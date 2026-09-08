@@ -86,7 +86,7 @@
 
   /* micro apps */
   .mapp { border: 1px solid var(--line-2); background: var(--bg-2); border-radius: 8px; padding: 14px; display: grid; gap: 10px; cursor: pointer; position: relative; overflow: hidden; }
-  .mapp::before { content: ""; position: absolute; inset: 0; background: radial-gradient(120px 60px at 100% 0%, var(--accent-dim), transparent); opacity: 0; transition: opacity .25s; }
+  .mapp::before { content: ""; position: absolute; inset: 0; background: radial-gradient(120px 60px at 100% 0%, var(--accent-dim), transparent); opacity: 0; transition: opacity .25s; pointer-events: none; }
   .mapp:hover { border-color: var(--line); } .mapp:hover::before { opacity: 1; }
   .mapp .top { display: flex; align-items: center; gap: 10px; }
   .mapp .ic { width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 6px; display: grid; place-items: center; background: var(--bg); }
@@ -177,6 +177,8 @@
   .run.done i { background: var(--good); } .run.failed i { background: var(--crit); }
   .run span { font: 500 9px/1 var(--font-m); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
   @keyframes blink { 50% { opacity: .3; } }
+  .toast { position: fixed; bottom: 20px; right: 20px; z-index: 30; background: var(--bg-2); border: 1px solid var(--accent); border-radius: 6px; padding: 10px 14px; font: 500 12px var(--font-d); color: var(--ink); box-shadow: 0 6px 24px rgba(0,0,0,.5); }
+  .toast.bad { border-color: var(--crit); }
   .modal[hidden] { display: none; }
   .modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; z-index: 20; }
   .dlg { width: 520px; max-width: 92vw; background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 18px; display: grid; gap: 12px; }
@@ -361,10 +363,16 @@ function openModal(appId, actionId) {
 $('#m-close').onclick = () => $('#modal').hidden = true;
 $('#modal').addEventListener('click', e => { if (e.target === $('#modal')) $('#modal').hidden = true; });
 $('#m-run').onclick = async () => {
-  const brief = $('#m-brief').value.trim(); if (!brief) return;
-  await api('/api/runs', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...modalCtx, brief, model: $('#m-model').value }) });
-  $('#modal').hidden = true; loadRuns();
+  const brief = $('#m-brief').value.trim(); if (!brief) { $('#m-brief').focus(); return; }
+  const btn = $('#m-run'); btn.disabled = true; btn.textContent = 'Lancement…';
+  try {
+    const r = await api('/api/runs', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...modalCtx, brief, model: $('#m-model').value }) });
+    if (r.error) throw new Error(r.error);
+    $('#modal').hidden = true; toast(`Run lancé · ${$('#m-title').textContent}`); loadRuns();
+  } catch (e) { toast('Échec du lancement : ' + e.message, true); }
+  btn.disabled = false; btn.textContent = 'Lancer';
 };
+function toast(msg, bad) { const el = document.createElement('div'); el.className = 'toast' + (bad ? ' bad' : ''); el.textContent = msg; document.body.appendChild(el); setTimeout(() => el.remove(), 4000); }
 async function loadRuns() {
   runs = await api('/api/runs'); renderApps();
   const arts = await api('/api/artifacts');
@@ -384,7 +392,7 @@ let nodes = [], edges = [], byId = {}, domKeys = [];
 const cv = $('#g'), ctx = cv.getContext('2d');
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let W = 0, H = 0, DPR = 1;
-const cam = { x: 0, y: 0, k: 1 };
+const cam = { x: 0, y: 0, k: .8 };
 function resize() { const r = cv.getBoundingClientRect(); DPR = Math.min(2, devicePixelRatio || 1); W = r.width; H = r.height; cv.width = W * DPR; cv.height = H * DPR; }
 addEventListener('resize', resize); resize();
 const toWorld = (sx, sy) => [(sx - W / 2) / cam.k - cam.x, (sy - H / 2) / cam.k - cam.y];
@@ -411,17 +419,51 @@ function renderDoms() {
   domKeys.forEach(k => { const n = nodes.filter(f => f.d === k).length; const b = document.createElement('button'); b.className = 'dom' + (activeDom === k ? ' on' : activeDom ? ' off' : ''); b.dataset.k = k; b.style.setProperty('--c', domOf(k).c); b.innerHTML = `<i></i>${domOf(k).label} <span style="opacity:.6">${n}</span>`; b.onclick = () => { activeDom = activeDom === k ? null : k; renderDoms(); }; el.appendChild(b); });
 }
 function step() {
-  const t = performance.now() / 1000, a = Math.max(alpha, reduce ? 0 : .012);
-  for (let i = 0; i < nodes.length; i++) { const n = nodes[i]; for (let j = i + 1; j < nodes.length; j++) { const m = nodes[j]; let dx = m.x - n.x, dy = m.y - n.y, d2 = dx * dx + dy * dy + .01; if (d2 > 160000) continue; const f = Math.min(40, 1400 / d2), d = Math.sqrt(d2); dx /= d; dy /= d; n.vx -= dx * f * a; n.vy -= dy * f * a; m.vx += dx * f * a; m.vy += dy * f * a; } }
-  for (const e of edges) { const dx = e.b.x - e.a.x, dy = e.b.y - e.a.y, d = Math.hypot(dx, dy) || 1, L = 80 + (e.a.r + e.b.r) * 2.5, f = (d - L) * .015 * a; e.a.vx += dx / d * f; e.a.vy += dy / d * f; e.b.vx -= dx / d * f; e.b.vy -= dy / d * f; }
+  const t = performance.now() / 1000, a = Math.max(alpha, reduce ? 0 : .02);
+  // Fruchterman-Reingold: ideal edge length k derived from the room available per node,
+  // so the graph fills the canvas instead of collapsing into a hairball.
+  const k = Math.max(64, Math.sqrt(W * H * 0.62 / Math.max(1, nodes.length)));
+  const cut = k * 3.5;
+  // domain centroids — gives each colour its own island
+  const cen = {};
+  for (const n of nodes) { const c = cen[n.d] ??= { x: 0, y: 0, n: 0 }; c.x += n.x; c.y += n.y; c.n++; }
+  for (const d in cen) { cen[d].x /= cen[d].n; cen[d].y /= cen[d].n; }
+  for (let i = 0; i < nodes.length; i++) {
+    const n = nodes[i];
+    for (let j = i + 1; j < nodes.length; j++) {
+      const m = nodes[j];
+      let dx = m.x - n.x, dy = m.y - n.y, d = Math.hypot(dx, dy);
+      if (d > cut) continue;
+      if (d < .01) { dx = Math.random() - .5; dy = Math.random() - .5; d = .01; }
+      // hard floor so two discs never overlap, whatever the rest of the forces say
+      const floor = n.r + m.r + 26;
+      const f = (k * k / Math.max(d, 6) + (d < floor ? (floor - d) * 60 : 0)) * .02 * a;
+      dx /= d; dy /= d;
+      n.vx -= dx * f; n.vy -= dy * f; m.vx += dx * f; m.vy += dy * f;
+    }
+  }
+  for (const e of edges) {
+    const dx = e.b.x - e.a.x, dy = e.b.y - e.a.y, d = Math.hypot(dx, dy) || 1;
+    const f = (d * d / k) * .005 * a;
+    e.a.vx += dx / d * f; e.a.vy += dy / d * f; e.b.vx -= dx / d * f; e.b.vy -= dy / d * f;
+  }
+  for (const n of nodes) {
+    const c = cen[n.d];
+    n.vx += (c.x - n.x) * .006 * a; n.vy += (c.y - n.y) * .006 * a;
+  }
   if (selected && !reduce) {
-    const f = selected, nb = [...f.nb], R = Math.max(120, 26 * nb.length / (2 * Math.PI) + 40);
+    const f = selected, nb = [...f.nb], R = Math.max(150, 30 * nb.length / (2 * Math.PI) + 60);
     nb.forEach((m, i) => { const ang = i / nb.length * Math.PI * 2; const tx = f.x + Math.cos(ang) * R, ty = f.y + Math.sin(ang) * R; m.vx += (tx - m.x) * .06; m.vy += (ty - m.y) * .06; });
-    for (const m of nodes) { if (m === f || f.nb.has(m)) continue; const dx = m.x - f.x, dy = m.y - f.y, d = Math.hypot(dx, dy) || 1; if (d < R + 70) { const push = (R + 70 - d) * .08; m.vx += dx / d * push; m.vy += dy / d * push; } }
+    for (const m of nodes) { if (m === f || f.nb.has(m)) continue; const dx = m.x - f.x, dy = m.y - f.y, d = Math.hypot(dx, dy) || 1; if (d < R + 80) { const push = (R + 80 - d) * .08; m.vx += dx / d * push; m.vy += dy / d * push; } }
     f.vx *= .5; f.vy *= .5;
   }
-  for (const n of nodes) { if (n.fixed) { n.vx = n.vy = 0; continue; } n.vx -= n.x * .004 * a; n.vy -= n.y * .004 * a; if (!reduce) { n.vx += Math.sin(t * .7 + n.x * .01) * .012; n.vy += Math.cos(t * .6 + n.y * .01) * .012; } n.vx = Math.max(-12, Math.min(12, n.vx * .82)); n.vy = Math.max(-12, Math.min(12, n.vy * .82)); n.x += n.vx; n.y += n.vy; }
-  alpha *= .985;
+  for (const n of nodes) {
+    if (n.fixed) { n.vx = n.vy = 0; continue; }
+    n.vx -= n.x * .004 * a; n.vy -= n.y * .004 * a;
+    if (!reduce) { n.vx += Math.sin(t * .7 + n.x * .01) * .012; n.vy += Math.cos(t * .6 + n.y * .01) * .012; }
+    n.vx = Math.max(-14, Math.min(14, n.vx * .84)); n.vy = Math.max(-14, Math.min(14, n.vy * .84)); n.x += n.vx; n.y += n.vy;
+  }
+  alpha *= .99;
 }
 const hex = (h, a) => h + Math.round(Math.max(0, Math.min(1, a)) * 255).toString(16).padStart(2, '0');
 function draw() {
@@ -483,7 +525,7 @@ cv.addEventListener('pointerup', () => { if (drag) { const n = drag; drag = null
 cv.addEventListener('wheel', e => { e.preventDefault(); const [sx, sy] = pos(e); const [wx, wy] = toWorld(sx, sy); cam.k = Math.min(5, Math.max(.3, cam.k * (e.deltaY < 0 ? 1.12 : .89))); const [wx2, wy2] = toWorld(sx, sy); cam.x += wx2 - wx; cam.y += wy2 - wy; }, { passive: false });
 document.getElementById('z+').onclick = () => cam.k = Math.min(5, cam.k * 1.25);
 document.getElementById('z-').onclick = () => cam.k = Math.max(.3, cam.k / 1.25);
-document.getElementById('z0').onclick = () => { cam.x = cam.y = 0; cam.k = 1; select(null); };
+document.getElementById('z0').onclick = () => { cam.x = cam.y = 0; cam.k = .8; select(null); };
 
 /* selection panel with the note body */
 const panel = $('#panel'), history = [];

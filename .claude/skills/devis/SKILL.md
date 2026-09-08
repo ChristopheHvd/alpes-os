@@ -47,3 +47,8 @@ Produit un document commercial conforme au format des documents déjà envoyés
 - Ne jamais envoyer, ne jamais toucher à Gmail ou Drive.
 - Ne jamais inventer un montant : s'il manque, s'arrêter et l'écrire dans la sortie.
 - Un seul document par run.
+
+## Garde-fous git
+- **Ne jamais lancer de commande git** : pas de `git add`, `git commit`, `git checkout`.
+  Les fichiers sont laissés modifiés, Christophe committe lui-même sur la bonne branche.
+- Écrire dans le second brain sans jamais y toucher aux branches.

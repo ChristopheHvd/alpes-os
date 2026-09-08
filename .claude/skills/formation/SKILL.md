@@ -45,3 +45,8 @@ formation Claude 2 jours pour Simatis).
 - Ne pas inventer de références clients ; les prendre dans le second brain ou les omettre.
 - Durées réalistes : 7 h par jour, pauses comprises.
 - Français, tutoiement proscrit dans les livrables client.
+
+## Garde-fous git
+- **Ne jamais lancer de commande git** : pas de `git add`, `git commit`, `git checkout`.
+  Les fichiers sont laissés modifiés, Christophe committe lui-même sur la bonne branche.
+- Écrire dans le second brain sans jamais y toucher aux branches.
