@@ -196,6 +196,20 @@ a.mail, .mail {
 .agenda .none { font: 400 12px/1.4 var(--font); color: var(--ink-3); padding: 4px 0; }
 .agenda .scope { font: 400 12px/1.5 var(--font); color: var(--ink-3); border: 1px dashed var(--line); border-radius: 6px; padding: 9px 10px; }
 .agenda .scope a { color: var(--accent); }
+.mail a { text-decoration: none; color: inherit; display: block; }
+.mail .acts { display: none; gap: 5px; margin-top: 7px; }
+.mail:hover .acts { display: flex; }
+.mail .acts button { font: 500 11px/1 var(--font); color: var(--ink-3); background: var(--bg); border: 1px solid var(--line); border-radius: 20px; padding: 5px 9px; cursor: pointer; }
+.mail .acts button:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.mail .from b.kn.rule { background: var(--sunken); color: var(--ink-3); }
+.hiddenbar { display: flex; align-items: center; gap: 10px; font: 400 12px/1.4 var(--font); color: var(--ink-3); border-top: 1px solid var(--line-soft); padding-top: 10px; }
+.hiddenbar button { margin-left: auto; font: 500 12px/1 var(--font); color: var(--accent); background: transparent; border: 0; cursor: pointer; padding: 0; }
+.rules summary { font: 500 12px/1.4 var(--font); color: var(--ink-3); cursor: pointer; list-style: none; }
+.rules summary::-webkit-details-marker { display: none; }
+.rules summary::before { content: "›"; display: inline-block; margin-right: 6px; transition: transform .15s; }
+.rules[open] summary::before { transform: rotate(90deg); }
+.rules textarea { width: 100%; margin-top: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; color: var(--ink); font: 400 12.5px/1.5 var(--font); padding: 9px; resize: vertical; outline: none; }
+.rules textarea:focus { border-color: var(--accent); }
 .auth { display: grid; gap: 10px; }
 .auth p { margin: 0; color: var(--ink-2); font-size: 13px; }
 .auth code { font: 400 12px var(--mono); color: var(--ink-3); background: var(--sunken); padding: 6px 8px; border-radius: 4px; word-break: break-all; }
@@ -566,14 +580,44 @@ async function loadGmail(refresh) {
     return;
   }
   $('#gm-sync').textContent = 'sync ' + rel(g.syncedAt);
-  const row = t => `<a class="mail${t.unread ? ' unread' : ''}${t.bucket !== 'personne' ? ' muted' : ''}" href="${t.url}" target="_blank" rel="noopener" title="${esc(t.why.join(' · '))}"><i class="dot"></i><div><div class="from">${esc(t.from)}${t.count > 1 ? ' · ' + t.count : ''}${t.known ? ' <b class="kn">connu</b>' : ''}</div><b>${esc(t.subject)}</b><small>${esc(t.snippet.slice(0, 110))}</small></div><span class="when">${rel(t.date)}</span></a>`;
+  const senderRule = a => g.senders?.[a]?.rule;
+  const row = t => `<div class="mail${t.unread ? ' unread' : ''}${t.bucket !== 'personne' ? ' muted' : ''}" title="${esc(t.why.join(' · '))}">
+      <i class="dot"></i>
+      <div>
+        <div class="from">${esc(t.from)}${t.count > 1 ? ' · ' + t.count : ''}${t.known ? ' <b class="kn">connu</b>' : ''}${senderRule(t.addr) ? ` <b class="kn rule">${senderRule(t.addr) === 'allow' ? 'toujours' : 'jamais'}</b>` : ''}</div>
+        <a href="${t.url}" target="_blank" rel="noopener"><b>${esc(t.subject)}</b></a>
+        <small>${esc(t.snippet.slice(0, 110))}</small>
+        <div class="acts">
+          <button data-hide="${esc(t.id)}" data-subject="${esc(t.subject)}" data-from="${esc(t.from)}" title="Masquer ce fil, rien à répondre">Traité</button>
+          <button data-sender="${esc(t.addr)}" data-rule="${senderRule(t.addr) === 'allow' ? 'none' : 'allow'}" title="Toujours afficher cet expéditeur">${senderRule(t.addr) === 'allow' ? 'Ne plus prioriser' : 'Toujours'}</button>
+          <button data-sender="${esc(t.addr)}" data-rule="${senderRule(t.addr) === 'deny' ? 'none' : 'deny'}" title="Ne plus jamais afficher cet expéditeur">${senderRule(t.addr) === 'deny' ? 'Réautoriser' : 'Jamais'}</button>
+        </div>
+      </div>
+      <span class="when">${rel(t.date)}</span>
+    </div>`;
   const noise = g.counts.auto + g.counts.bulk;
   const noiseLabel = `Voir les ${noise} messages écartés · ${g.counts.auto} automatiques, ${g.counts.bulk} newsletters`;
   el.innerHTML = `<div style="display:flex;gap:12px;align-items:baseline"><span class="num">${g.total}</span><div class="lbl" style="line-height:1.5">à traiter${g.unreadKept ? `<br>dont ${g.unreadKept} non lu${g.unreadKept > 1 ? 's' : ''}` : '<br>tous lus'}</div></div>
     <div class="mails">${g.threads.length ? g.threads.map(row).join('') : '<span class="lbl" style="padding:8px">Rien qui demande une réponse.</span>'}
       ${noise ? `<button class="more" id="gm-more">${noiseLabel}</button><div id="gm-others" hidden>${g.others.map(row).join('')}</div>` : ''}</div>
+    ${g.hidden?.length ? `<div class="hiddenbar"><span>${g.hidden.length} fil${g.hidden.length > 1 ? 's' : ''} marqué${g.hidden.length > 1 ? 's' : ''} traité${g.hidden.length > 1 ? 's' : ''}</span><button id="gm-unhide">Tout réafficher</button></div>` : ''}
+    <details class="rules"><summary>Consignes de tri</summary><textarea id="gm-notes" rows="3" placeholder="Ce que tu veux que je retienne. Ex : les rappels Noota ne demandent jamais de réponse, la compta IONOS part au classement.">${esc(g.notes ?? '')}</textarea><span class="lbl">Lu par le briefing du jour. Les boutons, eux, agissent tout de suite.</span></details>
     <div style="display:flex;gap:6px"><a class="btn acc" href="https://mail.google.com/mail/u/0/#label/${encodeURIComponent(g.label)}" target="_blank" rel="noopener">Ouvrir Gmail</a><button class="btn" id="gm-refresh">Rafraîchir</button></div>`;
   $('#gm-refresh').onclick = () => loadGmail(true);
+  const post = (url, body) => api(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  el.querySelectorAll('[data-hide]').forEach(b => b.onclick = async () => {
+    await post('/api/mail/hide', { id: b.dataset.hide, subject: b.dataset.subject, from: b.dataset.from });
+    toast('Fil marqué traité'); loadGmail(true);
+  });
+  el.querySelectorAll('[data-sender]').forEach(b => b.onclick = async () => {
+    await post('/api/mail/sender', { addr: b.dataset.sender, rule: b.dataset.rule === 'none' ? null : b.dataset.rule });
+    toast(b.dataset.rule === 'allow' ? 'Expéditeur toujours prioritaire' : b.dataset.rule === 'deny' ? 'Expéditeur écarté' : 'Règle retirée');
+    loadGmail(true);
+  });
+  const unhide = $('#gm-unhide');
+  if (unhide) unhide.onclick = async () => { await post('/api/mail/unhide', { all: true }); toast('Fils réaffichés'); loadGmail(true); };
+  const notes = $('#gm-notes');
+  if (notes) notes.onblur = () => post('/api/mail/notes', { notes: notes.value }).then(() => toast('Consignes enregistrées'));
   const more = $('#gm-more');
   if (more) more.onclick = () => { const o = $('#gm-others'); o.hidden = !o.hidden; more.textContent = o.hidden ? noiseLabel : 'Masquer les messages écartés'; };
 }
@@ -1009,7 +1053,17 @@ async function loadAgenda() {
   const c = await api('/api/calendar');
   const el = $('#agenda');
   if (c.needsScope) { el.innerHTML = `<div class="scope">Le calendrier a besoin d'une autorisation supplémentaire. <a href="/auth/google">Autoriser l'agenda</a></div>`; return; }
-  if (c.needsAuth || c.error) { el.innerHTML = c.error ? `<div class="none">Agenda indisponible : ${esc(c.error)}</div>` : ''; return; }
+  if (c.needsAuth) { el.innerHTML = ''; return; }
+  if (c.error) {
+    // the most common cause is the Calendar API simply not being switched on
+    const link = c.error.match(/https:\/\/console\.developers\.google\.com\/apis\S*?(?=["\s\\]|$)/)?.[0];
+    el.innerHTML = link
+      ? `<div class="scope">L'API Google Calendar n'est pas activée sur ton projet Google Cloud. <a href="${esc(link)}" target="_blank" rel="noopener">L'activer</a>, puis <a href="#" id="cal-retry">réessayer</a>.</div>`
+      : `<div class="none">Agenda indisponible : ${esc(c.error.slice(0, 140))}</div>`;
+    const retry = $('#cal-retry');
+    if (retry) retry.onclick = e => { e.preventDefault(); api('/api/calendar?refresh=1').then(loadAgenda); };
+    return;
+  }
   const today = new Date().toDateString();
   const next = c.events.slice(0, 4);
   el.innerHTML = next.length ? next.map(e => {

@@ -12,12 +12,14 @@ import { makeGmail } from './lib/gmail.js';
 import { makeRunner } from './lib/runs.js';
 import { listProjects, updateProject } from './lib/projects.js';
 import { makeCalendar } from './lib/calendar.js';
+import { makeMailState } from './lib/mailstate.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'config/config.json'), 'utf8'));
 const branding = JSON.parse(fs.readFileSync(path.join(ROOT, 'config/branding.json'), 'utf8'));
 const todoFile = path.join(cfg.secondBrain, cfg.todoFile);
 const gmail = makeGmail(path.join(ROOT, 'credentials'), cfg.port, { secondBrain: cfg.secondBrain });
+const mailState = makeMailState(path.join(ROOT, 'output', 'mail-state.json'));
 const calendar = makeCalendar(() => gmail.accessToken(), () => gmail.status().hasCalendar);
 const runner = makeRunner(ROOT, { ...cfg.claude, apps: cfg.apps, secondBrain: cfg.secondBrain });
 
@@ -42,14 +44,24 @@ app.put('/api/todo', (req, res) => res.json(writeTodo(todoFile, Array.isArray(re
 app.get('/auth/google', (req, res) => { const u = gmail.authUrl(); u ? res.redirect(u) : res.status(400).send('credentials/client_secret.json manquant'); });
 app.get('/auth/callback', async (req, res) => { try { await gmail.exchange(String(req.query.code)); res.redirect('/'); } catch (e) { res.status(500).send(String(e)); } });
 let gmailCache = null;
+// user decisions ride along with every inbox read
+const mailOpts = () => ({ ...cfg.gmail, filter: { ...(cfg.gmail.filter ?? {}), ...mailState.rules(), isHidden: id => mailState.isHidden(id) } });
 app.get('/api/gmail', async (req, res) => {
   const st = gmail.status();
   if (!st.hasSecret || !st.hasToken) return res.json({ needsAuth: true, ...st });
   try {
-    if (!gmailCache || req.query.refresh || Date.now() - gmailCache.at > 120e3) gmailCache = { at: Date.now(), data: await gmail.flagged(cfg.gmail) };
-    res.json(gmailCache.data);
+    if (!gmailCache || req.query.refresh || Date.now() - gmailCache.at > 120e3) gmailCache = { at: Date.now(), data: await gmail.flagged(mailOpts()) };
+    res.json({ ...gmailCache.data, hidden: mailState.hidden(), notes: mailState.get().notes, senders: mailState.get().senders });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
+
+// Mail triage — what Christophe decided about each thread and each sender
+const dropCache = () => { gmailCache = null; };
+app.get('/api/mail/state', (req, res) => res.json(mailState.get()));
+app.post('/api/mail/hide', (req, res) => { mailState.hide(String(req.body.id), { subject: req.body.subject, from: req.body.from }); dropCache(); res.json({ ok: true }); });
+app.post('/api/mail/unhide', (req, res) => { req.body.all ? mailState.unhideAll() : mailState.unhide(String(req.body.id)); dropCache(); res.json({ ok: true }); });
+app.post('/api/mail/sender', (req, res) => { mailState.sender(req.body.addr, req.body.rule ?? null); dropCache(); res.json({ ok: true }); });
+app.post('/api/mail/notes', (req, res) => { mailState.setNotes(req.body.notes); res.json({ ok: true }); });
 
 // Skills — headless runs
 app.get('/api/runs', (req, res) => res.json(runner.list(req.query.app ? String(req.query.app) : null)));
@@ -86,10 +98,10 @@ async function briefingContext() {
   let events = [], mails = [];
   try { const c = await calendar.upcoming({ days: 3, max: 12 }); events = c.events.map(e => ({ titre: e.title, debut: e.start, journee_entiere: e.allDay, avec: e.attendees, lieu: e.location })); } catch (e) { /* calendar optional */ }
   try {
-    const g = await gmail.flagged({ ...cfg.gmail, maxThreads: 8 });
+    const g = await gmail.flagged({ ...mailOpts(), maxThreads: 8 });
     mails = g.threads.map(t => ({ de: t.from, objet: t.subject, extrait: t.snippet.slice(0, 160), recu: t.date, non_lu: t.unread, contact_connu: t.known }));
   } catch (e) { /* mail optional */ }
-  return { date: new Date().toISOString().slice(0, 10), projets: projects, agenda: events, mails_a_traiter: mails, todo_du_jour: todo.items, taches_reportees: todo.carried };
+  return { date: new Date().toISOString().slice(0, 10), consignes_boite: mailState.get().notes, projets: projects, agenda: events, mails_a_traiter: mails, todo_du_jour: todo.items, taches_reportees: todo.carried };
 }
 app.get('/api/briefing/context', async (req, res) => res.json(await briefingContext()));
 app.post('/api/briefing', async (req, res) => {
