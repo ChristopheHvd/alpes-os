@@ -50,6 +50,7 @@
   .mails { display: grid; gap: 4px; }
   .mail { display: grid; grid-template-columns: 8px 1fr auto; gap: 10px; align-items: start; padding: 7px 6px; border-radius: 4px; cursor: pointer; }
   .mail:hover { background: var(--bg-2); }
+  a.mail { text-decoration: none; color: inherit; }
   .mail .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 6px; background: var(--ink-3); }
   .mail.unread .dot { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
   .mail b { display: block; font-weight: 600; font-size: 12.5px; }
@@ -122,8 +123,9 @@
   .search input::placeholder { color: var(--ink-3); }
   .search kbd { font: 500 9px/1 var(--font-m); border: 1px solid var(--line); border-radius: 3px; padding: 3px 5px; color: var(--ink-3); }
 
-  .panel { position: absolute; right: 18px; top: 70px; width: 270px; max-height: calc(100% - 200px); overflow: auto; background: rgba(18,16,14,.94); border: 1px solid var(--line); border-radius: 6px; padding: 14px; display: none; gap: 10px; z-index: 4; backdrop-filter: blur(6px); }
+  .panel { position: absolute; right: 18px; top: 70px; width: 400px; min-width: 300px; max-width: 70%; resize: horizontal; direction: rtl; max-height: calc(100% - 200px); overflow: auto; background: rgba(18,16,14,.94); border: 1px solid var(--line); border-radius: 6px; padding: 14px; display: none; gap: 10px; z-index: 4; backdrop-filter: blur(6px); }
   .panel.on { display: grid; }
+  .panel > * { direction: ltr; }
   .panel .hd { display: flex; align-items: center; gap: 8px; }
   .panel .hd .dm { flex: 1; }
   .panel .icobtn { width: 22px; height: 22px; border: 1px solid var(--line); border-radius: 4px; background: transparent; color: var(--ink-2); cursor: pointer; display: grid; place-items: center; font: 500 13px/1 var(--font-m); flex-shrink: 0; }
@@ -131,11 +133,11 @@
   .panel .icobtn:disabled { opacity: .3; cursor: default; }
   .panel .icobtn:disabled:hover { border-color: var(--line); color: var(--ink-2); }
   .panel .dm { font: 500 9px/1 var(--font-m); letter-spacing: .16em; text-transform: uppercase; }
-  .panel b.t { font: 600 15px/1.25 var(--font-d); text-wrap: balance; }
+  .panel b.t { font: 600 17px/1.25 var(--font-d); text-wrap: balance; }
   .panel .path { font: 400 10px/1.4 var(--font-m); color: var(--ink-3); word-break: break-all; }
   .panel .tags { display: flex; gap: 4px; flex-wrap: wrap; }
   .panel .links { display: grid; gap: 3px; }
-  .panel .links div { display: grid; grid-template-columns: 8px 1fr; gap: 8px; align-items: center; font-size: 12px; color: var(--ink-2); cursor: pointer; padding: 3px 4px; border-radius: 3px; }
+  .panel .links div { display: grid; grid-template-columns: 8px 1fr; gap: 8px; align-items: center; font-size: 13px; color: var(--ink-2); cursor: pointer; padding: 3px 4px; border-radius: 3px; }
   .panel .links div:hover { background: var(--bg); color: var(--ink); }
   .panel .links i { width: 6px; height: 6px; border-radius: 50%; }
   .panel .row { display: flex; gap: 6px; }
@@ -154,8 +156,8 @@
   .icobtn:disabled { opacity: .3; cursor: default; }
   .panel .hd { display: flex; align-items: center; gap: 8px; }
   .panel .hd .dm { flex: 1; }
-  .panel .body { font-size: 12px; color: var(--ink-2); line-height: 1.5; max-height: 220px; overflow: auto; border-top: 1px solid var(--line-2); padding-top: 8px; }
-  .panel .body h1, .panel .body h2, .panel .body h3 { font: 600 12px/1.3 var(--font-d); color: var(--ink); margin: 8px 0 3px; }
+  .panel .body { font-size: 13.5px; color: var(--ink-2); line-height: 1.6; max-height: 40vh; overflow: auto; border-top: 1px solid var(--line-2); padding-top: 8px; }
+  .panel .body h1, .panel .body h2, .panel .body h3 { font: 600 14px/1.3 var(--font-d); color: var(--ink); margin: 8px 0 3px; }
   .panel .body p { margin: 0 0 6px; } .panel .body ul { margin: 0 0 6px; padding-left: 16px; } .panel .body a { color: var(--accent); }
   .auth { display: grid; gap: 8px; }
   .auth p { margin: 0; color: var(--ink-2); font-size: 12px; }
@@ -407,8 +409,14 @@ function renderDoms() {
 }
 function step() {
   const t = performance.now() / 1000, a = Math.max(alpha, reduce ? 0 : .012);
-  for (let i = 0; i < nodes.length; i++) { const n = nodes[i]; for (let j = i + 1; j < nodes.length; j++) { const m = nodes[j]; let dx = m.x - n.x, dy = m.y - n.y, d2 = dx * dx + dy * dy + .01; if (d2 > 90000) continue; const f = Math.min(40, 900 / d2), d = Math.sqrt(d2); dx /= d; dy /= d; n.vx -= dx * f * a; n.vy -= dy * f * a; m.vx += dx * f * a; m.vy += dy * f * a; } }
-  for (const e of edges) { const dx = e.b.x - e.a.x, dy = e.b.y - e.a.y, d = Math.hypot(dx, dy) || 1, L = 60 + (e.a.r + e.b.r) * 2, f = (d - L) * .015 * a; e.a.vx += dx / d * f; e.a.vy += dy / d * f; e.b.vx -= dx / d * f; e.b.vy -= dy / d * f; }
+  for (let i = 0; i < nodes.length; i++) { const n = nodes[i]; for (let j = i + 1; j < nodes.length; j++) { const m = nodes[j]; let dx = m.x - n.x, dy = m.y - n.y, d2 = dx * dx + dy * dy + .01; if (d2 > 160000) continue; const f = Math.min(40, 1400 / d2), d = Math.sqrt(d2); dx /= d; dy /= d; n.vx -= dx * f * a; n.vy -= dy * f * a; m.vx += dx * f * a; m.vy += dy * f * a; } }
+  for (const e of edges) { const dx = e.b.x - e.a.x, dy = e.b.y - e.a.y, d = Math.hypot(dx, dy) || 1, L = 80 + (e.a.r + e.b.r) * 2.5, f = (d - L) * .015 * a; e.a.vx += dx / d * f; e.a.vy += dy / d * f; e.b.vx -= dx / d * f; e.b.vy -= dy / d * f; }
+  if (selected && !reduce) {
+    const f = selected, nb = [...f.nb], R = Math.max(120, 26 * nb.length / (2 * Math.PI) + 40);
+    nb.forEach((m, i) => { const ang = i / nb.length * Math.PI * 2; const tx = f.x + Math.cos(ang) * R, ty = f.y + Math.sin(ang) * R; m.vx += (tx - m.x) * .06; m.vy += (ty - m.y) * .06; });
+    for (const m of nodes) { if (m === f || f.nb.has(m)) continue; const dx = m.x - f.x, dy = m.y - f.y, d = Math.hypot(dx, dy) || 1; if (d < R + 70) { const push = (R + 70 - d) * .08; m.vx += dx / d * push; m.vy += dy / d * push; } }
+    f.vx *= .5; f.vy *= .5;
+  }
   for (const n of nodes) { if (n.fixed) { n.vx = n.vy = 0; continue; } n.vx -= n.x * .004 * a; n.vy -= n.y * .004 * a; if (!reduce) { n.vx += Math.sin(t * .7 + n.x * .01) * .012; n.vy += Math.cos(t * .6 + n.y * .01) * .012; } n.vx = Math.max(-12, Math.min(12, n.vx * .82)); n.vy = Math.max(-12, Math.min(12, n.vy * .82)); n.x += n.vx; n.y += n.vy; }
   alpha *= .985;
 }
@@ -436,14 +444,22 @@ function draw() {
     if (isF) { ctx.strokeStyle = hex(accent, .9); ctx.lineWidth = 1.5 / cam.k; ctx.beginPath(); ctx.arc(n.x, n.y, r + 5 / cam.k, 0, 7); ctx.stroke(); }
   }
   ctx.textBaseline = 'middle';
-  for (const n of nodes) {
-    const isF = n === focus, isNb = focus && focus.nb.has(n);
-    if (!isF && !isNb) continue;
-    const fs = (isF ? 13 : 10.5) / cam.k;
-    ctx.font = `${isF ? 600 : 500} ${fs}px ${isF ? '"Outfit"' : '"JetBrains Mono"'}, sans-serif`;
-    const w = ctx.measureText(n.t).width;
-    ctx.fillStyle = 'rgba(11,10,9,.75)'; ctx.fillRect(n.x + n.r + 4 / cam.k, n.y - fs * .7, w + 6 / cam.k, fs * 1.4);
-    ctx.fillStyle = isF ? '#fff' : hex(domOf(n.d).c, isNb ? .95 : .7); ctx.fillText(n.t, n.x + n.r + 7 / cam.k, n.y);
+  if (focus) {
+    const placed = [];
+    const labels = [focus, ...[...focus.nb].sort((a, b) => Math.atan2(a.y - focus.y, a.x - focus.x) - Math.atan2(b.y - focus.y, b.x - focus.x))];
+    for (const n of labels) {
+      const isF = n === focus, fs = (isF ? 14 : 11.5) / cam.k;
+      ctx.font = `${isF ? 600 : 500} ${fs}px ${isF ? '"Outfit"' : '"JetBrains Mono"'}, sans-serif`;
+      const w = ctx.measureText(n.t).width + 8 / cam.k, h = fs * 1.5;
+      /* anchor on the side facing away from the focus so labels sit outside the ring */
+      const left = !isF && n.x < focus.x;
+      let x = left ? n.x - n.r - 6 / cam.k - w : n.x + n.r + 6 / cam.k, y = n.y - h / 2;
+      for (let k = 0; k < 8; k++) { const hit = placed.find(b => x < b.x + b.w && x + w > b.x && y < b.y + b.h && y + h > b.y); if (!hit) break; y = hit.y + hit.h + 2 / cam.k; }
+      placed.push({ x, y, w, h });
+      ctx.fillStyle = 'rgba(11,10,9,.82)'; ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = isF ? '#fff' : hex(domOf(n.d).c, .95); ctx.fillText(n.t, x + 4 / cam.k, y + h / 2);
+      if (Math.abs(y + h / 2 - n.y) > 2) { ctx.strokeStyle = hex(domOf(n.d).c, .4); ctx.lineWidth = .8 / cam.k; ctx.beginPath(); ctx.moveTo(left ? x + w : x, y + h / 2); ctx.lineTo(n.x, n.y); ctx.stroke(); }
+    }
   }
   ctx.restore();
   requestAnimationFrame(draw);
@@ -477,7 +493,7 @@ async function select(n, fromNav) {
   panel.innerHTML = `<div class="hd"><button class="icobtn" id="pv-back" title="Précédent" ${history.length ? '' : 'disabled'}>‹</button><span class="dm" style="color:${c}">${domOf(n.d).label}${n.type ? ' · ' + esc(n.type) : ''}</span><button class="icobtn" id="pv-close" title="Fermer">×</button></div>
     <b class="t">${esc(n.t)}</b><div class="path">second-brain/${esc(n.id)}</div>
     <div class="tags">${n.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}${n.st ? `<span class="st ${n.st === 'verified' ? 'v' : 'd'}" style="align-self:center">${n.st === 'verified' ? '● verified' : '○ ' + esc(n.st)}</span>` : ''}</div>
-    ${n.desc ? `<p style="margin:0;font-size:12px;color:var(--ink-2)">${esc(n.desc)}</p>` : ''}
+    ${n.desc ? `<p style="margin:0;font-size:13.5px;line-height:1.5;color:var(--ink-2)">${esc(n.desc)}</p>` : ''}
     <span class="lbl">${links.length} connexion${links.length > 1 ? 's' : ''}</span>
     <div class="links">${links.map(m => `<div data-id="${esc(m.id)}"><i style="background:${domOf(m.d).c}"></i>${esc(m.t)}</div>`).join('')}</div>
     <div class="body" id="pv-body"><span class="lbl">Chargement…</span></div>
@@ -493,7 +509,7 @@ async function select(n, fromNav) {
   const body = panel.querySelector('#pv-body'); body.innerHTML = note.body ? md(note.body) : '<span class="lbl">Vide</span>';
   body.querySelectorAll('a[data-link]').forEach(a => a.onclick = () => { const target = new URL(a.dataset.link, 'file:///' + n.id).pathname.slice(1); const m = byId[target]; if (m) { select(m); center(m); } });
 }
-function center(n) { const t0 = performance.now(), fx = cam.x, fy = cam.y, fk = cam.k, tk = Math.max(cam.k, 1.8); (function anim() { const p = Math.min(1, (performance.now() - t0) / 450), e = 1 - Math.pow(1 - p, 3); cam.k = fk + (tk - fk) * e; cam.x = fx + (-n.x - fx) * e; cam.y = fy + (-n.y - fy) * e; if (p < 1) requestAnimationFrame(anim); })(); }
+function center(n) { const t0 = performance.now(), fx = cam.x, fy = cam.y, fk = cam.k, tk = Math.max(cam.k, 1.8); const off = panel.classList.contains('on') ? (panel.offsetWidth / 2 + 24) / tk : 0; /* keep the node clear of the panel */ (function anim() { const p = Math.min(1, (performance.now() - t0) / 450), e = 1 - Math.pow(1 - p, 3); cam.k = fk + (tk - fk) * e; cam.x = fx + (-n.x - off - fx) * e; cam.y = fy + (-n.y - fy) * e; if (p < 1) requestAnimationFrame(anim); })(); }
 const q = $('#q');
 q.addEventListener('input', () => query = q.value.trim().toLowerCase());
 addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); q.focus(); } if (e.key === 'Escape') { q.value = ''; query = ''; q.blur(); select(null); $('#modal').hidden = true; } });
