@@ -182,8 +182,11 @@ a.mail, .mail {
 .pj .next.empty { color: var(--ink-3); font-style: italic; }
 .pj .next[contenteditable="true"] { background: var(--bg); outline: 1px solid var(--accent); cursor: text; }
 .pj .row2 { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
-.pj select { font: 500 11px/1 var(--font); color: var(--ink-3); background: transparent; border: 1px solid var(--line-soft); border-radius: 20px; padding: 4px 7px; cursor: pointer; }
-.pj select:hover { border-color: var(--ink-3); color: var(--ink-2); }
+.stagebtn { font: 500 10.5px/1 var(--font); text-transform: capitalize; color: var(--ink-3); background: var(--sunken); border: 0; border-radius: 20px; padding: 4px 9px; cursor: pointer; }
+.stagebtn:hover { color: var(--ink); }
+.stagebtn.actif { color: var(--good); background: color-mix(in srgb, var(--good) 15%, var(--sunken)); }
+.stagebtn.incubation { color: var(--warn); background: color-mix(in srgb, var(--warn) 15%, var(--sunken)); }
+.stagebtn.terminé { color: var(--ink-3); }
 .pj .push { display: none; font: 500 11px/1 var(--font); color: var(--accent); background: var(--accent-soft); border: 0; border-radius: 20px; padding: 5px 9px; cursor: pointer; }
 .pj:hover .push { display: inline-block; }
 .agenda { display: grid; gap: 1px; }
@@ -210,6 +213,11 @@ a.mail, .mail {
 .rules[open] summary::before { transform: rotate(90deg); }
 .rules textarea { width: 100%; margin-top: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; color: var(--ink); font: 400 12.5px/1.5 var(--font); padding: 9px; resize: vertical; outline: none; }
 .rules textarea:focus { border-color: var(--accent); }
+.wtoggle { margin-left: 6px; width: 22px; height: 22px; border: 0; background: transparent; color: var(--ink-3); cursor: pointer; border-radius: 5px; font: 400 13px/1 var(--font); display: grid; place-items: center; transition: transform .15s; flex-shrink: 0; }
+.wtoggle:hover { background: var(--sunken); color: var(--ink); }
+.w.collapsed { flex: 0 0 auto !important; gap: 0; }
+.w.collapsed .w-body { display: none !important; }
+.w.collapsed .wtoggle { transform: rotate(-90deg); }
 .auth { display: grid; gap: 10px; }
 .auth p { margin: 0; color: var(--ink-2); font-size: 13px; }
 .auth code { font: 400 12px var(--mono); color: var(--ink-3); background: var(--sunken); padding: 6px 8px; border-radius: 4px; word-break: break-all; }
@@ -242,20 +250,17 @@ a.mail, .mail {
 .add input::placeholder { color: var(--ink-3); }
 
 /* ---------- micro apps ---------- */
-.mapp { flex-shrink: 0; border: 1px solid var(--line-soft); background: var(--surface); border-radius: var(--r); padding: 14px; display: grid; gap: 11px; position: relative; }
-.mapp .top { display: flex; align-items: center; gap: 11px; }
-.mapp .head-link { cursor: pointer; border-radius: 6px; margin: -4px; padding: 4px; }
-.mapp .head-link:hover { background: var(--sunken); }
-.mapp .ic { width: 36px; height: 36px; border-radius: 8px; display: grid; place-items: center; background: var(--accent-soft); flex-shrink: 0; }
-.mapp .ic svg { width: 18px; height: 18px; stroke: var(--accent); fill: none; stroke-width: 1.7; }
-.mapp b { font: 600 14.5px/1.25 var(--font); display: block; color: var(--ink); }
-.mapp .sub { color: var(--ink-3); font-size: 12px; line-height: 1.35; }
-.mapp .count { margin-left: auto; align-self: flex-start; font: 500 11px/1 var(--font); color: var(--ink-3); background: var(--sunken); border-radius: 20px; padding: 5px 9px; white-space: nowrap; }
-.mapp .head-link:hover .count { color: var(--accent); }
-.mapp .skills { display: flex; gap: 5px; flex-wrap: wrap; }
-.mapp .skills span { overflow-wrap: anywhere; font: 400 11px/1 var(--mono); color: var(--ink-3); background: var(--sunken); border-radius: 4px; padding: 5px 7px; }
-.mapp .recent { display: grid; gap: 2px; border-top: 1px solid var(--line-soft); padding-top: 10px; }
-.mapp .act { display: flex; gap: 7px; }
+.mapp { flex-shrink: 0; padding: 8px 4px; border-radius: 6px; min-width: 0; }
+.mapp:hover { background: var(--sunken); }
+.mapp .row1 { display: flex; align-items: center; gap: 9px; min-width: 0; margin-bottom: 7px; }
+.mapp .ic.sm { width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center; background: var(--accent-soft); flex-shrink: 0; }
+.mapp .ic.sm svg { width: 13px; height: 13px; stroke: var(--accent); fill: none; stroke-width: 1.8; }
+.mapp .head-link { flex: 1; min-width: 0; cursor: pointer; font: 500 13.5px/1.3 var(--font); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
+.mapp .head-link:hover { color: var(--accent); }
+.mapp .head-link .live { width: 6px; height: 6px; border-radius: 50%; background: var(--warn); flex-shrink: 0; animation: pulse 1.2s ease-in-out infinite; }
+.mapp .act { display: flex; gap: 5px; flex-wrap: wrap; padding-left: 33px; }
+#apps.w-body { overflow-y: auto; min-height: 0; display: flex; flex-direction: column; }
+.btn.sm { font-size: 11.5px; padding: 5px 8px; }
 .run { display: grid; grid-template-columns: 7px 1fr auto; gap: 9px; align-items: center; font-size: 12.5px; padding: 6px 7px; cursor: pointer; border-radius: 6px; color: var(--ink-2); }
 .run:hover { background: var(--sunken); color: var(--ink); }
 .run i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); }
@@ -414,6 +419,7 @@ a.mail, .mail {
     <symbol id="i-euro" viewBox="0 0 24 24"><path d="M18 6a7 7 0 1 0 0 12M4 10h10M4 14h10"/></symbol>
     <symbol id="i-course" viewBox="0 0 24 24"><path d="M3 6h7a3 3 0 0 1 3 3v11a2 2 0 0 0-2-2H3z"/><path d="M21 6h-7a3 3 0 0 0-3 3v11a2 2 0 0 1 2-2h8z"/></symbol>
     <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
     <symbol id="i-hex" viewBox="0 0 24 24"><path d="M12 2l8 4.6v9.2L12 20.5 4 15.8V6.6z"/><path d="M12 7l4 2.3v4.6L12 16l-4-2.1V9.3z"/></symbol>
     <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></symbol>
     <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/></symbol>
@@ -423,26 +429,30 @@ a.mail, .mail {
 
 <div class="os">
   <aside class="col left">
-    <section class="w">
+    <section class="w" data-widget="inbox">
       <div class="w-head">
         <h2><svg><use href="#i-mail"/></svg>Boîte de réception</h2>
         <span class="tag acc" id="gm-label">ALPES-IA</span>
         <span class="meta" id="gm-sync">—</span>
+        <button class="wtoggle" data-w="inbox" title="Réduire">⌄</button>
       </div>
-      <div id="gmail"><span class="lbl">Chargement…</span></div>
+      <div class="w-body" id="gmail"><span class="lbl">Chargement…</span></div>
     </section>
 
-    <section class="w">
+    <section class="w" data-widget="today">
       <div class="w-head">
         <h2><svg><use href="#i-list"/></svg>Aujourd'hui</h2>
         <span class="meta" id="today"></span>
+        <button class="wtoggle" data-w="today" title="Réduire">⌄</button>
       </div>
-      <div class="prog"><div class="bar"><i id="pbar"></i></div><span id="pcount">0/0</span></div>
-      <div class="todo" id="todo"></div>
-      <div class="add"><span class="lbl">+</span><input id="newtodo" placeholder="Ajouter une tâche, Entrée pour valider · !! = urgent"></div>
-      <div class="agenda" id="agenda"></div>
-      <button class="btn acc" id="brief-run" style="width:100%">Composer ma journée</button>
-      <span class="lbl" id="todo-src"></span>
+      <div class="w-body">
+        <div class="prog"><div class="bar"><i id="pbar"></i></div><span id="pcount">0/0</span></div>
+        <div class="todo" id="todo"></div>
+        <div class="add"><span class="lbl">+</span><input id="newtodo" placeholder="Ajouter une tâche, Entrée pour valider · !! = urgent"></div>
+        <div class="agenda" id="agenda"></div>
+        <button class="btn acc" id="brief-run" style="width:100%">Composer ma journée</button>
+        <span class="lbl" id="todo-src"></span>
+      </div>
     </section>
   </aside>
 
@@ -470,27 +480,30 @@ a.mail, .mail {
   <div class="grip" data-side="right" title="Redimensionner"></div>
 
   <aside class="col right">
-    <section class="w" id="w-projects">
+    <section class="w" id="w-projects" data-widget="projects">
       <div class="w-head">
         <h2><svg><use href="#i-flow"/></svg>Projets en cours</h2>
         <span class="meta" id="pj-meta"></span>
+        <button class="wtoggle" data-w="projects" title="Réduire">⌄</button>
       </div>
-      <div class="projects" id="projects"></div>
+      <div class="projects w-body" id="projects"></div>
     </section>
 
-    <section class="w">
+    <section class="w" data-widget="apps">
       <div class="w-head">
         <h2><svg><use href="#i-grid"/></svg>Micro apps</h2>
         <span class="meta">exécutées par Claude</span>
+        <button class="wtoggle" data-w="apps" title="Réduire">⌄</button>
       </div>
-      <div id="apps"></div>
+      <div class="w-body" id="apps"></div>
     </section>
-    <section class="w">
+    <section class="w" data-widget="artifacts">
       <div class="w-head">
         <h2><svg><use href="#i-file"/></svg>Fichiers produits</h2>
         <span class="meta" id="runs-meta"></span>
+        <button class="wtoggle" data-w="artifacts" title="Réduire">⌄</button>
       </div>
-      <div class="arts" id="artifacts"></div>
+      <div class="arts w-body" id="artifacts"></div>
     </section>
   </aside>
 </div>
@@ -626,15 +639,16 @@ async function loadGmail(refresh) {
 let cfg = { apps: [], gmail: {} }, runs = [];
 function renderApps() {
   $('#apps').innerHTML = cfg.apps.map(a => {
-    const mine = runs.filter(r => r.app === a.id).slice(0, 3);
-    const n = runs.filter(r => r.app === a.id).length;
-    return `<div class="mapp" style="margin-bottom:8px"><div class="top head-link" data-open="${a.id}"><span class="ic"><svg><use href="#i-${a.id === 'devis' ? 'euro' : 'course'}"/></svg></span><div><b>${esc(a.name)}</b><span class="sub">${esc(a.description)}</span></div><span class="count">${n} run${n > 1 ? 's' : ''}</span></div>
-      <div class="skills">${a.skillsUsed.map(s => `<span>${esc(s)}</span>`).join('')}</div>
-      ${mine.length ? `<div class="recent">${mine.map(r => `<div class="run ${r.status}" data-run="${r.id}" title="${esc(r.brief)}"><i></i><span class="txt">${esc(r.brief.split('\n')[0])}</span><span>${r.status === 'running' ? 'en cours' : r.status === 'done' ? 'fait' : 'échec'}</span></div>`).join('')}</div>` : ''}
-      <div class="act">${a.actions.map((ac, i) => `<button class="btn${i ? '' : ' acc'}" data-app="${a.id}" data-action="${ac.id}">${esc(ac.label)}</button>`).join('')}</div></div>`;
+    const running = runs.some(r => r.app === a.id && r.status === 'running');
+    return `<div class="mapp">
+      <div class="row1">
+        <span class="ic sm"><svg><use href="#i-${a.id === 'devis' ? 'euro' : a.id === 'formation' ? 'course' : 'clock'}"/></svg></span>
+        <b class="head-link" data-open="${a.id}">${esc(a.name)}${running ? '<i class="live" title="Un run est en cours"></i>' : ''}</b>
+      </div>
+      <div class="act">${a.actions.map((ac, i) => `<button class="btn sm${i ? '' : ' acc'}" data-app="${a.id}" data-action="${ac.id}">${esc(ac.label)}</button>`).join('')}</div>
+    </div>`;
   }).join('');
   $('#apps').querySelectorAll('button[data-app]').forEach(b => b.onclick = () => openModal(b.dataset.app, b.dataset.action));
-  $('#apps').querySelectorAll('.run[data-run]').forEach(el => el.onclick = () => { const r = runs.find(x => x.id === el.dataset.run); if (r) openRun(r); });
   $('#apps').querySelectorAll('[data-open]').forEach(el => el.onclick = () => openApp(el.dataset.open));
 }
 let modalCtx = null;
@@ -834,7 +848,7 @@ function step() {
   for (const n of nodes) {
     if (n.fixed) { n.vx = n.vy = 0; continue; }
     n.vx -= n.x * .004 * a; n.vy -= n.y * .004 * a;
-    if (!reduce) { n.vx += Math.sin(t * .7 + n.x * .01) * .012; n.vy += Math.cos(t * .6 + n.y * .01) * .012; }
+    if (!reduce) { n.vx += Math.sin(t * .55 + n.x * .012 + n.id.length) * .03; n.vy += Math.cos(t * .48 + n.y * .012 + n.id.length) * .03; }
     n.vx = Math.max(-14, Math.min(14, n.vx * .84)); n.vy = Math.max(-14, Math.min(14, n.vy * .84)); n.x += n.vx; n.y += n.vy;
   }
   alpha *= .99;
@@ -1018,7 +1032,7 @@ async function loadProjects() {
         <div class="name"><b data-open-note="${esc(p.id)}">${esc(p.title)}</b><span class="age">${p.updated ? 'revu ' + relDate(p.updated) : ''}</span></div>
         <div class="next ${p.next ? '' : 'empty'}" data-next="${esc(p.slug)}" title="Cliquer pour modifier la prochaine étape">${esc(p.next || 'Pas de prochaine étape')}</div>
         <div class="row2">
-          <select data-stage="${esc(p.slug)}">${STAGES.map(v => `<option value="${v}"${v === p.stage ? ' selected' : ''}>${v}</option>`).join('')}</select>
+          <button class="stagebtn ${esc(p.stage)}" data-stage="${esc(p.slug)}" data-cur="${esc(p.stage)}" title="Cliquer pour changer le stade">${esc(p.stage)}</button>
           ${p.next ? `<button class="push" data-push="${esc(p.slug)}">→ Aujourd'hui</button>` : ''}
         </div>
       </div>
@@ -1028,7 +1042,10 @@ async function loadProjects() {
     const n = byId[el.dataset.openNote];
     if (n) { select(n); center(n); } else toast('Fiche absente du graphe, rafraîchis dans 30 s');
   });
-  $('#projects').querySelectorAll('select[data-stage]').forEach(el => el.onchange = () => patchProject(el.dataset.stage, { stage: el.value }));
+  $('#projects').querySelectorAll('button[data-stage]').forEach(el => el.onclick = () => {
+    const next = STAGES[(STAGES.indexOf(el.dataset.cur) + 1) % STAGES.length];
+    patchProject(el.dataset.stage, { stage: next });
+  });
   $('#projects').querySelectorAll('[data-next]').forEach(el => {
     el.onclick = () => { if (el.isContentEditable) return; el.contentEditable = 'true'; el.classList.remove('empty'); if (el.textContent.startsWith('Pas de')) el.textContent = ''; el.focus(); };
     el.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } if (e.key === 'Escape') { el.contentEditable = 'false'; loadProjects(); } };
@@ -1090,6 +1107,16 @@ $('#brief-run').onclick = async () => {
   btn.disabled = false; btn.textContent = 'Composer ma journée';
 };
 let briefWatch = null;
+
+/* ---------- widget collapse: remembered per widget, header stays, body hides ---------- */
+(() => {
+  let saved = {}; try { saved = JSON.parse(localStorage.getItem('collapsed') || '{}'); } catch (e) {}
+  document.querySelectorAll('.w[data-widget]').forEach(w => { if (saved[w.dataset.widget]) w.classList.add('collapsed'); });
+  document.querySelectorAll('.wtoggle').forEach(btn => btn.onclick = () => {
+    const w = btn.closest('.w'), key = w.dataset.widget, on = w.classList.toggle('collapsed');
+    saved[key] = on; try { localStorage.setItem('collapsed', JSON.stringify(saved)); } catch (e) {}
+  });
+})();
 
 /* ---------- boot ---------- */
 (async () => {
