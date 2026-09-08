@@ -1,0 +1,43 @@
+{
+  "company": "Alpes IA",
+  "tagline": "Expert en IA générative et automatisation pour TPE/PME",
+  "owner": "Prénom Nom",
+  "address": "1 rue Exemple",
+  "zip": "00000",
+  "city": "Ville",
+  "siret": "00000000000000",
+  "nda": "00000000000",
+  "email": "contact@exemple.fr",
+  "legalStatus": "Microentreprise - TVA non applicable, art. 293 B du CGI. Cet enregistrement ne vaut pas agrément de l'État.",
+  "vat": "TVA non applicable, art. 293 B du CGI",
+  "bank": {
+    "holder": "Prénom Nom",
+    "iban": "FR00 0000 0000 0000 0000 0000 000",
+    "bic": "XXXXXXXX",
+    "domiciliation": "Banque, adresse"
+  },
+  "paymentTerms": {
+    "defaultDueDays": 8,
+    "latePenalty": "En cas de retard de paiement : intérêts au taux BCE majoré de 10 points et indemnité forfaitaire pour frais de recouvrement de 40 € (article L441-10 du Code de commerce). Aucun escompte pour règlement anticipé."
+  },
+  "numbering": {
+    "devis": {
+      "prefix": "DEV",
+      "last": 0
+    },
+    "facture": {
+      "prefix": "FAC",
+      "last": 0
+    },
+    "convention": {
+      "prefix": "CONV",
+      "last": 0
+    }
+  },
+  "colors": {
+    "accent": "#ff7a1a",
+    "ink": "#1a1714",
+    "muted": "#6b6358",
+    "line": "#e2ddd4"
+  }
+}

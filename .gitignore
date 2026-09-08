@@ -3,3 +3,6 @@ credentials/
 output/
 runs.log
 .DS_Store
+# Real identity, SIRET, NDA and bank details — never versioned.
+# Copy config/branding.example.json to config/branding.json and fill it in.
+config/branding.json

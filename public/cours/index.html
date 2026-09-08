@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Support de formation — Alpes IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="deck.css">
+</head>
+<body>
+
+<header class="bar" id="bar">
+  <a class="home" href="/" title="Retour au dashboard">ALPES IA</a>
+  <span class="sep">/</span>
+  <span class="mod" id="b-mod">…</span>
+  <span class="right">
+    <span class="client" id="b-client"></span>
+    <button id="timer" title="Démarrer ou arrêter le chrono du module (T)">00:00</button>
+    <button class="icobtn" id="b-notes" title="Notes formateur (N)">N</button>
+    <button class="icobtn" id="b-toc" title="Sommaire (S)">☰</button>
+    <button class="icobtn" id="b-theme" title="Papier / Ardoise">◐</button>
+    <button class="icobtn" id="b-help" title="Raccourcis (?)">?</button>
+  </span>
+</header>
+
+<main class="stage" id="stage"><span class="loading">Chargement du support…</span></main>
+
+<footer class="foot" id="foot">
+  <span class="count" id="f-count"></span>
+  <span class="track" id="f-track" title="Aller à"><i id="f-bar"></i></span>
+  <span class="nav">
+    <button class="icobtn" id="f-prev" title="Précédent (←)">‹</button>
+    <button class="icobtn" id="f-next" title="Suivant (→)">›</button>
+  </span>
+</footer>
+
+<aside class="notes" id="notes">
+  <h3>Notes formateur <button class="icobtn" id="n-close" title="Fermer">×</button></h3>
+  <div class="nx" id="n-body"></div>
+  <div class="peek" id="n-peek"></div>
+</aside>
+
+<div class="sheet" id="sheet"><div class="box" id="sheet-box"></div></div>
+
+<div class="print" id="print"></div>
+
+<script src="deck.js"></script>
+</body>
+</html>

@@ -10,6 +10,7 @@ Produit un document commercial conforme au format des documents déjà envoyés
 
 ## Sources à lire, dans l'ordre
 1. `config/branding.json` — identité, SIRET, NDA, banque, mentions légales, numérotation.
+   Ce fichier n'est pas versionné : s'il manque, le créer depuis `config/branding.example.json`.
 2. `templates/document.html` — gabarit A4. Ne pas changer le style, remplir les `{{...}}`.
 3. Second brain (`/Users/christophehavard/Code/second-brain`) via la logique de la skill
    `second-brain-recall` : `brain/clients/` pour l'identité du client, `brain/finance/`
