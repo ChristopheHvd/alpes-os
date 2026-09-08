@@ -1,0 +1,5 @@
+node_modules/
+credentials/
+output/
+runs.log
+.DS_Store

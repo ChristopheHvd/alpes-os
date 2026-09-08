@@ -1,0 +1,45 @@
+{
+  "port": 4545,
+  "secondBrain": "/Users/christophehavard/Code/second-brain",
+  "brainFolders": ["brain", "skills", "index.md", "log.md", "AGENTS.md"],
+  "todoFile": "brain/journal/todo.md",
+  "gmail": {
+    "label": "ALPES-IA",
+    "maxThreads": 8,
+    "newerThanDays": 30
+  },
+  "claude": {
+    "bin": "claude",
+    "defaultModel": "claude-sonnet-5",
+    "allowedTools": "Read,Write,Edit,Glob,Grep,Bash,Skill",
+    "permissionMode": "acceptEdits"
+  },
+  "apps": [
+    {
+      "id": "devis",
+      "name": "Devis & Factures",
+      "description": "PDF au branding Alpes IA depuis un brief",
+      "skill": "/devis",
+      "model": "claude-opus-5",
+      "output": "output/devis",
+      "actions": [
+        { "id": "devis", "label": "Nouveau devis", "placeholder": "Client, prestation, dates, prix HT, conditions. Ex : Simatis, formation Claude 2 jours les 21/09 et 08/10, 1800 €, acompte 30 %" },
+        { "id": "facture", "label": "Nouvelle facture", "placeholder": "Client, devis associé, montant ou % d'acompte, échéance. Ex : facture de solde 70 % sur DEV-2026-004" }
+      ],
+      "skillsUsed": ["office-pdf", "second-brain-recall", "templates/document.html"]
+    },
+    {
+      "id": "formation",
+      "name": "Programmes de formation",
+      "description": "Objectifs, modules, exercices, déroulé horaire",
+      "skill": "/formation",
+      "model": "claude-opus-5",
+      "output": "output/formations",
+      "actions": [
+        { "id": "programme", "label": "Nouveau programme", "placeholder": "Sujet, public, durée, niveau, objectif final. Ex : n8n pour Atomic Digitale, 2 jours, 12 personnes, non-devs, automatiser un process métier" },
+        { "id": "audit", "label": "Auditer un module", "placeholder": "Chemin ou contenu du programme à auditer, et la promesse de transformation" }
+      ],
+      "skillsUsed": ["core-thesis-extractor", "exercise-factory", "module-auditor", "office-docx"]
+    }
+  ]
+}

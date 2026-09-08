@@ -1,0 +1,18 @@
+{
+  "name": "alpes-os",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Alpes IA Agentic OS — local command centre (ARMS)",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "index": "node scripts/index-brain.js",
+    "pm2": "pm2 start server.js --name alpes-os && pm2 save"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "google-auth-library": "^9.15.0"
+  },
+  "engines": { "node": ">=20" }
+}
