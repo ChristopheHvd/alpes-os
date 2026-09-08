@@ -84,12 +84,18 @@ button, input, textarea, select { font-family: inherit; }
 
 /* ---------- shell ---------- */
 .os {
-  display: grid; grid-template-columns: 340px 1fr 340px;
-  height: 100vh; gap: 14px; padding: 14px;
+  display: grid; grid-template-columns: var(--left, 340px) 14px 1fr 14px var(--right, 340px);
+  height: 100vh; gap: 0; padding: 14px; position: relative;
 }
-.col { display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+
+.grip { width: 14px; cursor: col-resize; position: relative; flex-shrink: 0; }
+.grip::after { content: ""; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 3px; height: 34px; border-radius: 2px; background: var(--line); opacity: 0; transition: opacity .15s; }
+.grip:hover::after, .grip.on::after { opacity: 1; background: var(--accent); }
+body.resizing { cursor: col-resize; user-select: none; }
+.col { display: flex; flex-direction: column; gap: 14px; min-height: 0; min-width: 0; }
 
 .w {
+  min-width: 0;
   background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--r);
   padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 12px; min-height: 0;
   box-shadow: var(--shadow);
@@ -147,6 +153,12 @@ a.mail, .mail {
 .mail.unread b { font-weight: 600; color: var(--ink); }
 .mail small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--ink-3); font-size: 12.5px; line-height: 1.4; margin-top: 2px; }
 .mail .when { font: 400 11.5px/1 var(--font); color: var(--ink-3); margin-top: 4px; white-space: nowrap; }
+.mail.muted { opacity: .55; }
+.mail.muted:hover { opacity: 1; }
+.mail .from b.kn { font: 500 10px/1 var(--font); color: var(--accent); background: var(--accent-soft); border-radius: 3px; padding: 2px 5px; margin-left: 5px; }
+.mails .more { margin: 8px; text-align: left; font: 500 12px/1.4 var(--font); color: var(--ink-3); background: transparent; border: 1px dashed var(--line); border-radius: 6px; padding: 9px 10px; cursor: pointer; }
+.mails .more:hover { border-color: var(--ink-3); color: var(--ink-2); }
+#gm-others[hidden] { display: none; }
 .auth { display: grid; gap: 10px; }
 .auth p { margin: 0; color: var(--ink-2); font-size: 13px; }
 .auth code { font: 400 12px var(--mono); color: var(--ink-3); background: var(--sunken); padding: 6px 8px; border-radius: 4px; word-break: break-all; }
@@ -190,7 +202,7 @@ a.mail, .mail {
 .mapp .count { margin-left: auto; align-self: flex-start; font: 500 11px/1 var(--font); color: var(--ink-3); background: var(--sunken); border-radius: 20px; padding: 5px 9px; white-space: nowrap; }
 .mapp .head-link:hover .count { color: var(--accent); }
 .mapp .skills { display: flex; gap: 5px; flex-wrap: wrap; }
-.mapp .skills span { font: 400 11px/1 var(--mono); color: var(--ink-3); background: var(--sunken); border-radius: 4px; padding: 5px 7px; }
+.mapp .skills span { overflow-wrap: anywhere; font: 400 11px/1 var(--mono); color: var(--ink-3); background: var(--sunken); border-radius: 4px; padding: 5px 7px; }
 .mapp .recent { display: grid; gap: 2px; border-top: 1px solid var(--line-soft); padding-top: 10px; }
 .mapp .act { display: flex; gap: 7px; }
 .run { display: grid; grid-template-columns: 7px 1fr auto; gap: 9px; align-items: center; font-size: 12.5px; padding: 6px 7px; cursor: pointer; border-radius: 6px; color: var(--ink-2); }
@@ -198,18 +210,21 @@ a.mail, .mail {
 .run i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); }
 .run.running i { background: var(--warn); animation: pulse 1.2s ease-in-out infinite; }
 .run.done i { background: var(--good); } .run.failed i { background: var(--crit); }
-.run span { font: 500 11px/1 var(--font); color: var(--ink-3); white-space: nowrap; }
+.run > span:last-child { font: 500 11px/1 var(--font); color: var(--ink-3); white-space: nowrap; }
+.run .txt { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; color: inherit; font: inherit; }
+.run { align-items: start; }
+.run i { margin-top: 5px; }
 @keyframes pulse { 50% { opacity: .3; } }
 
 /* ---------- produced files ---------- */
 .arts { display: grid; gap: 1px; margin: 0 -8px; overflow-y: auto; min-height: 0; }
-.art { display: grid; grid-template-columns: 16px 1fr auto; gap: 10px; align-items: center; padding: 8px; border-radius: 6px; font-size: 13px; color: var(--ink-2); cursor: pointer; }
+.art { min-width: 0; overflow-wrap: anywhere; display: grid; grid-template-columns: 16px 1fr auto; gap: 10px; align-items: center; padding: 8px; border-radius: 6px; font-size: 13px; color: var(--ink-2); cursor: pointer; }
 .art:hover { background: var(--sunken); color: var(--ink); }
 .art svg { width: 14px; height: 14px; stroke: var(--ink-3); fill: none; stroke-width: 1.6; }
 .art span { font: 400 11.5px/1 var(--font); color: var(--ink-3); white-space: nowrap; }
 
 /* ---------- centre / graph ---------- */
-.core { position: relative; min-width: 0; background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow); }
+.core { position: relative; min-width: 0; overflow: hidden; background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow); }
 .core canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
 .brand { position: absolute; top: 22px; left: 0; right: 0; text-align: center; pointer-events: none; z-index: 2; }
 .brand h1 { margin: 0; font: 600 26px/1.1 var(--display); letter-spacing: -.01em; display: inline-flex; gap: 11px; align-items: center; color: var(--ink); }
@@ -337,7 +352,7 @@ a.mail, .mail {
 .toast { position: fixed; bottom: 22px; right: 22px; z-index: 40; background: var(--ink); color: var(--bg); border-radius: 8px; padding: 12px 16px; font: 500 13px var(--font); box-shadow: var(--shadow-lg); }
 .toast.bad { background: var(--crit); color: #fff; }
 
-@media (max-width: 1240px) { .os { grid-template-columns: 300px 1fr 300px; } }
+@media (max-width: 1240px) { .os { --left: 300px; --right: 300px; } }
 </style>
 </head>
 <body>
@@ -378,6 +393,8 @@ a.mail, .mail {
     </section>
   </aside>
 
+  <div class="grip" data-side="left" title="Redimensionner"></div>
+
   <main class="core">
     <canvas id="g"></canvas>
     <div class="skins" role="group" aria-label="Thème">
@@ -396,6 +413,8 @@ a.mail, .mail {
       <label class="search"><svg><use href="#i-search"/></svg><input id="q" type="search" placeholder="Chercher un concept, un client, un projet…"><kbd>⌘K</kbd></label>
     </div>
   </main>
+
+  <div class="grip" data-side="right" title="Redimensionner"></div>
 
   <aside class="col right">
     <section class="w">
@@ -500,10 +519,16 @@ async function loadGmail(refresh) {
     return;
   }
   $('#gm-sync').textContent = 'sync ' + rel(g.syncedAt);
-  el.innerHTML = `<div style="display:flex;gap:12px;align-items:baseline"><span class="num">${g.unread || g.total}</span><div class="lbl" style="line-height:1.5">${g.unread ? `non lus<br>sur ${g.total} à traiter` : `à traiter<br>tous lus`}</div></div>
-    <div class="mails">${g.threads.map(t => `<a class="mail${t.unread ? ' unread' : ''}" href="${t.url}" target="_blank" rel="noopener"><i class="dot"></i><div><div class="from">${esc(t.from)}${t.count > 1 ? ' · ' + t.count : ''}</div><b>${esc(t.subject)}</b><small>${esc(t.snippet.slice(0, 90))}</small></div><span class="when">${rel(t.date)}</span></a>`).join('')}</div>
+  const row = t => `<a class="mail${t.unread ? ' unread' : ''}${t.bucket !== 'personne' ? ' muted' : ''}" href="${t.url}" target="_blank" rel="noopener" title="${esc(t.why.join(' · '))}"><i class="dot"></i><div><div class="from">${esc(t.from)}${t.count > 1 ? ' · ' + t.count : ''}${t.known ? ' <b class="kn">connu</b>' : ''}</div><b>${esc(t.subject)}</b><small>${esc(t.snippet.slice(0, 110))}</small></div><span class="when">${rel(t.date)}</span></a>`;
+  const noise = g.counts.auto + g.counts.bulk;
+  const noiseLabel = `Voir les ${noise} messages écartés · ${g.counts.auto} automatiques, ${g.counts.bulk} newsletters`;
+  el.innerHTML = `<div style="display:flex;gap:12px;align-items:baseline"><span class="num">${g.total}</span><div class="lbl" style="line-height:1.5">à traiter${g.unreadKept ? `<br>dont ${g.unreadKept} non lu${g.unreadKept > 1 ? 's' : ''}` : '<br>tous lus'}</div></div>
+    <div class="mails">${g.threads.length ? g.threads.map(row).join('') : '<span class="lbl" style="padding:8px">Rien qui demande une réponse.</span>'}
+      ${noise ? `<button class="more" id="gm-more">${noiseLabel}</button><div id="gm-others" hidden>${g.others.map(row).join('')}</div>` : ''}</div>
     <div style="display:flex;gap:6px"><a class="btn acc" href="https://mail.google.com/mail/u/0/#label/${encodeURIComponent(g.label)}" target="_blank" rel="noopener">Ouvrir Gmail</a><button class="btn" id="gm-refresh">Rafraîchir</button></div>`;
   $('#gm-refresh').onclick = () => loadGmail(true);
+  const more = $('#gm-more');
+  if (more) more.onclick = () => { const o = $('#gm-others'); o.hidden = !o.hidden; more.textContent = o.hidden ? noiseLabel : 'Masquer les messages écartés'; };
 }
 
 /* ---------- micro apps + runs ---------- */
@@ -514,7 +539,7 @@ function renderApps() {
     const n = runs.filter(r => r.app === a.id).length;
     return `<div class="mapp" style="margin-bottom:8px"><div class="top head-link" data-open="${a.id}"><span class="ic"><svg><use href="#i-${a.id === 'devis' ? 'euro' : 'course'}"/></svg></span><div><b>${esc(a.name)}</b><span class="sub">${esc(a.description)}</span></div><span class="count">${n} run${n > 1 ? 's' : ''}</span></div>
       <div class="skills">${a.skillsUsed.map(s => `<span>${esc(s)}</span>`).join('')}</div>
-      ${mine.length ? `<div class="recent">${mine.map(r => `<div class="run ${r.status}" data-run="${r.id}"><i></i>${esc(r.brief.slice(0, 48))}<span>${r.status === 'running' ? 'en cours' : r.status === 'done' ? 'fait' : 'échec'}</span></div>`).join('')}</div>` : ''}
+      ${mine.length ? `<div class="recent">${mine.map(r => `<div class="run ${r.status}" data-run="${r.id}" title="${esc(r.brief)}"><i></i><span class="txt">${esc(r.brief.split('\n')[0])}</span><span>${r.status === 'running' ? 'en cours' : r.status === 'done' ? 'fait' : 'échec'}</span></div>`).join('')}</div>` : ''}
       <div class="act">${a.actions.map((ac, i) => `<button class="btn${i ? '' : ' acc'}" data-app="${a.id}" data-action="${ac.id}">${esc(ac.label)}</button>`).join('')}</div></div>`;
   }).join('');
   $('#apps').querySelectorAll('button[data-app]').forEach(b => b.onclick = () => openModal(b.dataset.app, b.dataset.action));
@@ -862,6 +887,31 @@ function center(n) { const t0 = performance.now(), fx = cam.x, fy = cam.y, fk = 
 const q = $('#q');
 q.addEventListener('input', () => query = q.value.trim().toLowerCase());
 addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); q.focus(); } if (e.key === 'Escape') { if (!viewer.hidden) { viewer.hidden = true; return; } if (!appview.hidden) { appview.hidden = true; return; } q.value = ''; query = ''; q.blur(); select(null); $('#modal').hidden = true; } });
+
+/* ---------- resizable side columns ---------- */
+(() => {
+  const LIMITS = { left: [240, 620], right: [240, 620] };
+  const apply = (side, px) => {
+    const [min, max] = LIMITS[side];
+    const v = Math.max(min, Math.min(max, px));
+    document.documentElement.style.setProperty('--' + side, v + 'px');
+    try { localStorage.setItem('w-' + side, v); } catch (e) {}
+    resize();                       // the canvas needs its new box
+  };
+  for (const side of ['left', 'right']) {
+    try { const v = localStorage.getItem('w-' + side); if (v) document.documentElement.style.setProperty('--' + side, v + 'px'); } catch (e) {}
+  }
+  document.querySelectorAll('.grip').forEach(grip => {
+    grip.addEventListener('pointerdown', e => {
+      e.preventDefault(); grip.setPointerCapture(e.pointerId); grip.classList.add('on'); document.body.classList.add('resizing');
+      const side = grip.dataset.side;
+      const move = ev => apply(side, side === 'left' ? ev.clientX - 14 : innerWidth - ev.clientX - 14);
+      const up = () => { grip.classList.remove('on'); document.body.classList.remove('resizing'); grip.removeEventListener('pointermove', move); grip.removeEventListener('pointerup', up); };
+      grip.addEventListener('pointermove', move); grip.addEventListener('pointerup', up);
+    });
+    grip.addEventListener('dblclick', () => apply(grip.dataset.side, 340));
+  });
+})();
 
 /* ---------- boot ---------- */
 (async () => {

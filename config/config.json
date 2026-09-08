@@ -6,8 +6,12 @@
   "gmail": {
     "label": "ALPES-IA",
     "query": "in:inbox",
-    "maxThreads": 8,
-    "newerThanDays": 180
+    "maxThreads": 10,
+    "newerThanDays": 180,
+    "filter": {
+      "allow": [],
+      "deny": []
+    }
   },
   "claude": {
     "bin": "claude",

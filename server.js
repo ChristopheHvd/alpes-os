@@ -15,7 +15,7 @@ const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'config/config.json'), 'utf8'));
 const branding = JSON.parse(fs.readFileSync(path.join(ROOT, 'config/branding.json'), 'utf8'));
 const todoFile = path.join(cfg.secondBrain, cfg.todoFile);
-const gmail = makeGmail(path.join(ROOT, 'credentials'), cfg.port);
+const gmail = makeGmail(path.join(ROOT, 'credentials'), cfg.port, { secondBrain: cfg.secondBrain });
 const runner = makeRunner(ROOT, { ...cfg.claude, apps: cfg.apps, secondBrain: cfg.secondBrain });
 
 const app = express();
