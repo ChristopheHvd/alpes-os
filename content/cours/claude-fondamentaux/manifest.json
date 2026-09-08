@@ -1,0 +1,28 @@
+{
+  "titre": "Maîtriser Claude",
+  "soustitre": "Du chat web à la posture d'opérateur",
+  "generique": {
+    "nom": "",
+    "prenom": "votre interlocuteur",
+    "metier": "votre métier",
+    "entreprise": "votre entreprise",
+    "crm": "votre CRM",
+    "mail": "votre messagerie",
+    "agenda": "votre agenda",
+    "fichier": "votre fichier de prospection",
+    "cas": "votre reporting mensuel",
+    "objectif": "gagner du temps sur les tâches répétitives"
+  },
+  "modules": [
+    "01-panorama.md",
+    "02-modes.md",
+    "03-prompting.md",
+    "04-context-engineering.md",
+    "05-memoire.md",
+    "06-connecteurs.md",
+    "07-skills.md",
+    "08-taches-planifiees.md",
+    "09-claude-code.md",
+    "10-pieges.md"
+  ]
+}

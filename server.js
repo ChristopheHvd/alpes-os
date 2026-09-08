@@ -43,6 +43,9 @@ app.use(express.static(path.join(ROOT, 'public')));
 app.use('/output', express.static(path.join(ROOT, 'output'), {
   setHeaders: (res, f) => { if (f.endsWith('.md') || f.endsWith('.txt')) res.type('text/plain; charset=utf-8'); },
 }));
+app.use('/content', express.static(path.join(ROOT, 'content'), {
+  setHeaders: (res, f) => { if (f.endsWith('.md')) res.type('text/plain; charset=utf-8'); },
+}));
 
 app.get('/api/config', (req, res) => res.json({ apps: cfg.apps, gmail: { label: cfg.gmail.label, ...gmail.status() }, brand: { company: branding.company, owner: branding.owner }, secondBrain: cfg.secondBrain }));
 

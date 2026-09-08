@@ -537,6 +537,13 @@ a.mail, .mail {
       </div>
       <div class="w-body" id="apps"></div>
     </section>
+    <section class="w" data-widget="decks">
+      <div class="w-head">
+        <h2><svg><use href="#i-course"/></svg>Supports de formation</h2>
+        <button class="wtoggle" aria-label="Réduire ou déplier" data-w="decks" title="Réduire"><svg><use href="#i-chev"/></svg></button>
+      </div>
+      <div class="w-body" id="decks"></div>
+    </section>
     <section class="w" data-widget="artifacts">
       <div class="w-head">
         <h2><svg><use href="#i-file"/></svg>Fichiers produits</h2>
@@ -710,6 +717,23 @@ function renderApps() {
   }).join('');
   $('#apps').querySelectorAll('button[data-app]').forEach(b => b.onclick = () => openModal(b.dataset.app, b.dataset.action));
   $('#apps').querySelectorAll('[data-open]').forEach(el => el.onclick = () => openApp(el.dataset.open));
+}
+async function loadDecks() {
+  let decks = [];
+  try { decks = await (await fetch('/content/cours/decks.json')).json(); } catch (e) {}
+  $('#decks').innerHTML = decks.length ? decks.map(d => `<div class="mapp">
+      <div class="row1">
+        <span class="ic sm"><svg><use href="#i-course"/></svg></span>
+        <b>${esc(d.titre)}</b>
+      </div>
+      <p class="lbl">${esc(d.soustitre || '')}</p>
+      <div class="act">${d.clients.map((c, i) => `<button class="btn sm${i ? '' : ' acc'}" data-deck="${esc(d.id)}" data-client="${esc(c.id)}">${esc(c.nom)}</button>`).join('')}</div>
+    </div>`).join('') : '<span class="lbl">Aucun support. Ajoute un dossier dans content/cours/.</span>';
+  $('#decks').querySelectorAll('button[data-deck]').forEach(b => b.onclick = () => {
+    const q = new URLSearchParams({ deck: b.dataset.deck });
+    if (b.dataset.client) q.set('client', b.dataset.client);
+    open(`/cours/?${q}`, '_blank', 'noopener');
+  });
 }
 let modalCtx = null;
 function openModal(appId, actionId, from) {
@@ -1316,7 +1340,7 @@ async function standupOnOpen() {
   cfg = await api('/api/config');
   $('#gm-label').textContent = cfg.gmail.label;
   draw();
-  await Promise.all([loadGraph(), loadTodo(), loadGmail(), loadRuns(), loadProjects(), loadAgenda()]);
+  await Promise.all([loadGraph(), loadTodo(), loadGmail(), loadRuns(), loadProjects(), loadAgenda(), loadDecks()]);
   setInterval(loadGraph, 30e3);      // second brain edits show up within 30 s
   setInterval(() => loadGmail(), 5 * 60e3);
   setInterval(loadAgenda, 10 * 60e3);
