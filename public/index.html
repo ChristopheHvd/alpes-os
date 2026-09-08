@@ -179,6 +179,35 @@
   @keyframes blink { 50% { opacity: .3; } }
   .toast { position: fixed; bottom: 20px; right: 20px; z-index: 30; background: var(--bg-2); border: 1px solid var(--accent); border-radius: 6px; padding: 10px 14px; font: 500 12px var(--font-d); color: var(--ink); box-shadow: 0 6px 24px rgba(0,0,0,.5); }
   .toast.bad { border-color: var(--crit); }
+  .viewer { position: fixed; inset: 0; background: rgba(0,0,0,.66); display: grid; place-items: center; z-index: 25; }
+  .viewer[hidden] { display: none; }
+  .vw { width: min(1000px, 92vw); height: min(84vh, 900px); background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; }
+  .vw .top { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--line-2); }
+  .vw .top b { font: 600 15px/1.2 var(--font-d); }
+  .vw .top .ext { font: 600 8.5px/1 var(--font-m); letter-spacing: .12em; text-transform: uppercase; color: var(--accent); border: 1px solid var(--accent); border-radius: 3px; padding: 3px 6px; }
+  .vw .top .sp { flex: 1; }
+  .vw .doc { overflow: auto; padding: 22px 26px; font-size: 14px; line-height: 1.65; color: var(--ink-2); }
+  .vw .doc h1 { font: 700 22px/1.25 var(--font-d); color: var(--ink); margin: 22px 0 10px; }
+  .vw .doc h2 { font: 600 17px/1.3 var(--font-d); color: var(--ink); margin: 20px 0 8px; border-bottom: 1px solid var(--line-2); padding-bottom: 5px; }
+  .vw .doc h3 { font: 600 14.5px/1.3 var(--font-d); color: var(--accent-2); margin: 16px 0 6px; }
+  .vw .doc p { margin: 0 0 10px; } .vw .doc ul, .vw .doc ol { margin: 0 0 10px; padding-left: 20px; }
+  .vw .doc li { margin: 3px 0; } .vw .doc b { color: var(--ink); }
+  .vw .doc blockquote { margin: 0 0 12px; padding: 8px 14px; border-left: 2px solid var(--accent); background: var(--bg); color: var(--ink); font-style: italic; }
+  .vw .doc hr { border: 0; border-top: 1px solid var(--line-2); margin: 18px 0; }
+  .vw .doc code { font: 400 12.5px var(--font-m); color: var(--accent-2); }
+  .vw .doc pre { background: var(--bg); border: 1px solid var(--line-2); border-radius: 4px; padding: 10px; overflow-x: auto; font: 400 12px/1.5 var(--font-m); }
+  .vw .doc table { border-collapse: collapse; width: 100%; margin: 0 0 12px; font-size: 13px; }
+  .vw .doc th, .vw .doc td { border: 1px solid var(--line-2); padding: 6px 9px; text-align: left; }
+  .vw .doc th { color: var(--ink); background: var(--bg); }
+  .vw iframe { width: 100%; height: 100%; border: 0; background: #fff; }
+  .vw .log { font: 400 11.5px/1.6 var(--font-m); white-space: pre-wrap; color: var(--ink-3); }
+  .vw .bottom { display: flex; gap: 8px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line-2); }
+  .vw .bottom .files { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .vw .bottom .files button { font: 500 10px/1 var(--font-m); border: 1px solid var(--line); background: transparent; color: var(--ink-2); border-radius: 3px; padding: 5px 8px; cursor: pointer; }
+  .vw .bottom .files button.on { border-color: var(--accent); color: var(--accent); }
+  .art { cursor: pointer; }
+  .run { cursor: pointer; border-radius: 4px; }
+  .run:hover { background: var(--bg); }
   .modal[hidden] { display: none; }
   .modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; z-index: 20; }
   .dlg { width: 520px; max-width: 92vw; background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 18px; display: grid; gap: 12px; }
@@ -270,9 +299,18 @@
   </aside>
 </div>
 
+<div class="viewer" id="viewer" hidden>
+  <div class="vw">
+    <div class="top"><span class="ext" id="v-ext"></span><b id="v-name"></b><span class="sp"></span><button class="btn" id="v-reveal">Finder</button><button class="btn" id="v-raw">Ouvrir</button><button class="btn acc" id="v-iterate">Itérer</button><button class="icobtn" id="v-close">×</button></div>
+    <div class="doc" id="v-body"></div>
+    <div class="bottom"><div class="files" id="v-files"></div><span class="lbl" id="v-meta"></span></div>
+  </div>
+</div>
+
 <div class="modal" id="modal" hidden>
   <div class="dlg">
     <div class="w-head"><h2 id="m-title"></h2><button class="icobtn" id="m-close">×</button></div>
+    <span class="lbl" id="m-from" hidden></span>
     <textarea id="m-brief" rows="6"></textarea>
     <div class="row" style="display:flex;gap:8px;align-items:center">
       <select id="m-model" class="btn"><option value="claude-sonnet-5">Sonnet 5</option><option value="claude-opus-5">Opus 5</option><option value="claude-fable-5-1">Fable 5.1</option></select>
@@ -347,17 +385,23 @@ function renderApps() {
     const mine = runs.filter(r => r.app === a.id).slice(0, 3);
     return `<div class="mapp" style="margin-bottom:8px"><div class="top"><span class="ic"><svg><use href="#i-${a.id === 'devis' ? 'euro' : 'course'}"/></svg></span><div><b>${esc(a.name)}</b><span class="sub">${esc(a.description)}</span></div></div>
       <div class="skills">${a.skillsUsed.map(s => `<span>${esc(s)}</span>`).join('')}</div>
-      ${mine.length ? `<div class="recent">${mine.map(r => `<div class="run ${r.status}"><i></i>${esc(r.brief.slice(0, 48))}<span>${r.status === 'running' ? 'en cours' : r.status === 'done' ? 'fait' : 'échec'}</span></div>`).join('')}</div>` : ''}
+      ${mine.length ? `<div class="recent">${mine.map(r => `<div class="run ${r.status}" data-run="${r.id}"><i></i>${esc(r.brief.slice(0, 48))}<span>${r.status === 'running' ? 'en cours' : r.status === 'done' ? 'fait' : 'échec'}</span></div>`).join('')}</div>` : ''}
       <div class="act">${a.actions.map((ac, i) => `<button class="btn${i ? '' : ' acc'}" data-app="${a.id}" data-action="${ac.id}">${esc(ac.label)}</button>`).join('')}</div></div>`;
   }).join('');
   $('#apps').querySelectorAll('button[data-app]').forEach(b => b.onclick = () => openModal(b.dataset.app, b.dataset.action));
+  $('#apps').querySelectorAll('.run[data-run]').forEach(el => el.onclick = () => { const r = runs.find(x => x.id === el.dataset.run); if (r) openRun(r); });
 }
 let modalCtx = null;
-function openModal(appId, actionId) {
+function openModal(appId, actionId, from) {
   const a = cfg.apps.find(x => x.id === appId), ac = a.actions.find(x => x.id === actionId);
-  modalCtx = { app: appId, action: actionId };
-  $('#m-title').textContent = `${a.name} · ${ac.label}`;
-  $('#m-brief').value = ''; $('#m-brief').placeholder = ac.placeholder; $('#m-model').value = a.model || 'claude-sonnet-5';
+  modalCtx = { app: appId, action: actionId, from };
+  $('#m-title').textContent = from?.length ? `${a.name} · itérer` : `${a.name} · ${ac.label}`;
+  const fromEl = $('#m-from');
+  fromEl.hidden = !from?.length;
+  if (from?.length) fromEl.textContent = 'Reprend : ' + from.map(f => f.split('/').pop()).join(', ');
+  $('#m-brief').value = '';
+  $('#m-brief').placeholder = from?.length ? 'Ce que tu veux changer. Ex : raccourcis le module 3, ajoute un exercice sur les webhooks' : ac.placeholder;
+  $('#m-model').value = a.model || 'claude-sonnet-5';
   $('#modal').hidden = false; $('#m-brief').focus();
 }
 $('#m-close').onclick = () => $('#modal').hidden = true;
@@ -377,9 +421,53 @@ async function loadRuns() {
   runs = await api('/api/runs'); renderApps();
   const arts = await api('/api/artifacts');
   $('#runs-meta').textContent = runs.some(r => r.status === 'running') ? `${runs.filter(r => r.status === 'running').length} en cours` : `${arts.length} fichiers`;
-  $('#artifacts').innerHTML = arts.length ? arts.map(f => `<a class="art" href="/${f.path}" target="_blank" rel="noopener"><svg><use href="#i-file"/></svg>${esc(f.name)}<span>${rel(f.mtime)}</span></a>`).join('') : '<span class="lbl">Rien encore. Lance une micro app.</span>';
+  $('#artifacts').innerHTML = arts.length ? arts.map(f => `<div class="art" data-path="${esc(f.path)}"><svg><use href="#i-file"/></svg>${esc(f.name)}<span>${rel(f.mtime)}</span></div>`).join('') : '<span class="lbl">Rien encore. Lance une micro app.</span>';
+  $('#artifacts').querySelectorAll('.art').forEach(el => el.onclick = () => openFile(el.dataset.path));
   if (runs.some(r => r.status === 'running')) setTimeout(loadRuns, 4000);
 }
+
+/* ---------- viewer: open a produced file, or a run's log ---------- */
+const viewer = $('#viewer');
+let vCtx = null;   // { files: [], path, run }
+async function openFile(p, run) {
+  const f = await api('/api/file?path=' + encodeURIComponent(p));
+  if (f.error) { toast(f.error, true); return; }
+  vCtx = { path: p, run: run ?? runs.find(r => (r.files ?? []).includes(p)), files: run?.files ?? [p] };
+  $('#v-name').textContent = f.name;
+  $('#v-ext').textContent = f.ext || 'fichier';
+  $('#v-meta').textContent = `${(f.size / 1024).toFixed(0)} Ko · ${rel(f.mtime)}`;
+  const body = $('#v-body');
+  if (f.ext === 'pdf') body.innerHTML = `<iframe src="/${esc(p)}#view=FitH" title="${esc(f.name)}"></iframe>`;
+  else if (f.ext === 'html') body.innerHTML = `<iframe src="/${esc(p)}" title="${esc(f.name)}"></iframe>`;
+  else if (f.text != null) body.innerHTML = md(f.text);
+  else body.innerHTML = `<p class="lbl">Aperçu indisponible pour ce format. Utilise « Ouvrir » ou « Finder ».</p>`;
+  body.classList.toggle('log', false);
+  renderVFiles();
+  viewer.hidden = false;
+}
+function openRun(r) {
+  vCtx = { path: null, run: r, files: r.files ?? [] };
+  if (r.files?.length) return openFile(r.files[0], r);
+  $('#v-name').textContent = r.brief.slice(0, 70);
+  $('#v-ext').textContent = r.status === 'running' ? 'en cours' : r.status === 'done' ? 'terminé' : 'échec';
+  $('#v-meta').textContent = `${r.model} · ${rel(r.startedAt)}`;
+  const body = $('#v-body'); body.className = 'doc log'; body.textContent = r.output || 'Aucune sortie pour le moment.';
+  renderVFiles();
+  viewer.hidden = false;
+}
+function renderVFiles() {
+  const fs = vCtx.files ?? [];
+  $('#v-files').innerHTML = fs.length > 1 ? fs.map(f => `<button data-p="${esc(f)}" class="${f === vCtx.path ? 'on' : ''}">${esc(f.split('/').pop())}</button>`).join('') : '';
+  $('#v-files').querySelectorAll('button').forEach(b => b.onclick = () => openFile(b.dataset.p, vCtx.run));
+  $('#v-raw').style.display = vCtx.path ? '' : 'none';
+  $('#v-reveal').style.display = vCtx.path ? '' : 'none';
+  $('#v-iterate').style.display = vCtx.run ? '' : 'none';
+}
+$('#v-close').onclick = () => viewer.hidden = true;
+viewer.addEventListener('click', e => { if (e.target === viewer) viewer.hidden = true; });
+$('#v-raw').onclick = () => window.open('/' + vCtx.path, '_blank', 'noopener');
+$('#v-reveal').onclick = () => api('/api/reveal', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ path: vCtx.path }) }).then(() => toast('Révélé dans le Finder'));
+$('#v-iterate').onclick = () => { viewer.hidden = true; openModal(vCtx.run.app, vCtx.run.action, vCtx.files); };
 
 /* ---------- graph (Obsidian-style, force-directed) ---------- */
 const DOMS = {
@@ -529,7 +617,52 @@ document.getElementById('z0').onclick = () => { cam.x = cam.y = 0; cam.k = .8; s
 
 /* selection panel with the note body */
 const panel = $('#panel'), history = [];
-const md = s => esc(s).replace(/^### (.*)$/gm, '<h3>$1</h3>').replace(/^## (.*)$/gm, '<h2>$1</h2>').replace(/^# (.*)$/gm, '<h1>$1</h1>').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a data-link="$2">$1</a>').replace(/^(?:- |\* )(.*)$/gm, '<li>$1</li>').replace(/(<li>[\s\S]*?<\/li>)(?!\s*<li>)/g, '<ul>$1</ul>').replace(/\n{2,}/g, '</p><p>').replace(/^(?!<)/, '<p>') + '</p>';
+const md = src => {
+  const lines = esc(src).replace(/\r/g, '').split('\n');
+  let out = '', inCode = false, inTable = false, list = null, para = [], quote = [], li = null, gap = false;
+  const inline = t => t.replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+    .replace(/(?<![*\w])\*([^*\n]+)\*(?!\*)/g, '<i>$1</i>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a data-link="$2">$1</a>');
+  const flushLi = () => { if (li !== null) { out += `<li>${inline(li.join(' '))}</li>`; li = null; } };
+  const closeList = () => { flushLi(); if (list) { out += `</${list}>`; list = null; } };
+  const flushPara = () => { if (para.length) { out += `<p>${inline(para.join(' '))}</p>`; para = []; } };
+  const flushQuote = () => { if (quote.length) { out += `<blockquote>${inline(quote.join(' '))}</blockquote>`; quote = []; } };
+  const flushAll = () => { flushPara(); flushQuote(); closeList(); };
+  for (const l of lines) {
+    if (/^\s*```/.test(l)) { if (!inCode) flushAll(); inCode = !inCode; out += inCode ? '<pre>' : '</pre>'; continue; }
+    if (inCode) { out += l + '\n'; continue; }
+    if (!l.trim()) { flushPara(); flushQuote(); gap = true; continue; }
+    const row = l.match(/^\s*\|(.+)\|\s*$/);
+    if (row) {
+      if (/^[\s|:-]+$/.test(l)) continue;
+      if (!inTable) { flushAll(); out += '<table>'; inTable = 'head'; }
+      const tag = inTable === 'head' ? 'th' : 'td';
+      out += '<tr>' + row[1].split('|').map(c => `<${tag}>${inline(c.trim())}</${tag}>`).join('') + '</tr>';
+      inTable = 'body'; gap = false; continue;
+    }
+    if (inTable) { out += '</table>'; inTable = false; }
+    const h = l.match(/^(#{1,4})\s+(.*)$/);
+    if (h) { flushAll(); const n = Math.min(3, h[1].length); out += `<h${n}>${inline(h[2])}</h${n}>`; gap = false; continue; }
+    if (/^\s*(---+|\*\*\*+|___+)\s*$/.test(l)) { flushAll(); out += '<hr>'; gap = false; continue; }
+    const bq = l.match(/^\s*&gt;\s?(.*)$/);
+    if (bq) { flushPara(); closeList(); quote.push(bq[1]); gap = false; continue; }
+    flushQuote();
+    const ul = l.match(/^(\s*)[-*]\s+(.*)$/), ol = l.match(/^(\s*)\d+[.)]\s+(.*)$/);
+    if (ul || ol) {
+      flushPara();
+      const want = ul ? 'ul' : 'ol';
+      flushLi();
+      if (list !== want) { closeList(); out += `<${want}>`; list = want; }
+      li = [(ul || ol)[2]]; gap = false; continue;
+    }
+    // a wrapped continuation line keeps feeding whatever block is open
+    if (li !== null && (!gap || /^\s{2,}/.test(l))) { li.push(l.trim()); gap = false; continue; }
+    closeList();
+    para.push(l.trim()); gap = false;
+  }
+  flushAll(); if (inTable) out += '</table>'; if (inCode) out += '</pre>';
+  return out;
+};
 async function select(n, fromNav) {
   if (!fromNav && selected && n && n !== selected) history.push(selected);
   if (!n) history.length = 0;
@@ -557,7 +690,7 @@ async function select(n, fromNav) {
 function center(n) { const t0 = performance.now(), fx = cam.x, fy = cam.y, fk = cam.k, tk = Math.max(cam.k, 1.8); const off = panel.classList.contains('on') ? (panel.offsetWidth / 2 + 24) / tk : 0; /* keep the node clear of the panel */ (function anim() { const p = Math.min(1, (performance.now() - t0) / 450), e = 1 - Math.pow(1 - p, 3); cam.k = fk + (tk - fk) * e; cam.x = fx + (-n.x - off - fx) * e; cam.y = fy + (-n.y - fy) * e; if (p < 1) requestAnimationFrame(anim); })(); }
 const q = $('#q');
 q.addEventListener('input', () => query = q.value.trim().toLowerCase());
-addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); q.focus(); } if (e.key === 'Escape') { q.value = ''; query = ''; q.blur(); select(null); $('#modal').hidden = true; } });
+addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); q.focus(); } if (e.key === 'Escape') { if (!viewer.hidden) { viewer.hidden = true; return; } q.value = ''; query = ''; q.blur(); select(null); $('#modal').hidden = true; } });
 
 /* ---------- boot ---------- */
 (async () => {

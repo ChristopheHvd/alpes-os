@@ -2,6 +2,7 @@
 // One page, one address (http://localhost:4545), a window onto the second brain,
 // Gmail, the day's todo and headless micro-apps. It shows, it never stores truth.
 import express from 'express';
+import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -20,7 +21,9 @@ const runner = makeRunner(ROOT, { ...cfg.claude, apps: cfg.apps, secondBrain: cf
 const app = express();
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(ROOT, 'public')));
-app.use('/output', express.static(path.join(ROOT, 'output')));
+app.use('/output', express.static(path.join(ROOT, 'output'), {
+  setHeaders: (res, f) => { if (f.endsWith('.md') || f.endsWith('.txt')) res.type('text/plain; charset=utf-8'); },
+}));
 
 app.get('/api/config', (req, res) => res.json({ apps: cfg.apps, gmail: { label: cfg.gmail.label, ...gmail.status() }, brand: { company: branding.company, owner: branding.owner }, secondBrain: cfg.secondBrain }));
 
@@ -51,9 +54,27 @@ app.get('/api/runs/:id', (req, res) => { const r = runner.get(req.params.id); r 
 app.post('/api/runs', (req, res) => {
   const a = cfg.apps.find(x => x.id === req.body.app), act = a?.actions.find(x => x.id === req.body.action);
   if (!a || !act || !req.body.brief?.trim()) return res.status(400).json({ error: 'app, action et brief requis' });
-  res.json(runner.start({ app: a, action: act, brief: req.body.brief.trim(), model: req.body.model }));
+  res.json(runner.start({ app: a, action: act, brief: req.body.brief.trim(), model: req.body.model, from: req.body.from }));
 });
 app.get('/api/artifacts', (req, res) => res.json(runner.artifacts()));
+// read one produced file back so the dashboard can show it without leaving the page
+app.get('/api/file', (req, res) => {
+  const rel = String(req.query.path ?? '');
+  const abs = path.resolve(ROOT, rel);
+  if (!abs.startsWith(path.join(ROOT, 'output'))) return res.status(403).json({ error: 'hors du dossier output' });
+  if (!fs.existsSync(abs)) return res.status(404).json({ error: 'fichier introuvable' });
+  const ext = path.extname(abs).slice(1).toLowerCase();
+  const st = fs.statSync(abs);
+  const textual = ['md', 'txt', 'html', 'json', 'csv'].includes(ext);
+  res.json({ path: rel, name: path.basename(abs), ext, size: st.size, mtime: st.mtimeMs, text: textual && st.size < 2e6 ? fs.readFileSync(abs, 'utf8') : null });
+});
+// reveal a produced file in Finder
+app.post('/api/reveal', (req, res) => {
+  const abs = path.resolve(ROOT, String(req.body.path ?? ''));
+  if (!abs.startsWith(path.join(ROOT, 'output')) || !fs.existsSync(abs)) return res.status(403).json({ error: 'chemin refusé' });
+  spawn('open', ['-R', abs], { detached: true }).unref();
+  res.json({ ok: true });
+});
 
 app.listen(cfg.port, () => {
   const st = gmail.status();
