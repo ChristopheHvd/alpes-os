@@ -5,8 +5,9 @@
   "todoFile": "brain/journal/todo.md",
   "gmail": {
     "label": "ALPES-IA",
+    "query": "is:important",
     "maxThreads": 8,
-    "newerThanDays": 30
+    "newerThanDays": 90
   },
   "claude": {
     "bin": "claude",
