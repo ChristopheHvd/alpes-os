@@ -208,6 +208,42 @@
   .art { cursor: pointer; }
   .run { cursor: pointer; border-radius: 4px; }
   .run:hover { background: var(--bg); }
+  /* ---- app history screen ---- */
+  .appview { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: grid; place-items: center; z-index: 24; }
+  .appview[hidden] { display: none; }
+  .av { width: min(880px, 92vw); height: min(86vh, 940px); background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; display: grid; grid-template-rows: auto auto 1fr; overflow: hidden; }
+  .av .top { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--line-2); }
+  .av .top .ic { width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 6px; display: grid; place-items: center; background: var(--bg); flex-shrink: 0; }
+  .av .top .ic svg { width: 17px; height: 17px; stroke: var(--accent); fill: none; stroke-width: 1.6; }
+  .av .top b { font: 600 17px/1.2 var(--font-d); display: block; }
+  .av .top small { color: var(--ink-3); font-size: 11.5px; }
+  .av .bar { display: flex; gap: 8px; align-items: center; padding: 12px 18px; border-bottom: 1px solid var(--line-2); flex-wrap: wrap; }
+  .av .bar .sp { flex: 1; }
+  .av .bar .stat { font: 500 9.5px/1 var(--font-m); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+  .av .bar .stat b { color: var(--ink); font-weight: 600; }
+  .av .body { overflow-y: auto; padding: 6px 18px 18px; }
+  .av h3 { font: 500 9.5px/1 var(--font-m); letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3); margin: 18px 0 8px; }
+  .entry { border: 1px solid var(--line-2); border-radius: 6px; padding: 12px 14px; margin-bottom: 8px; display: grid; gap: 8px; border-left: 2px solid var(--line); }
+  .entry.done { border-left-color: var(--good); } .entry.failed { border-left-color: var(--crit); }
+  .entry.running { border-left-color: var(--warn); } .entry.interrupted { border-left-color: var(--ink-3); }
+  .entry .hd { display: flex; align-items: baseline; gap: 10px; }
+  .entry .hd b { font: 600 13.5px/1.4 var(--font-d); flex: 1; }
+  .entry .hd .when { font: 500 10px/1 var(--font-m); color: var(--ink-3); white-space: nowrap; }
+  .entry .meta { display: flex; gap: 8px; flex-wrap: wrap; font: 500 9px/1 var(--font-m); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); align-items: center; }
+  .entry .meta .s { font-weight: 600; }
+  .entry.done .meta .s { color: var(--good); } .entry.failed .meta .s { color: var(--crit); }
+  .entry.running .meta .s { color: var(--warn); } .entry.interrupted .meta .s { color: var(--ink-3); }
+  .entry .from { font: 500 9.5px/1.4 var(--font-m); color: var(--accent-2); }
+  .entry .fl { display: flex; gap: 6px; flex-wrap: wrap; }
+  .entry .fl button, .orph button { display: inline-flex; align-items: center; gap: 6px; font: 500 11px/1 var(--font-d); border: 1px solid var(--line); background: var(--bg); color: var(--ink-2); border-radius: 4px; padding: 6px 9px; cursor: pointer; }
+  .entry .fl button:hover, .orph button:hover { border-color: var(--accent); color: var(--accent); }
+  .entry .fl button i, .orph button i { font: 600 8px/1 var(--font-m); letter-spacing: .08em; color: var(--accent); font-style: normal; }
+  .entry .acts { display: flex; gap: 6px; }
+  .orph { display: flex; gap: 6px; flex-wrap: wrap; }
+  .av .empty { color: var(--ink-3); font-size: 12.5px; padding: 20px 0; }
+  .mapp .head-link { cursor: pointer; }
+  .mapp .count { margin-left: auto; font: 500 9px/1 var(--font-m); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); border: 1px solid var(--line-2); border-radius: 10px; padding: 4px 8px; }
+  .mapp .count:hover { border-color: var(--accent); color: var(--accent); }
   .modal[hidden] { display: none; }
   .modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; z-index: 20; }
   .dlg { width: 520px; max-width: 92vw; background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 18px; display: grid; gap: 12px; }
@@ -299,6 +335,14 @@
   </aside>
 </div>
 
+<div class="appview" id="appview" hidden>
+  <div class="av">
+    <div class="top"><span class="ic"><svg id="av-icon"><use href="#i-grid"/></svg></span><div style="flex:1"><b id="av-name"></b><small id="av-desc"></small></div><button class="icobtn" id="av-close">×</button></div>
+    <div class="bar" id="av-bar"></div>
+    <div class="body" id="av-body"></div>
+  </div>
+</div>
+
 <div class="viewer" id="viewer" hidden>
   <div class="vw">
     <div class="top"><span class="ext" id="v-ext"></span><b id="v-name"></b><span class="sp"></span><button class="btn" id="v-reveal">Finder</button><button class="btn" id="v-raw">Ouvrir</button><button class="btn acc" id="v-iterate">Itérer</button><button class="icobtn" id="v-close">×</button></div>
@@ -383,13 +427,15 @@ let cfg = { apps: [], gmail: {} }, runs = [];
 function renderApps() {
   $('#apps').innerHTML = cfg.apps.map(a => {
     const mine = runs.filter(r => r.app === a.id).slice(0, 3);
-    return `<div class="mapp" style="margin-bottom:8px"><div class="top"><span class="ic"><svg><use href="#i-${a.id === 'devis' ? 'euro' : 'course'}"/></svg></span><div><b>${esc(a.name)}</b><span class="sub">${esc(a.description)}</span></div></div>
+    const n = runs.filter(r => r.app === a.id).length;
+    return `<div class="mapp" style="margin-bottom:8px"><div class="top head-link" data-open="${a.id}"><span class="ic"><svg><use href="#i-${a.id === 'devis' ? 'euro' : 'course'}"/></svg></span><div><b>${esc(a.name)}</b><span class="sub">${esc(a.description)}</span></div><span class="count">${n} run${n > 1 ? 's' : ''}</span></div>
       <div class="skills">${a.skillsUsed.map(s => `<span>${esc(s)}</span>`).join('')}</div>
       ${mine.length ? `<div class="recent">${mine.map(r => `<div class="run ${r.status}" data-run="${r.id}"><i></i>${esc(r.brief.slice(0, 48))}<span>${r.status === 'running' ? 'en cours' : r.status === 'done' ? 'fait' : 'échec'}</span></div>`).join('')}</div>` : ''}
       <div class="act">${a.actions.map((ac, i) => `<button class="btn${i ? '' : ' acc'}" data-app="${a.id}" data-action="${ac.id}">${esc(ac.label)}</button>`).join('')}</div></div>`;
   }).join('');
   $('#apps').querySelectorAll('button[data-app]').forEach(b => b.onclick = () => openModal(b.dataset.app, b.dataset.action));
   $('#apps').querySelectorAll('.run[data-run]').forEach(el => el.onclick = () => { const r = runs.find(x => x.id === el.dataset.run); if (r) openRun(r); });
+  $('#apps').querySelectorAll('[data-open]').forEach(el => el.onclick = () => openApp(el.dataset.open));
 }
 let modalCtx = null;
 function openModal(appId, actionId, from) {
@@ -423,16 +469,60 @@ async function loadRuns() {
   $('#runs-meta').textContent = runs.some(r => r.status === 'running') ? `${runs.filter(r => r.status === 'running').length} en cours` : `${arts.length} fichiers`;
   $('#artifacts').innerHTML = arts.length ? arts.map(f => `<div class="art" data-path="${esc(f.path)}"><svg><use href="#i-file"/></svg>${esc(f.name)}<span>${rel(f.mtime)}</span></div>`).join('') : '<span class="lbl">Rien encore. Lance une micro app.</span>';
   $('#artifacts').querySelectorAll('.art').forEach(el => el.onclick = () => openFile(el.dataset.path));
+  if (!appview.hidden && avId) openApp(avId);
   if (runs.some(r => r.status === 'running')) setTimeout(loadRuns, 4000);
 }
+
+/* ---------- app screen: every run this app ever did, and its files ---------- */
+const appview = $('#appview');
+let avId = null;
+async function openApp(id) {
+  avId = id;
+  const d = await api('/api/apps/' + encodeURIComponent(id));
+  if (d.error) { toast(d.error, true); return; }
+  const a = d.app;
+  $('#av-name').textContent = a.name;
+  $('#av-desc').textContent = a.description;
+  $('#av-icon').innerHTML = `<use href="#i-${id === 'devis' ? 'euro' : 'course'}"/>`;
+  const done = d.runs.filter(r => r.status === 'done').length;
+  const files = d.runs.reduce((n, r) => n + r.files.length, 0) + d.orphans.length;
+  $('#av-bar').innerHTML = a.actions.map((ac, i) => `<button class="btn${i ? '' : ' acc'}" data-app="${a.id}" data-action="${ac.id}">${esc(ac.label)}</button>`).join('')
+    + `<span class="sp"></span><span class="stat"><b>${d.runs.length}</b> exécutions · <b>${done}</b> réussies · <b>${files}</b> fichiers</span>`;
+  $('#av-bar').querySelectorAll('button[data-app]').forEach(b => b.onclick = () => { appview.hidden = true; openModal(b.dataset.app, b.dataset.action); });
+
+  const fileBtn = f => `<button data-p="${esc(f.path)}"><i>${esc(f.ext || 'fichier')}</i>${esc(f.name)}</button>`;
+  const STATUS = { done: 'Terminé', failed: 'Échec', running: 'En cours', interrupted: 'Interrompu' };
+  const body = $('#av-body');
+  body.innerHTML = (d.runs.length ? `<h3>Historique des exécutions</h3>` + d.runs.map(r => `
+    <div class="entry ${r.status}">
+      <div class="hd"><b>${esc(r.brief.split('\n')[0].slice(0, 120))}</b><span class="when">${when(r.startedAt)}</span></div>
+      <div class="meta"><span class="s">${STATUS[r.status] ?? r.status}</span><span>${esc(r.actionLabel ?? r.action)}</span><span>${esc(r.model)}</span>${r.endedAt ? `<span>${dur(r.startedAt, r.endedAt)}</span>` : ''}</div>
+      ${r.from?.length ? `<div class="from">↻ itération sur ${r.from.map(f => esc(f.split('/').pop())).join(', ')}</div>` : ''}
+      ${r.files.length ? `<div class="fl">${r.files.map(fileBtn).join('')}</div>` : '<div class="meta">Aucun fichier produit</div>'}
+      <div class="acts"><button class="btn" data-log="${r.id}">Voir le détail</button>${r.files.length ? `<button class="btn acc" data-iter="${r.id}">Itérer</button>` : ''}<button class="btn" data-again="${r.id}">Relancer</button></div>
+    </div>`).join('') : '<p class="empty">Aucune exécution pour le moment. Lance-en une avec les boutons ci-dessus.</p>')
+    + (d.orphans.length ? `<h3>Fichiers sans exécution rattachée</h3><div class="orph">${d.orphans.map(fileBtn).join('')}</div>` : '');
+
+  body.querySelectorAll('button[data-p]').forEach(b => b.onclick = () => openFile(b.dataset.p));
+  body.querySelectorAll('button[data-log]').forEach(b => b.onclick = () => { const r = d.runs.find(x => x.id === b.dataset.log); openRun(r, true); });
+  body.querySelectorAll('button[data-iter]').forEach(b => b.onclick = () => { const r = d.runs.find(x => x.id === b.dataset.iter); appview.hidden = true; openModal(r.app, r.action, r.files.map(f => f.path)); });
+  body.querySelectorAll('button[data-again]').forEach(b => b.onclick = () => { const r = d.runs.find(x => x.id === b.dataset.again); appview.hidden = true; openModal(r.app, r.action); $('#m-brief').value = r.brief; });
+  appview.hidden = false;
+}
+const when = iso => new Date(iso).toLocaleString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const dur = (a, b) => { const s = Math.round((new Date(b) - new Date(a)) / 1000); return s < 60 ? `${s} s` : `${Math.floor(s / 60)} min ${s % 60} s`; };
+$('#av-close').onclick = () => appview.hidden = true;
+appview.addEventListener('click', e => { if (e.target === appview) appview.hidden = true; });
 
 /* ---------- viewer: open a produced file, or a run's log ---------- */
 const viewer = $('#viewer');
 let vCtx = null;   // { files: [], path, run }
+const filePaths = r => (r?.files ?? []).map(f => typeof f === 'string' ? f : f.path);
 async function openFile(p, run) {
   const f = await api('/api/file?path=' + encodeURIComponent(p));
   if (f.error) { toast(f.error, true); return; }
-  vCtx = { path: p, run: run ?? runs.find(r => (r.files ?? []).includes(p)), files: run?.files ?? [p] };
+  const r = run ?? runs.find(x => filePaths(x).includes(p));
+  vCtx = { path: p, run: r, files: filePaths(r).length ? filePaths(r) : [p] };
   $('#v-name').textContent = f.name;
   $('#v-ext').textContent = f.ext || 'fichier';
   $('#v-meta').textContent = `${(f.size / 1024).toFixed(0)} Ko · ${rel(f.mtime)}`;
@@ -445,11 +535,11 @@ async function openFile(p, run) {
   renderVFiles();
   viewer.hidden = false;
 }
-function openRun(r) {
-  vCtx = { path: null, run: r, files: r.files ?? [] };
-  if (r.files?.length) return openFile(r.files[0], r);
+function openRun(r, logOnly) {
+  vCtx = { path: null, run: r, files: filePaths(r) };
+  if (!logOnly && vCtx.files.length) return openFile(vCtx.files[0], r);
   $('#v-name').textContent = r.brief.slice(0, 70);
-  $('#v-ext').textContent = r.status === 'running' ? 'en cours' : r.status === 'done' ? 'terminé' : 'échec';
+  $('#v-ext').textContent = r.status === 'running' ? 'en cours' : r.status === 'done' ? 'terminé' : r.status === 'interrupted' ? 'interrompu' : 'échec';
   $('#v-meta').textContent = `${r.model} · ${rel(r.startedAt)}`;
   const body = $('#v-body'); body.className = 'doc log'; body.textContent = r.output || 'Aucune sortie pour le moment.';
   renderVFiles();
@@ -690,7 +780,7 @@ async function select(n, fromNav) {
 function center(n) { const t0 = performance.now(), fx = cam.x, fy = cam.y, fk = cam.k, tk = Math.max(cam.k, 1.8); const off = panel.classList.contains('on') ? (panel.offsetWidth / 2 + 24) / tk : 0; /* keep the node clear of the panel */ (function anim() { const p = Math.min(1, (performance.now() - t0) / 450), e = 1 - Math.pow(1 - p, 3); cam.k = fk + (tk - fk) * e; cam.x = fx + (-n.x - off - fx) * e; cam.y = fy + (-n.y - fy) * e; if (p < 1) requestAnimationFrame(anim); })(); }
 const q = $('#q');
 q.addEventListener('input', () => query = q.value.trim().toLowerCase());
-addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); q.focus(); } if (e.key === 'Escape') { if (!viewer.hidden) { viewer.hidden = true; return; } q.value = ''; query = ''; q.blur(); select(null); $('#modal').hidden = true; } });
+addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); q.focus(); } if (e.key === 'Escape') { if (!viewer.hidden) { viewer.hidden = true; return; } if (!appview.hidden) { appview.hidden = true; return; } q.value = ''; query = ''; q.blur(); select(null); $('#modal').hidden = true; } });
 
 /* ---------- boot ---------- */
 (async () => {

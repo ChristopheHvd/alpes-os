@@ -49,14 +49,20 @@ app.get('/api/gmail', async (req, res) => {
 });
 
 // Skills — headless runs
-app.get('/api/runs', (req, res) => res.json(runner.list()));
+app.get('/api/runs', (req, res) => res.json(runner.list(req.query.app ? String(req.query.app) : null)));
 app.get('/api/runs/:id', (req, res) => { const r = runner.get(req.params.id); r ? res.json(r) : res.status(404).end(); });
 app.post('/api/runs', (req, res) => {
   const a = cfg.apps.find(x => x.id === req.body.app), act = a?.actions.find(x => x.id === req.body.action);
   if (!a || !act || !req.body.brief?.trim()) return res.status(400).json({ error: 'app, action et brief requis' });
   res.json(runner.start({ app: a, action: act, brief: req.body.brief.trim(), model: req.body.model, from: req.body.from }));
 });
-app.get('/api/artifacts', (req, res) => res.json(runner.artifacts()));
+app.get('/api/artifacts', (req, res) => res.json(runner.artifacts(req.query.app ? String(req.query.app) : null)));
+// everything one app has ever done: its runs, and the files no run claims
+app.get('/api/apps/:id', (req, res) => {
+  const a = cfg.apps.find(x => x.id === req.params.id);
+  if (!a) return res.status(404).json({ error: 'app inconnue' });
+  res.json({ app: a, runs: runner.list(a.id), orphans: runner.orphans(a.id) });
+});
 // read one produced file back so the dashboard can show it without leaving the page
 app.get('/api/file', (req, res) => {
   const rel = String(req.query.path ?? '');
