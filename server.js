@@ -10,12 +10,15 @@ import { getGraph, readNote } from './lib/brain.js';
 import { readTodo, writeTodo } from './lib/todo.js';
 import { makeGmail } from './lib/gmail.js';
 import { makeRunner } from './lib/runs.js';
+import { listProjects, updateProject } from './lib/projects.js';
+import { makeCalendar } from './lib/calendar.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'config/config.json'), 'utf8'));
 const branding = JSON.parse(fs.readFileSync(path.join(ROOT, 'config/branding.json'), 'utf8'));
 const todoFile = path.join(cfg.secondBrain, cfg.todoFile);
 const gmail = makeGmail(path.join(ROOT, 'credentials'), cfg.port, { secondBrain: cfg.secondBrain });
+const calendar = makeCalendar(() => gmail.accessToken(), () => gmail.status().hasCalendar);
 const runner = makeRunner(ROOT, { ...cfg.claude, apps: cfg.apps, secondBrain: cfg.secondBrain });
 
 const app = express();
@@ -56,6 +59,48 @@ app.post('/api/runs', (req, res) => {
   if (!a || !act || !req.body.brief?.trim()) return res.status(400).json({ error: 'app, action et brief requis' });
   res.json(runner.start({ app: a, action: act, brief: req.body.brief.trim(), model: req.body.model, from: req.body.from }));
 });
+// Projects — long-running work, read from brain/projects/ in the second brain
+app.get('/api/projects', (req, res) => res.json(listProjects(cfg.secondBrain)));
+app.patch('/api/projects/:slug', (req, res) => {
+  const p = updateProject(cfg.secondBrain, req.params.slug, req.body ?? {});
+  p ? res.json(p) : res.status(404).json({ error: 'projet introuvable' });
+});
+
+// Calendar — what is coming, used by the widget and by the daily briefing
+let calCache = null;
+app.get('/api/calendar', async (req, res) => {
+  const st = gmail.status();
+  if (!st.hasToken) return res.json({ needsAuth: true, events: [] });
+  if (!st.hasCalendar) return res.json({ needsScope: true, events: [] });
+  try {
+    if (!calCache || req.query.refresh || Date.now() - calCache.at > 300e3) calCache = { at: Date.now(), data: await calendar.upcoming({ days: 7 }) };
+    res.json(calCache.data);
+  } catch (e) { res.status(500).json({ error: e.message, events: [] }); }
+});
+
+// Daily briefing — the server assembles what the agent cannot reach on its own
+// (live mail and calendar) and hands it over as context for the /briefing skill.
+async function briefingContext() {
+  const projects = listProjects(cfg.secondBrain).map(p => ({ slug: p.slug, titre: p.title, stade: p.stage, prochaine_etape: p.next, revu_le: p.updated, etapes: p.steps }));
+  const todo = readTodo(todoFile);
+  let events = [], mails = [];
+  try { const c = await calendar.upcoming({ days: 3, max: 12 }); events = c.events.map(e => ({ titre: e.title, debut: e.start, journee_entiere: e.allDay, avec: e.attendees, lieu: e.location })); } catch (e) { /* calendar optional */ }
+  try {
+    const g = await gmail.flagged({ ...cfg.gmail, maxThreads: 8 });
+    mails = g.threads.map(t => ({ de: t.from, objet: t.subject, extrait: t.snippet.slice(0, 160), recu: t.date, non_lu: t.unread, contact_connu: t.known }));
+  } catch (e) { /* mail optional */ }
+  return { date: new Date().toISOString().slice(0, 10), projets: projects, agenda: events, mails_a_traiter: mails, todo_du_jour: todo.items, taches_reportees: todo.carried };
+}
+app.get('/api/briefing/context', async (req, res) => res.json(await briefingContext()));
+app.post('/api/briefing', async (req, res) => {
+  const a = cfg.apps.find(x => x.id === 'briefing');
+  if (!a) return res.status(404).json({ error: 'app briefing absente de la config' });
+  const ctx = await briefingContext();
+  const note = String(req.body?.brief ?? '').trim();
+  const brief = `${note || 'Compose ma journée à partir du contexte ci-dessous.'}\n\nCONTEXTE:\n${JSON.stringify(ctx, null, 1)}`;
+  res.json(runner.start({ app: a, action: a.actions[0], brief, model: req.body?.model }));
+});
+
 app.get('/api/artifacts', (req, res) => res.json(runner.artifacts(req.query.app ? String(req.query.app) : null)));
 // everything one app has ever done: its runs, and the files no run claims
 app.get('/api/apps/:id', (req, res) => {

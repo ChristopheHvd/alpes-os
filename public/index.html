@@ -101,7 +101,13 @@ body.resizing { cursor: col-resize; user-select: none; }
   box-shadow: var(--shadow);
 }
 .w:last-child { flex: 1; }
-.col.left > .w:first-child { flex: 1 1 55%; overflow: hidden; }
+.col.left > .w:first-child { flex: 1 1 44%; overflow: hidden; }
+.col.left > .w:last-child { flex: 1 1 56%; overflow: hidden; }
+.todo { flex: 1 1 auto; min-height: 96px; }
+#w-projects { flex: 1 1 34%; overflow: hidden; }
+.col.right > .w:nth-child(2) { flex: 1 1 40%; overflow: hidden; }
+#apps { overflow-y: auto; min-height: 0; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.col.right > .w:last-child { flex: 1 1 26%; overflow: hidden; }
 .w-head { display: flex; align-items: center; gap: 10px; }
 .w-head h2 {
   margin: 0; font: 600 15px/1.2 var(--font); letter-spacing: -.01em;
@@ -155,10 +161,41 @@ a.mail, .mail {
 .mail .when { font: 400 11.5px/1 var(--font); color: var(--ink-3); margin-top: 4px; white-space: nowrap; }
 .mail.muted { opacity: .55; }
 .mail.muted:hover { opacity: 1; }
-.mail .from b.kn { font: 500 10px/1 var(--font); color: var(--accent); background: var(--accent-soft); border-radius: 3px; padding: 2px 5px; margin-left: 5px; }
+.mail .from b.kn { display: inline-block; font: 500 10px/1 var(--font); color: var(--accent); background: var(--accent-soft); border-radius: 3px; padding: 2px 5px; margin-left: 5px; vertical-align: baseline; }
 .mails .more { margin: 8px; text-align: left; font: 500 12px/1.4 var(--font); color: var(--ink-3); background: transparent; border: 1px dashed var(--line); border-radius: 6px; padding: 9px 10px; cursor: pointer; }
 .mails .more:hover { border-color: var(--ink-3); color: var(--ink-2); }
 #gm-others[hidden] { display: none; }
+.projects { display: grid; gap: 2px; overflow-y: auto; min-height: 0; margin: 0 -8px; }
+.pj { display: grid; grid-template-columns: 8px 1fr; gap: 11px; padding: 10px 8px; border-radius: 6px; align-items: start; }
+.pj:hover { background: var(--sunken); }
+.pj .stage { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; background: var(--ink-3); }
+.pj.actif .stage { background: var(--good); }
+.pj.incubation .stage { background: var(--warn); }
+.pj.pause .stage { background: var(--ink-3); }
+.pj.terminé .stage { background: var(--line); }
+.pj .name { display: flex; align-items: baseline; gap: 8px; }
+.pj .name b { font: 600 13.5px/1.35 var(--font); color: var(--ink); cursor: pointer; }
+.pj .name b:hover { color: var(--accent); }
+.pj .name .age { margin-left: auto; font: 400 11px/1 var(--font); color: var(--ink-3); white-space: nowrap; }
+.pj .next { font: 400 12.5px/1.45 var(--font); color: var(--ink-2); margin-top: 3px; cursor: text; border-radius: 4px; padding: 2px 4px; margin-left: -4px; }
+.pj .next:hover { background: var(--bg); }
+.pj .next.empty { color: var(--ink-3); font-style: italic; }
+.pj .next[contenteditable="true"] { background: var(--bg); outline: 1px solid var(--accent); cursor: text; }
+.pj .row2 { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
+.pj select { font: 500 11px/1 var(--font); color: var(--ink-3); background: transparent; border: 1px solid var(--line-soft); border-radius: 20px; padding: 4px 7px; cursor: pointer; }
+.pj select:hover { border-color: var(--ink-3); color: var(--ink-2); }
+.pj .push { display: none; font: 500 11px/1 var(--font); color: var(--accent); background: var(--accent-soft); border: 0; border-radius: 20px; padding: 5px 9px; cursor: pointer; }
+.pj:hover .push { display: inline-block; }
+.agenda { display: grid; gap: 1px; }
+.ev { display: grid; grid-template-columns: 54px 1fr; gap: 10px; padding: 6px 8px; border-radius: 6px; font-size: 12.5px; color: var(--ink-2); margin: 0 -8px; }
+.ev:hover { background: var(--sunken); }
+.ev .h { font: 500 12px/1.4 var(--font); color: var(--accent); font-variant-numeric: tabular-nums; }
+.ev .h small { display: block; color: var(--ink-3); font-weight: 400; font-size: 11px; }
+.ev .t { color: var(--ink); font-weight: 500; }
+.ev .t small { display: block; color: var(--ink-3); font-weight: 400; }
+.agenda .none { font: 400 12px/1.4 var(--font); color: var(--ink-3); padding: 4px 0; }
+.agenda .scope { font: 400 12px/1.5 var(--font); color: var(--ink-3); border: 1px dashed var(--line); border-radius: 6px; padding: 9px 10px; }
+.agenda .scope a { color: var(--accent); }
 .auth { display: grid; gap: 10px; }
 .auth p { margin: 0; color: var(--ink-2); font-size: 13px; }
 .auth code { font: 400 12px var(--mono); color: var(--ink-3); background: var(--sunken); padding: 6px 8px; border-radius: 4px; word-break: break-all; }
@@ -191,7 +228,7 @@ a.mail, .mail {
 .add input::placeholder { color: var(--ink-3); }
 
 /* ---------- micro apps ---------- */
-.mapp { border: 1px solid var(--line-soft); background: var(--surface); border-radius: var(--r); padding: 14px; display: grid; gap: 11px; position: relative; }
+.mapp { flex-shrink: 0; border: 1px solid var(--line-soft); background: var(--surface); border-radius: var(--r); padding: 14px; display: grid; gap: 11px; position: relative; }
 .mapp .top { display: flex; align-items: center; gap: 11px; }
 .mapp .head-link { cursor: pointer; border-radius: 6px; margin: -4px; padding: 4px; }
 .mapp .head-link:hover { background: var(--sunken); }
@@ -389,6 +426,8 @@ a.mail, .mail {
       <div class="prog"><div class="bar"><i id="pbar"></i></div><span id="pcount">0/0</span></div>
       <div class="todo" id="todo"></div>
       <div class="add"><span class="lbl">+</span><input id="newtodo" placeholder="Ajouter une tâche, Entrée pour valider · !! = urgent"></div>
+      <div class="agenda" id="agenda"></div>
+      <button class="btn acc" id="brief-run" style="width:100%">Composer ma journée</button>
       <span class="lbl" id="todo-src"></span>
     </section>
   </aside>
@@ -417,6 +456,14 @@ a.mail, .mail {
   <div class="grip" data-side="right" title="Redimensionner"></div>
 
   <aside class="col right">
+    <section class="w" id="w-projects">
+      <div class="w-head">
+        <h2><svg><use href="#i-flow"/></svg>Projets en cours</h2>
+        <span class="meta" id="pj-meta"></span>
+      </div>
+      <div class="projects" id="projects"></div>
+    </section>
+
     <section class="w">
       <div class="w-head">
         <h2><svg><use href="#i-grid"/></svg>Micro apps</h2>
@@ -913,14 +960,93 @@ addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLower
   });
 })();
 
+/* ---------- projects: long-running work, stored in the second brain ---------- */
+const STAGES = ['actif', 'incubation', 'pause', 'terminé'];
+let projects = [];
+async function loadProjects() {
+  projects = await api('/api/projects');
+  const actifs = projects.filter(p => p.stage === 'actif').length;
+  $('#pj-meta').textContent = `${actifs} actif${actifs > 1 ? 's' : ''} sur ${projects.length}`;
+  $('#projects').innerHTML = projects.map(p => `
+    <div class="pj ${p.stage}" data-slug="${esc(p.slug)}">
+      <i class="stage" title="${esc(p.stage)}"></i>
+      <div>
+        <div class="name"><b data-open-note="${esc(p.id)}">${esc(p.title)}</b><span class="age">${p.updated ? 'revu ' + relDate(p.updated) : ''}</span></div>
+        <div class="next ${p.next ? '' : 'empty'}" data-next="${esc(p.slug)}" title="Cliquer pour modifier la prochaine étape">${esc(p.next || 'Pas de prochaine étape')}</div>
+        <div class="row2">
+          <select data-stage="${esc(p.slug)}">${STAGES.map(v => `<option value="${v}"${v === p.stage ? ' selected' : ''}>${v}</option>`).join('')}</select>
+          ${p.next ? `<button class="push" data-push="${esc(p.slug)}">→ Aujourd'hui</button>` : ''}
+        </div>
+      </div>
+    </div>`).join('');
+
+  $('#projects').querySelectorAll('[data-open-note]').forEach(el => el.onclick = () => {
+    const n = byId[el.dataset.openNote];
+    if (n) { select(n); center(n); } else toast('Fiche absente du graphe, rafraîchis dans 30 s');
+  });
+  $('#projects').querySelectorAll('select[data-stage]').forEach(el => el.onchange = () => patchProject(el.dataset.stage, { stage: el.value }));
+  $('#projects').querySelectorAll('[data-next]').forEach(el => {
+    el.onclick = () => { if (el.isContentEditable) return; el.contentEditable = 'true'; el.classList.remove('empty'); if (el.textContent.startsWith('Pas de')) el.textContent = ''; el.focus(); };
+    el.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } if (e.key === 'Escape') { el.contentEditable = 'false'; loadProjects(); } };
+    el.onblur = () => { if (!el.isContentEditable) return; el.contentEditable = 'false'; patchProject(el.dataset.next, { next: el.textContent.trim() }); };
+  });
+  $('#projects').querySelectorAll('[data-push]').forEach(el => el.onclick = () => {
+    const p = projects.find(x => x.slug === el.dataset.push);
+    todos.items.push({ t: p.next, s: p.title, p: '', done: false });
+    saveTodo(); toast(`Ajouté à aujourd'hui : ${p.next.slice(0, 40)}`);
+  });
+}
+async function patchProject(slug, patch) {
+  const r = await api('/api/projects/' + encodeURIComponent(slug), { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(patch) });
+  if (r.error) return toast(r.error, true);
+  toast('Projet mis à jour dans le second brain');
+  loadProjects();
+}
+const relDate = iso => { const d = Math.round((Date.now() - new Date(iso)) / 864e5); return d <= 0 ? "aujourd'hui" : d === 1 ? 'hier' : `il y a ${d} j`; };
+
+/* ---------- agenda: what is coming, and what the briefing reads ---------- */
+async function loadAgenda() {
+  const c = await api('/api/calendar');
+  const el = $('#agenda');
+  if (c.needsScope) { el.innerHTML = `<div class="scope">Le calendrier a besoin d'une autorisation supplémentaire. <a href="/auth/google">Autoriser l'agenda</a></div>`; return; }
+  if (c.needsAuth || c.error) { el.innerHTML = c.error ? `<div class="none">Agenda indisponible : ${esc(c.error)}</div>` : ''; return; }
+  const today = new Date().toDateString();
+  const next = c.events.slice(0, 4);
+  el.innerHTML = next.length ? next.map(e => {
+    const d = new Date(e.start), isToday = d.toDateString() === today;
+    const hour = e.allDay ? 'journée' : d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    const day = isToday ? '' : d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
+    return `<a class="ev" href="${e.url}" target="_blank" rel="noopener"><span class="h">${hour}${day ? `<small>${day}</small>` : ''}</span><span class="t">${esc(e.title)}${e.attendees.length ? `<small>avec ${esc(e.attendees.join(', '))}</small>` : ''}</span></a>`;
+  }).join('') : '<div class="none">Rien de prévu dans les 7 jours.</div>';
+}
+
+/* ---------- the daily briefing composes the todo ---------- */
+$('#brief-run').onclick = async () => {
+  const btn = $('#brief-run'); btn.disabled = true; btn.textContent = 'Composition…';
+  try {
+    const r = await api('/api/briefing', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({}) });
+    if (r.error) throw new Error(r.error);
+    toast('Briefing lancé, la todo se met à jour dans une minute');
+    loadRuns();
+    briefWatch = setInterval(async () => {
+      const rs = await api('/api/runs?app=briefing');
+      if (rs[0] && rs[0].status !== 'running') { clearInterval(briefWatch); loadTodo(); loadProjects(); loadRuns(); toast(rs[0].status === 'done' ? 'Journée composée' : 'Le briefing a échoué', rs[0].status !== 'done'); }
+    }, 5000);
+  } catch (e) { toast('Échec : ' + e.message, true); }
+  btn.disabled = false; btn.textContent = 'Composer ma journée';
+};
+let briefWatch = null;
+
 /* ---------- boot ---------- */
 (async () => {
   cfg = await api('/api/config');
   $('#gm-label').textContent = cfg.gmail.label;
   draw();
-  await Promise.all([loadGraph(), loadTodo(), loadGmail(), loadRuns()]);
+  await Promise.all([loadGraph(), loadTodo(), loadGmail(), loadRuns(), loadProjects(), loadAgenda()]);
   setInterval(loadGraph, 30e3);      // second brain edits show up within 30 s
   setInterval(() => loadGmail(), 5 * 60e3);
+  setInterval(loadAgenda, 10 * 60e3);
+  setInterval(loadProjects, 60e3);
 })();
 </script>
 </body>
