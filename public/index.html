@@ -182,8 +182,16 @@ a.mail, .mail {
 .pj .next.empty { color: var(--ink-3); font-style: italic; }
 .pj .next[contenteditable="true"] { background: var(--bg); outline: 1px solid var(--accent); cursor: text; }
 .pj .row2 { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
-.stagebtn { font: 500 10.5px/1 var(--font); text-transform: capitalize; color: var(--ink-3); background: var(--sunken); border: 0; border-radius: 20px; padding: 4px 9px; cursor: pointer; }
+.stagebtn { display: inline-flex; align-items: center; gap: 4px; font: 500 10.5px/1 var(--font); text-transform: capitalize; color: var(--ink-3); background: var(--sunken); border: 0; border-radius: 20px; padding: 4px 7px 4px 9px; cursor: pointer; }
+.stagebtn svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2.2; opacity: .6; }
 .stagebtn:hover { color: var(--ink); }
+.stagemenu { position: fixed; z-index: 40; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 5px; box-shadow: var(--shadow-lg); display: grid; gap: 1px; min-width: 210px; }
+.stagemenu button { display: grid; gap: 1px; text-align: left; border: 0; background: transparent; border-radius: 6px; padding: 7px 9px; cursor: pointer; }
+.stagemenu button:hover { background: var(--sunken); }
+.stagemenu button b { font: 600 12.5px/1.3 var(--font); color: var(--ink); text-transform: capitalize; }
+.stagemenu button small { font: 400 11.5px/1.3 var(--font); color: var(--ink-3); }
+.stagemenu button.on b { color: var(--accent); }
+.stagemenu button.on b::after { content: " ✓"; }
 .stagebtn.actif { color: var(--good); background: color-mix(in srgb, var(--good) 15%, var(--sunken)); }
 .stagebtn.incubation { color: var(--warn); background: color-mix(in srgb, var(--warn) 15%, var(--sunken)); }
 .stagebtn.terminé { color: var(--ink-3); }
@@ -213,7 +221,8 @@ a.mail, .mail {
 .rules[open] summary::before { transform: rotate(90deg); }
 .rules textarea { width: 100%; margin-top: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; color: var(--ink); font: 400 12.5px/1.5 var(--font); padding: 9px; resize: vertical; outline: none; }
 .rules textarea:focus { border-color: var(--accent); }
-.wtoggle { margin-left: 6px; width: 22px; height: 22px; border: 0; background: transparent; color: var(--ink-3); cursor: pointer; border-radius: 5px; font: 400 13px/1 var(--font); display: grid; place-items: center; transition: transform .15s; flex-shrink: 0; }
+.wtoggle { margin-left: 6px; width: 24px; height: 24px; padding: 0; border: 0; background: transparent; color: var(--ink-3); cursor: pointer; border-radius: 6px; display: grid; place-items: center; transition: transform .15s; flex-shrink: 0; }
+.wtoggle svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; display: block; }
 .wtoggle:hover { background: var(--sunken); color: var(--ink); }
 .w.collapsed { flex: 0 0 auto !important; gap: 0; }
 .w.collapsed .w-body { display: none !important; }
@@ -420,6 +429,7 @@ a.mail, .mail {
     <symbol id="i-course" viewBox="0 0 24 24"><path d="M3 6h7a3 3 0 0 1 3 3v11a2 2 0 0 0-2-2H3z"/><path d="M21 6h-7a3 3 0 0 0-3 3v11a2 2 0 0 1 2-2h8z"/></symbol>
     <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></symbol>
     <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
     <symbol id="i-hex" viewBox="0 0 24 24"><path d="M12 2l8 4.6v9.2L12 20.5 4 15.8V6.6z"/><path d="M12 7l4 2.3v4.6L12 16l-4-2.1V9.3z"/></symbol>
     <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></symbol>
     <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/></symbol>
@@ -434,7 +444,7 @@ a.mail, .mail {
         <h2><svg><use href="#i-mail"/></svg>Boîte de réception</h2>
         <span class="tag acc" id="gm-label">ALPES-IA</span>
         <span class="meta" id="gm-sync">—</span>
-        <button class="wtoggle" data-w="inbox" title="Réduire">⌄</button>
+        <button class="wtoggle" aria-label="Réduire ou déplier" data-w="inbox" title="Réduire"><svg><use href="#i-chev"/></svg></button>
       </div>
       <div class="w-body" id="gmail"><span class="lbl">Chargement…</span></div>
     </section>
@@ -443,7 +453,7 @@ a.mail, .mail {
       <div class="w-head">
         <h2><svg><use href="#i-list"/></svg>Aujourd'hui</h2>
         <span class="meta" id="today"></span>
-        <button class="wtoggle" data-w="today" title="Réduire">⌄</button>
+        <button class="wtoggle" aria-label="Réduire ou déplier" data-w="today" title="Réduire"><svg><use href="#i-chev"/></svg></button>
       </div>
       <div class="w-body">
         <div class="prog"><div class="bar"><i id="pbar"></i></div><span id="pcount">0/0</span></div>
@@ -484,7 +494,7 @@ a.mail, .mail {
       <div class="w-head">
         <h2><svg><use href="#i-flow"/></svg>Projets en cours</h2>
         <span class="meta" id="pj-meta"></span>
-        <button class="wtoggle" data-w="projects" title="Réduire">⌄</button>
+        <button class="wtoggle" aria-label="Réduire ou déplier" data-w="projects" title="Réduire"><svg><use href="#i-chev"/></svg></button>
       </div>
       <div class="projects w-body" id="projects"></div>
     </section>
@@ -492,8 +502,7 @@ a.mail, .mail {
     <section class="w" data-widget="apps">
       <div class="w-head">
         <h2><svg><use href="#i-grid"/></svg>Micro apps</h2>
-        <span class="meta">exécutées par Claude</span>
-        <button class="wtoggle" data-w="apps" title="Réduire">⌄</button>
+        <button class="wtoggle" aria-label="Réduire ou déplier" data-w="apps" title="Réduire"><svg><use href="#i-chev"/></svg></button>
       </div>
       <div class="w-body" id="apps"></div>
     </section>
@@ -501,7 +510,7 @@ a.mail, .mail {
       <div class="w-head">
         <h2><svg><use href="#i-file"/></svg>Fichiers produits</h2>
         <span class="meta" id="runs-meta"></span>
-        <button class="wtoggle" data-w="artifacts" title="Réduire">⌄</button>
+        <button class="wtoggle" aria-label="Réduire ou déplier" data-w="artifacts" title="Réduire"><svg><use href="#i-chev"/></svg></button>
       </div>
       <div class="arts w-body" id="artifacts"></div>
     </section>
@@ -1020,6 +1029,12 @@ addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLower
 
 /* ---------- projects: long-running work, stored in the second brain ---------- */
 const STAGES = ['actif', 'incubation', 'pause', 'terminé'];
+const STAGE_HELP = {
+  actif: "en cours, j'y travaille",
+  incubation: 'idée à valider, pas encore lancée',
+  pause: 'mis de côté, à reprendre plus tard',
+  'terminé': 'livré, plus rien à faire',
+};
 let projects = [];
 async function loadProjects() {
   projects = await api('/api/projects');
@@ -1032,7 +1047,7 @@ async function loadProjects() {
         <div class="name"><b data-open-note="${esc(p.id)}">${esc(p.title)}</b><span class="age">${p.updated ? 'revu ' + relDate(p.updated) : ''}</span></div>
         <div class="next ${p.next ? '' : 'empty'}" data-next="${esc(p.slug)}" title="Cliquer pour modifier la prochaine étape">${esc(p.next || 'Pas de prochaine étape')}</div>
         <div class="row2">
-          <button class="stagebtn ${esc(p.stage)}" data-stage="${esc(p.slug)}" data-cur="${esc(p.stage)}" title="Cliquer pour changer le stade">${esc(p.stage)}</button>
+          <button class="stagebtn ${esc(p.stage)}" data-stage="${esc(p.slug)}" aria-haspopup="true">${esc(p.stage)}<svg><use href="#i-chev"/></svg></button>
           ${p.next ? `<button class="push" data-push="${esc(p.slug)}">→ Aujourd'hui</button>` : ''}
         </div>
       </div>
@@ -1042,10 +1057,7 @@ async function loadProjects() {
     const n = byId[el.dataset.openNote];
     if (n) { select(n); center(n); } else toast('Fiche absente du graphe, rafraîchis dans 30 s');
   });
-  $('#projects').querySelectorAll('button[data-stage]').forEach(el => el.onclick = () => {
-    const next = STAGES[(STAGES.indexOf(el.dataset.cur) + 1) % STAGES.length];
-    patchProject(el.dataset.stage, { stage: next });
-  });
+  $('#projects').querySelectorAll('button[data-stage]').forEach(el => el.onclick = e => { e.stopPropagation(); openStageMenu(el); });
   $('#projects').querySelectorAll('[data-next]').forEach(el => {
     el.onclick = () => { if (el.isContentEditable) return; el.contentEditable = 'true'; el.classList.remove('empty'); if (el.textContent.startsWith('Pas de')) el.textContent = ''; el.focus(); };
     el.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } if (e.key === 'Escape') { el.contentEditable = 'false'; loadProjects(); } };
@@ -1057,6 +1069,24 @@ async function loadProjects() {
     saveTodo(); toast(`Ajouté à aujourd'hui : ${p.next.slice(0, 40)}`);
   });
 }
+let stageMenu = null;
+function closeStageMenu() { stageMenu?.remove(); stageMenu = null; }
+function openStageMenu(btn) {
+  closeStageMenu();
+  const slug = btn.dataset.stage, current = btn.textContent.trim();
+  const m = document.createElement('div');
+  m.className = 'stagemenu';
+  m.innerHTML = STAGES.map(v => `<button data-v="${v}"${v === current ? ' class="on"' : ''}><b>${v}</b><small>${esc(STAGE_HELP[v])}</small></button>`).join('');
+  document.body.appendChild(m);
+  const r = btn.getBoundingClientRect();
+  m.style.left = Math.min(r.left, innerWidth - m.offsetWidth - 12) + 'px';
+  m.style.top = (r.bottom + m.offsetHeight > innerHeight ? r.top - m.offsetHeight - 6 : r.bottom + 6) + 'px';
+  m.querySelectorAll('button').forEach(b => b.onclick = () => { closeStageMenu(); if (b.dataset.v !== current) patchProject(slug, { stage: b.dataset.v }); });
+  stageMenu = m;
+  setTimeout(() => document.addEventListener('click', closeStageMenu, { once: true }), 0);
+}
+addEventListener('keydown', e => { if (e.key === 'Escape') closeStageMenu(); });
+
 async function patchProject(slug, patch) {
   const r = await api('/api/projects/' + encodeURIComponent(slug), { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(patch) });
   if (r.error) return toast(r.error, true);
