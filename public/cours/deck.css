@@ -4,6 +4,7 @@
    en vw plafonnées : lisible à 3 m en projection, lisible au bureau.
    ============================================================ */
 :root {
+  --notes-w: min(420px, 38vw);
   --bg: #faf8f4;
   --surface: #ffffff;
   --sunken: #f2eee7;
@@ -65,7 +66,7 @@ button { font-family: inherit; color: inherit; }
   display: flex; align-items: center; gap: 14px; padding: 0 18px;
   font-size: 12.5px; color: var(--ink-3);
   background: linear-gradient(var(--bg) 62%, transparent);
-  transition: opacity .25s;
+  transition: opacity .25s, right .26s cubic-bezier(.2,.8,.3,1);
 }
 .bar.hide { opacity: 0; pointer-events: none; }
 .bar .home { color: var(--ink-3); text-decoration: none; font-weight: 500; letter-spacing: .04em; }
@@ -96,6 +97,7 @@ button { font-family: inherit; color: inherit; }
 .stage {
   position: absolute; inset: 0; display: grid; place-items: center;
   padding: 62px clamp(28px, 6vw, 110px) 74px;
+  transition: padding .26s cubic-bezier(.2,.8,.3,1);
 }
 .slide {
   width: 100%; max-width: 1180px; max-height: 100%; overflow-y: auto;
@@ -209,7 +211,7 @@ button { font-family: inherit; color: inherit; }
 .foot {
   position: fixed; inset: auto 0 0 0; z-index: 40; padding: 0 18px 14px;
   display: flex; align-items: center; gap: 14px;
-  transition: opacity .25s;
+  transition: opacity .25s, right .26s cubic-bezier(.2,.8,.3,1);
 }
 .foot.hide { opacity: 0; pointer-events: none; }
 .track { flex: 1; height: 3px; border-radius: 2px; background: var(--line-soft); overflow: hidden; cursor: pointer; }
@@ -219,13 +221,17 @@ button { font-family: inherit; color: inherit; }
 
 /* ---------- notes formateur ---------- */
 .notes {
-  position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 38vw); z-index: 50;
+  position: fixed; top: 0; right: 0; bottom: 0; width: var(--notes-w); z-index: 50;
   background: var(--surface); border-left: 1px solid var(--line);
   box-shadow: var(--shadow-lg); padding: 22px 24px 26px;
   overflow-y: auto; transform: translateX(101%); transition: transform .26s cubic-bezier(.2,.8,.3,1);
   display: flex; flex-direction: column; gap: 14px;
 }
 .notes.on { transform: none; }
+/* panneau ouvert : la scène et le chrome se replient au lieu de passer dessous */
+body:has(.notes.on) .stage { padding-right: calc(var(--notes-w) + clamp(28px, 6vw, 110px)); }
+body:has(.notes.on) .bar,
+body:has(.notes.on) .foot { right: var(--notes-w); }
 .notes h3 {
   margin: 0; font: 600 11.5px/1 var(--font); letter-spacing: .16em;
   text-transform: uppercase; color: var(--accent);
