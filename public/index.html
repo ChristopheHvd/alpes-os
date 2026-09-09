@@ -168,24 +168,22 @@ a.mail, .mail {
 .mails .more { margin: 8px; text-align: left; font: 500 12px/1.4 var(--font); color: var(--ink-3); background: transparent; border: 1px dashed var(--line); border-radius: 6px; padding: 9px 10px; cursor: pointer; }
 .mails .more:hover { border-color: var(--ink-3); color: var(--ink-2); }
 #gm-others[hidden] { display: none; }
-.projects { display: grid; gap: 2px; overflow-y: auto; min-height: 0; margin: 0 -8px; }
-.pj { display: grid; grid-template-columns: 8px 1fr; gap: 11px; padding: 10px 8px; border-radius: 6px; align-items: start; }
+.projects { display: grid; gap: 2px; overflow-y: auto; overflow-x: hidden; min-height: 0; margin: 0 -8px; }
+/* Two lines per project: title + stage + last review, then the next step with
+   the push button revealed on hover. */
+.pj { min-width: 0; padding: 7px 8px; border-radius: 6px; }
 .pj:hover { background: var(--sunken); }
-.pj .stage { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; background: var(--ink-3); }
-.pj.actif .stage { background: var(--good); }
-.pj.incubation .stage { background: var(--warn); }
-.pj.pause .stage { background: var(--ink-3); }
-.pj.terminé .stage { background: var(--line); }
-.pj .name { display: flex; align-items: baseline; gap: 8px; }
-.pj .name b { font: 600 13.5px/1.35 var(--font); color: var(--ink); cursor: pointer; }
+.pj .name { display: flex; align-items: center; gap: 7px; }
+.pj .name b { min-width: 0; font: 600 13.5px/1.35 var(--font); color: var(--ink); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pj .name b:hover { color: var(--accent); }
 .pj .name .age { margin-left: auto; font: 400 11px/1 var(--font); color: var(--ink-3); white-space: nowrap; }
-.pj .next { font: 400 12.5px/1.45 var(--font); color: var(--ink-2); margin-top: 3px; cursor: text; border-radius: 4px; padding: 2px 4px; margin-left: -4px; }
+.pj .line2 { display: flex; align-items: center; gap: 8px; }
+.pj .next { flex: 1; min-width: 0; font: 400 12.5px/1.5 var(--font); color: var(--ink-2); cursor: text; border-radius: 4px; padding: 1px 4px; margin-left: -4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pj .next:hover { background: var(--bg); }
 .pj .next.empty { color: var(--ink-3); font-style: italic; }
-.pj .next[contenteditable="true"] { background: var(--bg); outline: 1px solid var(--accent); cursor: text; }
-.pj .row2 { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
-.stagebtn { display: inline-flex; align-items: center; gap: 4px; font: 500 10.5px/1 var(--font); text-transform: capitalize; color: var(--ink-3); background: var(--sunken); border: 0; border-radius: 20px; padding: 4px 7px 4px 9px; cursor: pointer; }
+.pj .next[contenteditable="true"] { background: var(--bg); outline: 1px solid var(--accent); cursor: text; white-space: normal; overflow: visible; text-overflow: clip; }
+.stagebtn { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; font: 500 10.5px/1 var(--font); text-transform: capitalize; color: var(--ink-3); background: var(--sunken); border: 0; border-radius: 20px; padding: 4px 7px 4px 9px; cursor: pointer; }
 .stagebtn svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2.2; opacity: .6; }
 .stagebtn:hover { color: var(--ink); }
 .stagemenu { position: fixed; z-index: 40; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 5px; box-shadow: var(--shadow-lg); display: grid; gap: 1px; min-width: 210px; }
@@ -198,7 +196,7 @@ a.mail, .mail {
 .stagebtn.actif { color: var(--good); background: color-mix(in srgb, var(--good) 15%, var(--sunken)); }
 .stagebtn.incubation { color: var(--warn); background: color-mix(in srgb, var(--warn) 15%, var(--sunken)); }
 .stagebtn.terminé { color: var(--ink-3); }
-.pj .push { display: none; font: 500 11px/1 var(--font); color: var(--accent); background: var(--accent-soft); border: 0; border-radius: 20px; padding: 5px 9px; cursor: pointer; }
+.pj .push { display: none; flex-shrink: 0; white-space: nowrap; font: 500 11px/1 var(--font); color: var(--accent); background: var(--accent-soft); border: 0; border-radius: 20px; padding: 5px 9px; cursor: pointer; }
 .pj:hover .push { display: inline-block; }
 .agenda { display: grid; gap: 1px; }
 .ev { display: grid; grid-template-columns: 54px 1fr; gap: 10px; padding: 6px 8px; border-radius: 6px; font-size: 12.5px; color: var(--ink-2); margin: 0 -8px; }
@@ -274,6 +272,7 @@ a.mail, .mail {
   background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px;
   box-shadow: var(--shadow-lg); pointer-events: auto; }
 .chat.on { display: flex; }
+.chat.hist .turn { display: none; }
 .chat .turn { display: grid; gap: 6px; }
 .chat .me { justify-self: end; max-width: 82%; background: var(--accent-soft); color: var(--ink); border-radius: 12px 12px 4px 12px; padding: 9px 13px; font: 400 14px/1.5 var(--font); }
 .chat .bot { font: 400 14.5px/1.65 var(--font); color: var(--ink-2); }
@@ -287,7 +286,14 @@ a.mail, .mail {
 .chat .act.run i { background: var(--warn); animation: pulse 1.2s ease-in-out infinite; }
 .chat .card { border: 1px solid var(--accent); background: var(--accent-soft); border-radius: 10px; padding: 12px 14px; display: grid; gap: 9px; }
 .chat .card b { font: 600 13.5px/1.4 var(--font); color: var(--ink); }
-.chat .card pre { margin: 0; font: 400 11.5px/1.55 var(--mono); color: var(--ink-2); white-space: pre-wrap; word-break: break-word; max-height: 150px; overflow: auto; }
+.chat .log { display: grid; gap: 2px; }
+.chat .log button { display: grid; gap: 2px; text-align: left; border: 0; background: transparent; border-radius: 8px; padding: 9px 10px; cursor: pointer; }
+.chat .log button:hover { background: var(--sunken); }
+.chat .log .t { font: 400 13.5px/1.4 var(--font); color: var(--ink); }
+.chat .log .m { font: 400 11.5px/1 var(--font); color: var(--ink-3); }
+.chat .log .none { font: 400 13px/1.5 var(--font); color: var(--ink-3); padding: 6px 2px; }
+.chat .past { font: 400 14px/1.65 var(--font); color: var(--ink-2); }
+.chat .past b { color: var(--ink); }
 .chat .card .row { display: flex; gap: 7px; }
 .chat .thinking { font: 400 13px/1.4 var(--font); color: var(--ink-3); }
 .chat .err { color: var(--crit); font-size: 13px; }
@@ -713,7 +719,7 @@ async function loadGmail(refresh) {
     <div class="mails">${g.threads.length ? g.threads.map(row).join('') : '<span class="lbl" style="padding:8px">Rien qui demande une réponse.</span>'}
       ${noise ? `<button class="more" id="gm-more">${noiseLabel}</button><div id="gm-others" hidden>${g.others.map(row).join('')}</div>` : ''}</div>
     ${g.hidden?.length ? `<div class="hiddenbar"><span>${g.hidden.length} fil${g.hidden.length > 1 ? 's' : ''} marqué${g.hidden.length > 1 ? 's' : ''} traité${g.hidden.length > 1 ? 's' : ''}</span><button id="gm-unhide">Tout réafficher</button></div>` : ''}
-    <details class="rules"><summary>Consignes de tri</summary><textarea id="gm-notes" rows="3" placeholder="Ce que tu veux que je retienne. Ex : les rappels Noota ne demandent jamais de réponse, la compta IONOS part au classement.">${esc(g.notes ?? '')}</textarea><span class="lbl">Lu par le briefing du jour. Les boutons, eux, agissent tout de suite.</span></details>
+    <details class="rules"><summary>Consignes de tri</summary><textarea id="gm-notes" rows="3" placeholder="Ce que tu veux que je retienne. Ex : les rappels Noota ne demandent jamais de réponse, la compta IONOS part au classement.">${esc(g.notes ?? '')}</textarea><span class="lbl">Lu par le point du jour. Les boutons, eux, agissent tout de suite.</span></details>
     <div style="display:flex;gap:6px"><a class="btn acc" href="https://mail.google.com/mail/u/0/#label/${encodeURIComponent(g.label)}" target="_blank" rel="noopener">Ouvrir Gmail</a><button class="btn" id="gm-refresh">Rafraîchir</button></div>`;
   $('#gm-refresh').onclick = () => loadGmail(true);
   const post = (url, body) => api(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
@@ -1154,14 +1160,14 @@ async function loadProjects() {
   $('#pj-meta').textContent = `${actifs} actif${actifs > 1 ? 's' : ''} sur ${projects.length}`;
   $('#projects').innerHTML = projects.map(p => `
     <div class="pj ${p.stage}" data-slug="${esc(p.slug)}">
-      <i class="stage" title="${esc(p.stage)}"></i>
-      <div>
-        <div class="name"><b data-open-note="${esc(p.id)}">${esc(p.title)}</b><span class="age">${p.updated ? 'revu ' + relDate(p.updated) : ''}</span></div>
+      <div class="name">
+        <b data-open-note="${esc(p.id)}">${esc(p.title)}</b>
+        <button class="stagebtn ${esc(p.stage)}" data-stage="${esc(p.slug)}" aria-haspopup="true">${esc(p.stage)}<svg><use href="#i-chev"/></svg></button>
+        <span class="age">${p.updated ? 'revu ' + relDate(p.updated) : ''}</span>
+      </div>
+      <div class="line2">
         <div class="next ${p.next ? '' : 'empty'}" data-next="${esc(p.slug)}" title="Cliquer pour modifier la prochaine étape">${esc(p.next || 'Pas de prochaine étape')}</div>
-        <div class="row2">
-          <button class="stagebtn ${esc(p.stage)}" data-stage="${esc(p.slug)}" aria-haspopup="true">${esc(p.stage)}<svg><use href="#i-chev"/></svg></button>
-          ${p.next ? `<button class="push" data-push="${esc(p.slug)}">→ Aujourd'hui</button>` : ''}
-        </div>
+        ${p.next ? `<button class="push" data-push="${esc(p.slug)}">→ Aujourd'hui</button>` : ''}
       </div>
     </div>`).join('');
 
@@ -1207,7 +1213,7 @@ async function patchProject(slug, patch) {
 }
 const relDate = iso => { const d = Math.round((Date.now() - new Date(iso)) / 864e5); return d <= 0 ? "aujourd'hui" : d === 1 ? 'hier' : `il y a ${d} j`; };
 
-/* ---------- agenda: what is coming, and what the briefing reads ---------- */
+/* ---------- agenda: what is coming, and what the standup reads ---------- */
 async function loadAgenda() {
   const c = await api('/api/calendar');
   const el = $('#agenda');
@@ -1258,17 +1264,17 @@ async function loadAgenda() {
   if (more) more.onclick = async () => { await api('/api/calendar/unhide', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ all: true }) }); toast('Événements réaffichés'); loadAgenda(); };
 }
 
-/* ---------- the daily briefing composes the todo ---------- */
+/* ---------- "sans questions": the standup skill composes the todo alone ---------- */
 $('#brief-run').onclick = async () => {
   const btn = $('#brief-run'); btn.disabled = true; btn.textContent = 'Composition…';
   try {
     const r = await api('/api/briefing', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({}) });
     if (r.error) throw new Error(r.error);
-    toast('Briefing lancé, la todo se met à jour dans une minute');
+    toast('Composition lancée, la todo se met à jour dans une minute');
     loadRuns();
     briefWatch = setInterval(async () => {
-      const rs = await api('/api/runs?app=briefing');
-      if (rs[0] && rs[0].status !== 'running') { clearInterval(briefWatch); loadTodo(); loadProjects(); loadRuns(); toast(rs[0].status === 'done' ? 'Journée composée' : 'Le briefing a échoué', rs[0].status !== 'done'); }
+      const rs = await api('/api/runs?app=standup');
+      if (rs[0] && rs[0].status !== 'running') { clearInterval(briefWatch); loadTodo(); loadProjects(); loadRuns(); toast(rs[0].status === 'done' ? 'Journée composée' : 'La composition a échoué', rs[0].status !== 'done'); }
     }, 5000);
   } catch (e) { toast('Échec : ' + e.message, true); }
   btn.disabled = false; btn.textContent = 'Composer ma journée';
@@ -1422,7 +1428,8 @@ async function standupOnOpen() {
 
 /* ---------- chat: typing filters the graph, Enter asks the agent ---------- */
 const chatEl = $('#chat');
-const chatId = (() => { try { let v = localStorage.getItem('chat-id'); if (!v) { v = String(Date.now()); localStorage.setItem('chat-id', v); } return v; } catch (e) { return 'default'; } })();
+let chatId = (() => { try { let v = localStorage.getItem('chat-id'); if (!v) { v = String(Date.now()); localStorage.setItem('chat-id', v); } return v; } catch (e) { return 'default'; } })();
+const chatIdSet = v => { chatId = v; localStorage.setItem('chat-id', v); };
 let chatOpen = false, chatStream = null, botEl = null, chatBusy = false;
 
 function chatShow(on) {
@@ -1431,13 +1438,17 @@ function chatShow(on) {
   if (on && !chatEl.querySelector('.head')) {
     const head = document.createElement('div');
     head.className = 'head';
-    head.innerHTML = `<span>Assistant · agit sur ton tableau de bord</span><span class="sp"></span><button id="chat-clear">Nouvelle conversation</button><button id="chat-hide">Fermer</button>`;
+    head.innerHTML = `<span>Assistant · agit sur ton tableau de bord</span><span class="sp"></span><button id="chat-log">Historique</button><button id="chat-clear">Nouvelle conversation</button><button id="chat-hide">Fermer</button>`;
     chatEl.appendChild(head);
     $('#chat-hide').onclick = () => chatShow(false);
+    $('#chat-log').onclick = () => (chatEl.querySelector('.histpane') ? chatBack() : chatHistory());
     $('#chat-clear').onclick = async () => {
       await fetch('/api/chat?id=' + encodeURIComponent(chatId), { method: 'DELETE' });
+      chatBack();
       chatEl.querySelectorAll('.turn').forEach(n => n.remove());
       if (chatStream) { chatStream.close(); chatStream = null; }
+      // a fresh id, so the new conversation gets its own section in the journal
+      try { chatIdSet(String(Date.now())); } catch (e) { /* private mode */ }
       toast('Conversation repartie de zéro');
     };
   }
@@ -1450,6 +1461,37 @@ const chatAdd = (cls, html) => {
   chatEl.scrollTop = chatEl.scrollHeight;
   return el;
 };
+
+/* Conversations are journalled in the second brain (lib/chatlog.js), so past
+   ones can be read back — and the current one redrawn after a page reload. */
+const chatBack = () => { chatEl.querySelector('.histpane')?.remove(); chatEl.classList.remove('hist'); };
+
+async function chatHistory() {
+  chatEl.classList.add('hist');
+  chatEl.querySelector('.histpane')?.remove();
+  const pane = document.createElement('div');
+  pane.className = 'histpane';
+  pane.innerHTML = '<div class="log"><div class="none">…</div></div>';
+  chatEl.appendChild(pane);
+  const list = await api('/api/chat/log');
+  const log = pane.querySelector('.log');
+  if (!list.length) { log.innerHTML = '<div class="none">Aucune conversation journalisée pour l\'instant.</div>'; return; }
+  log.innerHTML = list.map(c => `<button data-conv="${esc(c.id)}"><span class="t">${esc(c.title)}</span><span class="m">${esc(c.date)} ${esc(c.time)} · ${c.turns} échange${c.turns > 1 ? 's' : ''}${c.actions ? ' · ' + c.actions + ' action' + (c.actions > 1 ? 's' : '') : ''}${c.id === chatId ? ' · en cours' : ''}</span></button>`).join('');
+  log.querySelectorAll('[data-conv]').forEach(b => b.onclick = async () => {
+    const conv = await api('/api/chat/log?id=' + encodeURIComponent(b.dataset.conv));
+    pane.innerHTML = `<div class="head" style="border:0;padding:0"><button id="chat-back">← Toutes les conversations</button></div><div class="past">${md(conv.body || '(vide)')}</div>`;
+    pane.querySelector('#chat-back').onclick = () => chatHistory();
+  });
+}
+
+// After a reload the server may still hold the conversation, but the browser has
+// forgotten what was said. The journal is what puts it back on screen.
+async function chatReplay() {
+  if (chatEl.querySelector('.turn')) return;
+  const conv = await api('/api/chat/log?id=' + encodeURIComponent(chatId)).catch(() => null);
+  if (!conv?.body || chatEl.querySelector('.turn')) return;
+  chatAdd('', `<div class="past">${md(conv.body)}</div>`);
+}
 
 function chatConnect() {
   if (chatStream) return;
@@ -1475,7 +1517,6 @@ function chatConnect() {
     if (m.type === 'confirm') {
       const el = chatAdd('', `<div class="card" data-key="${esc(m.key)}">
         <b>${esc(m.summary)}</b>
-        <pre>${esc(JSON.stringify(m.details, null, 1))}</pre>
         <div class="row"><button class="btn acc" data-yes>Valider</button><button class="btn" data-no>Annuler</button></div>
       </div>`);
       const decide = approved => fetch('/api/chat/decision', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: chatId, key: m.key, approved }) });
@@ -1505,6 +1546,7 @@ function chatConnect() {
 
 function chatSend(text) {
   chatShow(true);
+  chatBack();
   chatConnect();
   chatAdd('', `<div class="me">${esc(text)}</div>`);
   chatAdd('', '<div class="thinking">…</div>');
@@ -1516,6 +1558,7 @@ function chatSend(text) {
 /* ---------- boot ---------- */
 (async () => {
   cfg = await api('/api/config');
+  chatReplay();   // a reload should not wipe what was already said
   $('#gm-label').textContent = cfg.gmail.label;
   draw();
   await Promise.all([loadGraph(), loadTodo(), loadGmail(), loadRuns(), loadProjects(), loadAgenda()]);
