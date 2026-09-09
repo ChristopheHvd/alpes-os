@@ -103,6 +103,33 @@
         "Gmail",
         "brain/journal/todo.md"
       ]
+    },
+    {
+      "id": "standup",
+      "name": "Point du jour",
+      "description": "Le stand-up du matin et le bilan du soir",
+      "skill": "/standup",
+      "model": "claude-opus-5",
+      "output": "output/standup",
+      "actions": [
+        {
+          "id": "questions",
+          "label": "Préparer le point",
+          "placeholder": "Interne : génère les questions du stand-up"
+        },
+        {
+          "id": "compose",
+          "label": "Composer la journée",
+          "placeholder": "Interne : compose la todo depuis les réponses"
+        }
+      ],
+      "skillsUsed": [
+        "brain/journal/standup.md",
+        "brain/journal/todo.md",
+        "brain/projects/",
+        "Google Calendar",
+        "Gmail"
+      ]
     }
   ]
 }

@@ -227,6 +227,37 @@ a.mail, .mail {
 .w.collapsed { flex: 0 0 auto !important; gap: 0; }
 .w.collapsed .w-body { display: none !important; }
 .w.collapsed .wtoggle { transform: rotate(-90deg); }
+/* ---- stand-up: a short spoken conversation, twice a day ---- */
+.standup { position: fixed; inset: 0; background: var(--scrim); display: grid; place-items: center; z-index: 28; backdrop-filter: blur(3px); }
+.standup[hidden] { display: none; }
+.su { width: min(700px, 92vw); max-height: 88vh; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-lg); display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; }
+.su .top { display: flex; align-items: center; gap: 11px; padding: 16px 20px; border-bottom: 1px solid var(--line-soft); }
+.su .top .ic { width: 30px; height: 30px; border-radius: 8px; background: var(--accent-soft); display: grid; place-items: center; flex-shrink: 0; }
+.su .top .ic svg { width: 15px; height: 15px; stroke: var(--accent); fill: none; stroke-width: 1.8; }
+.su .top b { font: 600 15.5px/1.2 var(--font); }
+.su .top .step { margin-left: auto; font: 500 12px/1 var(--font); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.su .body { padding: 22px 24px; overflow-y: auto; }
+.su .greeting { font: 400 15px/1.6 var(--font); color: var(--ink-2); border-left: 3px solid var(--accent); padding-left: 14px; margin-bottom: 22px; }
+.su .q { font: 600 19px/1.4 var(--display); color: var(--ink); margin: 0 0 6px; text-wrap: balance; }
+.su .why { font: 400 12.5px/1.5 var(--font); color: var(--ink-3); margin: 0 0 14px; }
+.su textarea { width: 100%; min-height: 108px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; color: var(--ink); font: 400 15px/1.6 var(--font); padding: 13px 15px; resize: vertical; outline: none; }
+.su textarea:focus { border-color: var(--accent); }
+.su .hints { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.su .hints button { font: 500 12.5px/1 var(--font); color: var(--ink-2); background: var(--bg); border: 1px solid var(--line); border-radius: 20px; padding: 7px 12px; cursor: pointer; }
+.su .hints button:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.su .foot { display: flex; align-items: center; gap: 9px; padding: 14px 20px; border-top: 1px solid var(--line-soft); background: var(--bg); }
+.su .foot .sp { flex: 1; }
+.su .foot .hintkey { font: 400 11.5px/1 var(--font); color: var(--ink-3); }
+.su .wait { display: grid; gap: 14px; place-items: center; padding: 46px 0; text-align: center; }
+.su .wait p { margin: 0; font: 400 14px/1.6 var(--font); color: var(--ink-2); max-width: 46ch; }
+.su .spin { width: 26px; height: 26px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.su .recap { font-size: 14.5px; line-height: 1.65; color: var(--ink-2); }
+.su .recap h1, .su .recap h2, .su .recap h3 { font: 600 16px/1.3 var(--font); color: var(--ink); margin: 16px 0 6px; }
+.su .recap ul { padding-left: 20px; margin: 0 0 10px; }
+.su .recap b { color: var(--ink); }
+.su .err { color: var(--crit); font-size: 13.5px; }
+.su-launch { display: flex; align-items: center; gap: 8px; }
 .auth { display: grid; gap: 10px; }
 .auth p { margin: 0; color: var(--ink-2); font-size: 13px; }
 .auth code { font: 400 12px var(--mono); color: var(--ink-3); background: var(--sunken); padding: 6px 8px; border-radius: 4px; word-break: break-all; }
@@ -460,7 +491,7 @@ a.mail, .mail {
         <div class="todo" id="todo"></div>
         <div class="add"><span class="lbl">+</span><input id="newtodo" placeholder="Ajouter une tâche, Entrée pour valider · !! = urgent"></div>
         <div class="agenda" id="agenda"></div>
-        <button class="btn acc" id="brief-run" style="width:100%">Composer ma journée</button>
+        <div class="su-launch"><button class="btn acc" id="su-run" style="flex:1">Faire le point</button><button class="btn" id="brief-run" title="Composer sans passer par les questions">Sans questions</button></div>
         <span class="lbl" id="todo-src"></span>
       </div>
     </section>
@@ -515,6 +546,19 @@ a.mail, .mail {
       <div class="arts w-body" id="artifacts"></div>
     </section>
   </aside>
+</div>
+
+<div class="standup" id="standup" hidden>
+  <div class="su">
+    <div class="top">
+      <span class="ic"><svg><use href="#i-list"/></svg></span>
+      <b id="su-title">Point du jour</b>
+      <span class="step" id="su-step"></span>
+      <button class="icobtn" id="su-close" title="Fermer">×</button>
+    </div>
+    <div class="body" id="su-body"></div>
+    <div class="foot" id="su-foot"></div>
+  </div>
 </div>
 
 <div class="appview" id="appview" hidden>
@@ -1007,7 +1051,7 @@ async function select(n, fromNav) {
 function center(n) { const t0 = performance.now(), fx = cam.x, fy = cam.y, fk = cam.k, tk = Math.max(cam.k, 1.8); const off = panel.classList.contains('on') ? (panel.offsetWidth / 2 + 24) / tk : 0; /* keep the node clear of the panel */ (function anim() { const p = Math.min(1, (performance.now() - t0) / 450), e = 1 - Math.pow(1 - p, 3); cam.k = fk + (tk - fk) * e; cam.x = fx + (-n.x - off - fx) * e; cam.y = fy + (-n.y - fy) * e; if (p < 1) requestAnimationFrame(anim); })(); }
 const q = $('#q');
 q.addEventListener('input', () => query = q.value.trim().toLowerCase());
-addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); q.focus(); } if (e.key === 'Escape') { if (!viewer.hidden) { viewer.hidden = true; return; } if (!appview.hidden) { appview.hidden = true; return; } q.value = ''; query = ''; q.blur(); select(null); $('#modal').hidden = true; } });
+addEventListener('keydown', e => { if (e.key === 'Escape' && !su.hidden) { suClose(); return; } if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); q.focus(); } if (e.key === 'Escape') { if (!viewer.hidden) { viewer.hidden = true; return; } if (!appview.hidden) { appview.hidden = true; return; } q.value = ''; query = ''; q.blur(); select(null); $('#modal').hidden = true; } });
 
 /* ---------- resizable side columns ---------- */
 (() => {
@@ -1156,6 +1200,117 @@ let briefWatch = null;
   });
 })();
 
+/* ---------- stand-up: questions grounded in yesterday, answers dictated ---------- */
+const su = $('#standup');
+let suState = null;   // { slot, greeting, questions[], answers{}, i }
+
+const suClose = () => { su.hidden = true; };
+$('#su-close').onclick = suClose;
+su.addEventListener('click', e => { if (e.target === su) suClose(); });
+
+function suRender() {
+  const body = $('#su-body'), foot = $('#su-foot'), step = $('#su-step');
+  if (!suState) return;
+  const { phase, questions, i } = suState;
+
+  if (phase === 'loading') {
+    step.textContent = '';
+    body.innerHTML = `<div class="wait"><div class="spin"></div><p>Je relis ta veille, ton agenda et tes projets pour te poser les bonnes questions. Une trentaine de secondes.</p></div>`;
+    foot.innerHTML = '';
+    return;
+  }
+  if (phase === 'composing') {
+    step.textContent = '';
+    body.innerHTML = `<div class="wait"><div class="spin"></div><p>Je compose ta journée à partir de tes réponses.</p></div>`;
+    foot.innerHTML = '';
+    return;
+  }
+  if (phase === 'done') {
+    step.textContent = '';
+    body.innerHTML = `<div class="recap">${md(suState.outcome || 'Journée composée.')}</div>`;
+    foot.innerHTML = `<span class="hintkey">Consigné dans brain/journal/standup.md</span><span class="sp"></span><button class="btn acc" id="su-ok">Terminé</button>`;
+    $('#su-ok').onclick = () => { suClose(); loadTodo(); loadProjects(); };
+    return;
+  }
+  if (phase === 'error') {
+    step.textContent = '';
+    body.innerHTML = `<p class="err">${esc(suState.error)}</p>`;
+    foot.innerHTML = `<span class="sp"></span><button class="btn" id="su-retry">Réessayer</button>`;
+    $('#su-retry').onclick = () => startStandup(suState.slot);
+    return;
+  }
+
+  // one question at a time, the way a stand-up actually goes
+  const q = questions[i];
+  step.textContent = `${i + 1} / ${questions.length}`;
+  const hints = (q.hints ?? []).filter(Boolean);
+  body.innerHTML = `
+    ${i === 0 && suState.greeting ? `<p class="greeting">${esc(suState.greeting)}</p>` : ''}
+    <p class="q">${esc(q.text)}</p>
+    ${q.why ? `<p class="why">${esc(q.why)}</p>` : ''}
+    <textarea id="su-a" placeholder="Dicte ou écris ta réponse…">${esc(suState.answers[q.id] ?? '')}</textarea>
+    ${hints.length ? `<div class="hints">${hints.map(h => `<button data-h="${esc(h)}">${esc(h)}</button>`).join('')}</div>` : ''}`;
+  foot.innerHTML = `
+    ${i > 0 ? '<button class="btn" id="su-prev">Précédent</button>' : ''}
+    <button class="btn" id="su-skip">Passer</button>
+    <span class="sp"></span>
+    <span class="hintkey">⌘↵ pour continuer</span>
+    <button class="btn acc" id="su-next">${i === questions.length - 1 ? 'Composer ma journée' : 'Suivant'}</button>`;
+
+  const ta = $('#su-a');
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+  const keep = () => { suState.answers[q.id] = ta.value.trim(); };
+  ta.oninput = keep;
+  ta.onkeydown = e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); suNext(); } };
+  body.querySelectorAll('.hints button').forEach(b => b.onclick = () => {
+    ta.value = ta.value.trim() ? `${ta.value.trim()} ${b.dataset.h}` : b.dataset.h;
+    keep(); ta.focus();
+  });
+  const prev = $('#su-prev'); if (prev) prev.onclick = () => { keep(); suState.i--; suRender(); };
+  $('#su-skip').onclick = () => { suState.answers[q.id] = ''; suAdvance(); };
+  $('#su-next').onclick = suNext;
+}
+function suNext() { const q = suState.questions[suState.i]; const ta = $('#su-a'); if (ta) suState.answers[q.id] = ta.value.trim(); suAdvance(); }
+function suAdvance() {
+  if (suState.i < suState.questions.length - 1) { suState.i++; return suRender(); }
+  suCompose();
+}
+
+async function startStandup(slot) {
+  suState = { phase: 'loading', slot, answers: {}, i: 0, questions: [] };
+  $('#su-title').textContent = slot === 'soir' ? 'Bilan du soir' : 'Point du matin';
+  su.hidden = false; suRender();
+  try {
+    const r = await api('/api/standup/questions', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ slot }) });
+    if (r.error || !r.questions?.length) throw new Error(r.error || 'aucune question produite');
+    suState = { ...suState, phase: 'ask', greeting: r.greeting, questions: r.questions };
+  } catch (e) { suState = { ...suState, phase: 'error', error: e.message }; }
+  suRender();
+}
+async function suCompose() {
+  suState.phase = 'composing'; suRender();
+  try {
+    const r = await api('/api/standup/compose', { method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ slot: suState.slot, questions: suState.questions, answers: suState.answers }) });
+    if (r.error) throw new Error(r.error);
+    suState = { ...suState, phase: 'done', outcome: r.outcome };
+    loadTodo(); loadProjects(); loadRuns();
+  } catch (e) { suState = { ...suState, phase: 'error', error: e.message }; }
+  suRender();
+}
+$('#su-run').onclick = () => startStandup(new Date().getHours() < 14 ? 'matin' : 'soir');
+
+// opens itself once per slot: the morning frames the day, 17h closes it
+async function standupOnOpen() {
+  try {
+    const st = await api('/api/standup/state');
+    if (!st.due) return;
+    if (st.slot === 'matin' && st.hour >= 5 && st.hour < 14) startStandup('matin');
+    else if (st.slot === 'soir' && st.hour >= 17) startStandup('soir');
+  } catch (e) { /* never block the dashboard */ }
+}
+
 /* ---------- boot ---------- */
 (async () => {
   cfg = await api('/api/config');
@@ -1166,6 +1321,7 @@ let briefWatch = null;
   setInterval(() => loadGmail(), 5 * 60e3);
   setInterval(loadAgenda, 10 * 60e3);
   setInterval(loadProjects, 60e3);
+  standupOnOpen();
 })();
 </script>
 </body>

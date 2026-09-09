@@ -13,6 +13,7 @@ import { makeRunner } from './lib/runs.js';
 import { listProjects, updateProject } from './lib/projects.js';
 import { makeCalendar } from './lib/calendar.js';
 import { makeMailState } from './lib/mailstate.js';
+import { makeStandup, slotNow } from './lib/standup.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 // Local config stays out of git: it holds real paths, identity and bank details.
@@ -31,6 +32,7 @@ const cfg = loadConfig('config');
 const branding = loadConfig('branding');
 const todoFile = path.join(cfg.secondBrain, cfg.todoFile);
 const gmail = makeGmail(path.join(ROOT, 'credentials'), cfg.port, { secondBrain: cfg.secondBrain });
+const standup = makeStandup(cfg.secondBrain);
 const mailState = makeMailState(path.join(ROOT, 'output', 'mail-state.json'));
 const calendar = makeCalendar(() => gmail.accessToken(), () => gmail.status().hasCalendar, cfg.calendar ?? {});
 const runner = makeRunner(ROOT, { ...cfg.claude, apps: cfg.apps, secondBrain: cfg.secondBrain });
@@ -107,6 +109,91 @@ app.get('/api/calendar/list', async (req, res) => {
   if (!gmail.status().hasCalendar) return res.json({ needsScope: true, calendars: [] });
   try { res.json({ calendars: await calendar.calendars(), configured: cfg.calendar ?? {} }); }
   catch (e) { res.status(500).json({ error: e.message, calendars: [] }); }
+});
+
+// Stand-up — a short conversation, twice a day. The server assembles the facts,
+// the agent turns them into questions, the answers come back dictated, and a second
+// pass composes the day. The exchange is journaled whatever the second pass does.
+function daysSince(iso) { return iso ? Math.floor((Date.now() - Date.parse(iso)) / 864e5) : null; }
+
+async function standupContext(slot) {
+  const todo = readTodo(todoFile);
+  const projects = listProjects(cfg.secondBrain).map(p => ({
+    slug: p.slug, titre: p.title, stade: p.stage, prochaine_etape: p.next,
+    revu_le: p.updated, jours_sans_mouvement: daysSince(p.updated),
+  }));
+  let agenda = [], mails = [];
+  try {
+    const c = await calendar.upcoming({ days: 14, max: 20 });
+    agenda = c.events.map(e => ({ titre: e.title, debut: e.start, journee_entiere: e.allDay, avec: e.attendees, lieu: e.location, organisateur: e.organizer }));
+  } catch (e) { /* calendar optional */ }
+  try {
+    const g = await gmail.flagged({ ...mailOpts(), maxThreads: 8 });
+    mails = g.threads.map(t => ({ de: t.from, objet: t.subject, extrait: t.snippet.slice(0, 160), recu: t.date, jours: daysSince(t.date), non_lu: t.unread, contact_connu: t.known }));
+  } catch (e) { /* mail optional */ }
+  return {
+    date: new Date().toISOString().slice(0, 10),
+    moment: slot,
+    heure: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+    second_brain: cfg.secondBrain,
+    consignes_boite: mailState.get().notes,
+    todo_du_jour: todo.items,
+    taches_reportees: todo.carried,
+    projets: projects,
+    agenda,
+    mails_a_traiter: mails,
+    standups_recents: standup.last(3),
+  };
+}
+
+// runs the standup skill and waits for it, since both steps are interactive
+function runStandup(action, brief, model) {
+  const a = cfg.apps.find(x => x.id === 'standup');
+  const act = a?.actions.find(x => x.id === action);
+  if (!a || !act) throw new Error("l'app standup est absente de la config");
+  const run = runner.start({ app: a, action: act, brief, model: model ?? a.model });
+  return new Promise(resolve => {
+    const tick = () => {
+      const r = runner.get(run.id);
+      if (r && r.status !== 'running') return resolve(r);
+      setTimeout(tick, 1000);
+    };
+    tick();
+  });
+}
+
+app.get('/api/standup/state', (req, res) => res.json(standup.state()));
+app.get('/api/standup/journal', (req, res) => res.json({ sessions: standup.sessions().slice(-10) }));
+
+app.post('/api/standup/questions', async (req, res) => {
+  const slot = req.body?.slot || slotNow();
+  try {
+    const ctx = await standupContext(slot);
+    const out = path.join(ROOT, 'output', 'standup', `questions-${ctx.date}-${slot}.json`);
+    const r = await runStandup('questions',
+      `questions\n\nMoment : ${slot}. Écris le JSON dans ${out}.\n\nCONTEXTE:\n${JSON.stringify(ctx, null, 1)}`);
+    if (!fs.existsSync(out)) return res.status(500).json({ error: "les questions n'ont pas été produites", log: r.output.slice(-800) });
+    const data = JSON.parse(fs.readFileSync(out, 'utf8'));
+    res.json({ ...data, slot, date: ctx.date, runId: r.id });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/standup/compose', async (req, res) => {
+  const slot = req.body?.slot || slotNow();
+  const questions = Array.isArray(req.body?.questions) ? req.body.questions : [];
+  const answers = req.body?.answers ?? {};
+  try {
+    const ctx = await standupContext(slot);
+    // journal the exchange first: what was said must survive a failed composition
+    standup.append({ date: ctx.date, slot, questions, answers });
+    const out = path.join(ROOT, 'output', 'standup', `compose-${ctx.date}-${slot}.md`);
+    const withAnswers = { ...ctx, reponses: questions.map(q => ({ question: q.text, reponse: String(answers[q.id] ?? '').trim() })) };
+    const r = await runStandup('compose',
+      `compose\n\nMoment : ${slot}. Écris le compte rendu dans ${out}.\n\nCONTEXTE:\n${JSON.stringify(withAnswers, null, 1)}`);
+    const outcome = fs.existsSync(out) ? fs.readFileSync(out, 'utf8') : '';
+    if (outcome) standup.append({ date: ctx.date, slot, questions: [], answers: {}, outcome });
+    res.json({ ok: r.status === 'done', outcome, todo: readTodo(todoFile), log: r.status === 'done' ? undefined : r.output.slice(-800) });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // Daily briefing — the server assembles what the agent cannot reach on its own
