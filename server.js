@@ -31,7 +31,10 @@ function loadConfig(name) {
 const cfg = loadConfig('config');
 const branding = loadConfig('branding');
 const todoFile = path.join(cfg.secondBrain, cfg.todoFile);
-const gmail = makeGmail(path.join(ROOT, 'credentials'), cfg.port, { secondBrain: cfg.secondBrain });
+// PORT lets a second checkout (a worktree) run alongside the main one. Google only
+// knows the redirect URI of config.port, so first-time OAuth needs that port.
+const PORT = Number(process.env.PORT) || cfg.port;
+const gmail = makeGmail(path.join(ROOT, 'credentials'), PORT, { secondBrain: cfg.secondBrain });
 const standup = makeStandup(cfg.secondBrain);
 const mailState = makeMailState(path.join(ROOT, 'output', 'mail-state.json'));
 const calendar = makeCalendar(() => gmail.accessToken(), () => gmail.status().hasCalendar, cfg.calendar ?? {});
@@ -248,9 +251,9 @@ app.post('/api/reveal', (req, res) => {
   res.json({ ok: true });
 });
 
-app.listen(cfg.port, () => {
+app.listen(PORT, () => {
   const st = gmail.status();
-  console.log(`Alpes IA OS  →  http://localhost:${cfg.port}`);
+  console.log(`Alpes IA OS  →  http://localhost:${PORT}`);
   console.log(`second brain: ${cfg.secondBrain}`);
   if (!st.hasSecret) console.log('gmail: credentials/client_secret.json manquant (Google Cloud Console → OAuth client "Desktop app")');
   else if (!st.hasToken) console.log(`gmail: ouvrir http://localhost:${cfg.port}/auth/google pour autoriser`);
