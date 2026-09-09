@@ -111,11 +111,13 @@ body.resizing { cursor: col-resize; user-select: none; }
 .col.right > .w:last-child { flex: 1 1 26%; overflow: hidden; }
 .w-head { display: flex; align-items: center; gap: 10px; }
 .w-head h2 {
-  margin: 0; font: 600 15px/1.2 var(--font); letter-spacing: -.01em;
-  display: flex; align-items: center; gap: 9px; color: var(--ink);
+  margin: 0; font: 600 15px/1.2 var(--font); letter-spacing: -.01em; white-space: nowrap;
+  display: flex; align-items: center; gap: 9px; color: var(--ink); flex-shrink: 0;
 }
-.w-head h2 svg { width: 16px; height: 16px; stroke: var(--accent); fill: none; stroke-width: 1.7; }
-.w-head .meta { margin-left: auto; font: 400 11.5px/1 var(--font); color: var(--ink-3); }
+.w-head h2 svg { width: 16px; height: 16px; stroke: var(--accent); fill: none; stroke-width: 1.7; flex-shrink: 0; }
+.w-head .meta { margin-left: auto; font: 400 11.5px/1 var(--font); color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.w-head .tag { flex-shrink: 0; }
+.syncdot { flex-shrink: 0; margin-left: auto; width: 7px; height: 7px; border-radius: 50%; background: var(--good); cursor: default; }
 .lbl { font: 500 11.5px/1.4 var(--font); color: var(--ink-3); }
 .num { font: 600 34px/1 var(--display); color: var(--accent); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
 .tag {
@@ -482,7 +484,7 @@ a.mail, .mail {
       <div class="w-head">
         <h2><svg><use href="#i-mail"/></svg>Boîte de réception</h2>
         <span class="tag acc" id="gm-label">ALPES-IA</span>
-        <span class="meta" id="gm-sync">—</span>
+        <i class="syncdot" id="gm-sync" title="Synchronisation"></i>
         <button class="wtoggle" aria-label="Réduire ou déplier" data-w="inbox" title="Réduire"><svg><use href="#i-chev"/></svg></button>
       </div>
       <div class="w-body" id="gmail"><span class="lbl">Chargement…</span></div>
@@ -660,7 +662,7 @@ async function loadGmail(refresh) {
     el.innerHTML = `<div class="auth">${g.hasSecret ? `<p>Autorise l'accès en lecture à ta boîte Gmail (label ${esc(cfg.gmail.label)}).</p><a class="btn acc" href="/auth/google">Connecter Gmail</a>` : `<p>Dépose le client OAuth Google (type « Desktop app ») dans :</p><code>credentials/client_secret.json</code><p>puis relance le serveur.</p>`}</div>`;
     return;
   }
-  $('#gm-sync').textContent = 'sync ' + rel(g.syncedAt);
+  $('#gm-sync').title = 'Synchronisé ' + rel(g.syncedAt);
   const senderRule = a => g.senders?.[a]?.rule;
   const row = t => `<div class="mail${t.unread ? ' unread' : ''}${t.bucket !== 'personne' ? ' muted' : ''}" title="${esc(t.why.join(' · '))}">
       <i class="dot"></i>
@@ -678,7 +680,7 @@ async function loadGmail(refresh) {
     </div>`;
   const noise = g.counts.auto + g.counts.bulk;
   const noiseLabel = `Voir les ${noise} messages écartés · ${g.counts.auto} automatiques, ${g.counts.bulk} newsletters`;
-  el.innerHTML = `<div style="display:flex;gap:12px;align-items:baseline"><span class="num">${g.total}</span><div class="lbl" style="line-height:1.5">à traiter${g.unreadKept ? `<br>dont ${g.unreadKept} non lu${g.unreadKept > 1 ? 's' : ''}` : '<br>tous lus'}</div></div>
+  el.innerHTML = `<div style="display:flex;gap:12px;align-items:center"><span class="num">${g.total}</span><div class="lbl" style="line-height:1.5">à traiter${g.unreadKept ? `<br>dont ${g.unreadKept} non lu${g.unreadKept > 1 ? 's' : ''}` : '<br>tous lus'}</div></div>
     <div class="mails">${g.threads.length ? g.threads.map(row).join('') : '<span class="lbl" style="padding:8px">Rien qui demande une réponse.</span>'}
       ${noise ? `<button class="more" id="gm-more">${noiseLabel}</button><div id="gm-others" hidden>${g.others.map(row).join('')}</div>` : ''}</div>
     ${g.hidden?.length ? `<div class="hiddenbar"><span>${g.hidden.length} fil${g.hidden.length > 1 ? 's' : ''} marqué${g.hidden.length > 1 ? 's' : ''} traité${g.hidden.length > 1 ? 's' : ''}</span><button id="gm-unhide">Tout réafficher</button></div>` : ''}
@@ -849,8 +851,23 @@ const cv = $('#g'), ctx = cv.getContext('2d');
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let W = 0, H = 0, DPR = 1;
 const cam = { x: 0, y: 0, k: .8 };
-function resize() { const r = cv.getBoundingClientRect(); DPR = Math.min(2, devicePixelRatio || 1); W = r.width; H = r.height; cv.width = W * DPR; cv.height = H * DPR; }
-addEventListener('resize', resize); resize();
+function resize() {
+  const r = cv.getBoundingClientRect();
+  DPR = Math.min(2, devicePixelRatio || 1);
+  W = r.width; H = r.height;
+  const pw = Math.round(W * DPR), ph = Math.round(H * DPR);
+  if (cv.width !== pw) cv.width = pw;
+  if (cv.height !== ph) cv.height = ph;
+}
+// A single resize() at boot races the page's own layout: web fonts swapping in
+// (Fraunces, Instrument Sans) reflow the header after first paint, so the canvas's
+// CSS box changes size a moment after its pixel buffer was set — the browser then
+// stretches that buffer to fit, squashing every circle into an oval. A
+// ResizeObserver on the canvas itself catches every box change instead of only
+// the window resize event: font swaps, the initial layout settling, and the
+// column grips being dragged all go through the same, always-correct path.
+new ResizeObserver(resize).observe(cv);
+resize();
 const toWorld = (sx, sy) => [(sx - W / 2) / cam.k - cam.x, (sy - H / 2) / cam.k - cam.y];
 let alpha = 1, selected = null, hover = null, activeDom = null, query = '';
 const visible = n => (!activeDom || n.d === activeDom) && (!query || (n.t + ' ' + n.id + ' ' + n.tags.join(' ')).toLowerCase().includes(query));
