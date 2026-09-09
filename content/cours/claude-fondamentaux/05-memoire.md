@@ -25,7 +25,7 @@ type: concept
 | **Fichiers de contexte** | Ce que vous y écrivez | Vous |
 | **Outil externe** | Ce que vous y déposez, cherchable | Vous, hors de l'outil |
 
-Le deuxième est le plus rentable, et de loin. C'est un fichier texte. Rien de plus.
+Le deuxième est le plus rentable, et de loin. Un simple fichier texte.
 
 ::: notes
 Beaucoup arrivent en pensant qu'il faut un outil dédié. Commencer par le fichier : c'est gratuit, versionnable, lisible, et ça couvre 80 % du besoin.
@@ -85,7 +85,7 @@ Un dossier, un fichier par sujet, des liens entre eux.
 - Un fichier par **décision** structurante
 - Un index qui pointe vers le reste
 
-Pas de base de données, pas d'outil à installer. Du texte, dans un dossier, sauvegardé.
+Pas de base de données, pas d'outil à installer. Des fichiers texte dans un dossier sauvegardé.
 
 ::: notes
 Montrer un vrai second cerveau à l'écran, pas un schéma. L'effet « c'est juste des fichiers » est ce qui débloque les gens.
@@ -120,6 +120,6 @@ type: recap
 
 - Le modèle n'a pas de mémoire : elle vit dans des fichiers que vous contrôlez.
 - `aboutme.md` supprime les questions répétées, `style.md` rend le résultat publiable.
-- On y écrit le stable, jamais le daté.
+- On y écrit ce qui est stable, pas les chiffres du mois ni l'état d'une affaire.
 - Un fichier par client, par projet, par décision. Du texte, rien d'autre.
 - Écrire les décisions **et leur raison**, sinon l'option écartée revient.

@@ -18,14 +18,14 @@ Ne pas chercher à rendre le participant autonome sur le terminal en 45 minutes.
 
 ---
 
-## Ce que le chat ne peut pas faire
+## De répondre à agir
 type: concept
 
 Dans une conversation, l'outil **répond**. Vous exécutez.
 
 Dans un terminal, l'outil **agit** : il ouvre des fichiers, les modifie, lance des commandes, lit le résultat, corrige, recommence.
 
-> La différence n'est pas la puissance du modèle. C'est qu'il a les mains.
+> Même modèle, même intelligence. La seule chose qui change : dans un terminal, il a les mains.
 
 ::: notes
 L'image des mains fonctionne bien. Le même modèle, le même prompt : dans un cas il décrit la solution, dans l'autre il l'applique et vérifie qu'elle marche.
@@ -43,7 +43,7 @@ Ce qui vit dans des fichiers, il sait le traiter — et vos données vivent dans
 - Croiser **plusieurs exports** et produire un fichier propre
 - Refaire le tout le mois suivant, à l'identique
 
-Un export CRM, un fichier de prospection, un dossier de PDF : c'est du travail de fichiers, pas du développement.
+Un export CRM, un fichier de prospection, un dossier de PDF : ça se manipule sans écrire une ligne de code.
 
 ::: notes
 Cas concret à citer : {{client.fichier}}. Dédoublonner et enrichir ça dans un chat est pénible ; dans un terminal c'est une consigne et une vérification.
@@ -51,7 +51,7 @@ Cas concret à citer : {{client.fichier}}. Dédoublonner et enrichir ça dans un
 
 ---
 
-## Le vrai apport : la boucle
+## La boucle qui se ferme seule
 type: concept
 
 Dans un chat, la boucle passe par vous :
@@ -80,7 +80,7 @@ type: concept
 - Une **habitude de validation** : relire ce qui a été fait avant de garder
 - Une **sauvegarde** : travailler sur une copie tant qu'on n'est pas à l'aise
 
-Le quatrième point n'est pas négociable au début.
+Le quatrième point est le seul vraiment obligatoire au début.
 
 ::: notes
 Insister sur la copie de travail. La première fois qu'on laisse un outil modifier des fichiers en masse, on veut pouvoir revenir en arrière.
@@ -109,7 +109,7 @@ Vérifier trois lignes au hasard : le geste de contrôle qui doit devenir un ré
 ## Où ça s'arrête
 type: concept
 
-Ce n'est pas l'outil de tout le monde, et ce n'est pas grave.
+Tout le monde n'a pas besoin du terminal, et c'est très bien comme ça.
 
 - Si votre travail est surtout **relationnel**, restez sur l'application et les tâches planifiées.
 - Si votre travail touche **des volumes de fichiers**, ouvrir le terminal change l'échelle.
@@ -125,7 +125,7 @@ Terminer honnêtement. Vendre le terminal à quelqu'un qui n'en a pas besoin dé
 type: recap
 
 - Dans un chat il répond, dans un terminal il agit : il a les mains.
-- L'apport n'est pas la puissance, c'est la boucle qui se ferme sans vous.
+- L'apport principal : la boucle essai-erreur se ferme sans vous.
 - Ça concerne quiconque manipule des volumes de fichiers, développeur ou non.
 - En échange : un dossier de travail, des instructions permanentes, une copie de sauvegarde.
 - Décrire l'état voulu, pas les étapes. Puis vérifier au hasard.

@@ -125,7 +125,7 @@ Objectif de cette séquence : qu'il voie ce qu'une skill produit avant d'essayer
 ## Comment on en crée une
 type: concept
 
-**Jamais depuis la page blanche.** Toujours depuis un prompt qui a déjà marché.
+**Toujours partir d'un prompt qui a déjà marché**, jamais de la page blanche.
 
 1. Faire la tâche à la main, une fois, jusqu'à un résultat satisfaisant.
 2. Relire l'échange : qu'est-ce qui a été nécessaire pour y arriver ?
@@ -185,4 +185,4 @@ type: recap
 - Un dossier, du texte, pas de code.
 - La description dit **quand**, avec vos mots. C'est elle qui déclenche.
 - On part d'un prompt qui a marché, jamais de la page blanche.
-- Une skill = une chose, une page, des interdits, testée sur deux cas.
+- Une bonne skill fait une seule chose, tient en une page, liste ses interdits, et a été testée sur deux cas.

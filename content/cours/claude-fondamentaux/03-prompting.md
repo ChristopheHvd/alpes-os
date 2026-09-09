@@ -8,7 +8,7 @@ objectif: Écrire une demande qui donne le bon résultat du premier coup
 type: titre
 
 Un prompt vague donne une réponse vague.
-Ce n'est pas le modèle qui est décevant, c'est la commande.
+La réponse vaut ce que vaut la demande.
 
 ::: notes
 Faire ouvrir à {{client.prenom}} son historique et lire à voix haute un prompt raté. On le réécrira à la fin du module — c'est le fil rouge.
@@ -16,7 +16,7 @@ Faire ouvrir à {{client.prenom}} son historique et lire à voix haute un prompt
 
 ---
 
-## Le problème n'est pas où on croit
+## Tout ce que le modèle doit deviner
 type: concept
 
 « Fais-moi un mail de relance pour ce client. »
@@ -25,7 +25,7 @@ Le modèle doit deviner : quel ton, quelle longueur, quel historique, quelle rel
 
 Il devine six fois. Il se trompe au moins une fois. Vous réécrivez.
 
-**Le temps que vous croyez gagner en écrivant vite, vous le perdez en réécrivant.**
+**Trois minutes gagnées à l'écriture, dix perdues à réécrire.**
 
 ::: notes
 Ne pas enchaîner tout de suite sur la solution. Laisser le constat s'installer, éventuellement en montrant le résultat générique que ça produit.

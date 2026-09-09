@@ -8,7 +8,7 @@ objectif: Choisir le bon espace de travail selon la tâche
 type: titre
 
 Le même modèle, quatre espaces différents.
-Choisir le mauvais, c'est se priver de la moitié de l'outil.
+Vous en ouvrez un seul, et vous passez à côté du reste.
 
 ::: notes
 Module court mais rentable : la plupart des gens font tout dans le chat web, y compris ce qui devrait vivre ailleurs.
@@ -64,7 +64,7 @@ L'application de bureau donne accès à ce que le navigateur n'a pas :
 - Les **tâches planifiées** qui tournent sans vous
 - Les **skills** et leur exécution
 
-Le chat web est une vitrine. Le travail se fait dans l'application.
+Le chat web sert à jeter un œil. Le travail se fait dans l'application.
 
 ::: notes
 Vérifier ici, concrètement : l'app desktop est-elle installée ? Le plan est-il le bon ? Si non, l'installer maintenant, sinon la moitié de la journée tombe à plat.

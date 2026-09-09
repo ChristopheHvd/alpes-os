@@ -21,12 +21,12 @@ type: concept
 
 > Toute tâche faite **deux fois par semaine** doit devenir une tâche planifiée ou une skill.
 
-Pas parce qu'elle prend du temps. Parce qu'elle prend de **l'attention** : il faut y penser, choisir le moment, retrouver le contexte.
+Ce qu'elle coûte vraiment, c'est de **l'attention** : y penser, choisir le moment, retrouver le contexte à chaque fois.
 
-La tâche planifiée supprime la charge mentale avant de supprimer le temps.
+Une fois planifiée, elle vous enlève d'abord cette charge mentale. Le temps gagné vient ensuite.
 
 ::: notes
-Argument à privilégier chez un dirigeant : ce n'est pas un gain de productivité, c'est un gain de disponibilité mentale.
+Chez un dirigeant, parler de disponibilité mentale retrouvée porte plus qu'un gain de productivité.
 
 Faire lister trois tâches qui passent la règle des deux fois.
 :::
@@ -118,7 +118,7 @@ Trois symptômes, trois causes :
 | Il invente des chiffres | Source absente et pas de mode de défaillance |
 | Il oublie la moitié | Trop de tâches dans une seule consigne |
 
-Aucune de ces causes n'est dans le modèle. Toutes sont dans la conception.
+À chaque fois, c'est la conception de la tâche qu'il faut revoir, pas le modèle.
 
 ::: notes
 Table utile à photographier. Elle sert de grille de dépannage après la formation, quand je ne suis plus là.

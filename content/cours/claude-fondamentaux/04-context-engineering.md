@@ -11,7 +11,7 @@ Le prompting, c'est comment vous demandez.
 Le context engineering, c'est **ce qu'il a sous les yeux** au moment de répondre.
 
 ::: notes
-La distinction n'est pas cosmétique : on passe de « bien écrire une phrase » à « concevoir un poste de travail ». C'est le module qui fait basculer vers la posture d'opérateur.
+Vrai changement de posture ici : on passe de « bien écrire une phrase » à « préparer le poste de travail du modèle ». C'est le module qui fait basculer vers la posture d'opérateur.
 :::
 
 ---
@@ -54,7 +54,7 @@ Le bloc qui grossit sans qu'on le voie, c'est l'historique. D'où la règle de l
 type: concept
 
 ### Ouvrir une nouvelle conversation
-Une conversation qui a dérivé pollue tout ce qui suit. Changer de sujet = changer de fil.
+Une conversation qui a dérivé pollue tout ce qui suit. Nouveau sujet, nouveau fil.
 
 ### Joindre plutôt que coller
 Un fichier joint est relu proprement. Un tableau collé dans le chat perd sa structure et occupe la place.
@@ -128,4 +128,4 @@ type: recap
 - Nouvelle conversation à chaque changement de sujet.
 - Joindre les fichiers, ne pas les coller.
 - Multi-sources : dire où chercher, qui fait foi, quoi faire si ça manque.
-- Le contexte stable ne se retape pas : il vit dans un fichier.
+- Le contexte stable vit dans un fichier chargé automatiquement, plus besoin de le retaper.

@@ -28,10 +28,10 @@ Avec connecteur, vous posez la question. **Il va chercher.**
 - Il ouvre les fichiers du Drive
 - Il recoupe les trois et rend un livrable
 
-Le gain n'est pas le temps de copier-coller. C'est que la question devient **posable**.
+Résultat : une question que vous ne vous seriez pas donné la peine de creuser à la main devient **posable** en dix secondes.
 
 ::: notes
-Insister sur la dernière ligne. Personne ne compile trois sources à la main pour une question qu'il se pose en passant — donc la question n'est jamais posée. C'est ça que le connecteur débloque.
+Insister sur la dernière ligne. Personne ne compile trois sources à la main pour une question qu'il se pose en passant, donc la question reste dans un coin de la tête. Le connecteur la rend accessible.
 :::
 
 ---
@@ -50,7 +50,7 @@ La règle : **brancher en lecture d'abord.** L'écriture, seulement quand le flu
 ::: notes
 Question qui vient toujours chez un dirigeant : « et mes données ? ». Y répondre franchement et tôt, sinon elle parasite tout le reste de la journée.
 
-Distinguer : accès ≠ transfert de propriété, et ce qui est branché est visible et coupable.
+Distinguer : donner un accès n'est pas céder la propriété des données. Et ce qui est branché se voit et se coupe.
 :::
 
 ---
@@ -82,7 +82,7 @@ En direct, sur le compte du participant :
 - Montrer où l'accès se révoque
 
 ::: notes
-L'étape de vérification n'est pas décorative : c'est elle qui installe la confiance, et le réflexe de ne jamais faire confiance sans vérifier au premier tour.
+La vérification fait le vrai travail ici : elle installe la confiance, et le réflexe de toujours contrôler la première réponse.
 
 Choisir volontairement une question dont on connaît la réponse.
 :::
