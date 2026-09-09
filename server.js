@@ -13,6 +13,7 @@ import { makeRunner } from './lib/runs.js';
 import { listProjects, updateProject } from './lib/projects.js';
 import { makeCalendar } from './lib/calendar.js';
 import { makeMailState } from './lib/mailstate.js';
+import { makeCalendarState } from './lib/calendarstate.js';
 import { makeStandup, slotNow } from './lib/standup.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -34,6 +35,7 @@ const todoFile = path.join(cfg.secondBrain, cfg.todoFile);
 const gmail = makeGmail(path.join(ROOT, 'credentials'), cfg.port, { secondBrain: cfg.secondBrain });
 const standup = makeStandup(cfg.secondBrain);
 const mailState = makeMailState(path.join(ROOT, 'output', 'mail-state.json'));
+const calState = makeCalendarState(path.join(ROOT, 'output', 'calendar-state.json'));
 const calendar = makeCalendar(() => gmail.accessToken(), () => gmail.status().hasCalendar, cfg.calendar ?? {});
 const runner = makeRunner(ROOT, { ...cfg.claude, apps: cfg.apps, secondBrain: cfg.secondBrain });
 
@@ -95,15 +97,22 @@ app.patch('/api/projects/:slug', (req, res) => {
 
 // Calendar — what is coming, used by the widget and by the daily briefing
 let calCache = null;
+const calOpts = () => ({ days: 7, excludeOrganizers: calState.deniedOrganizers(), isHidden: id => calState.isHidden(id) });
 app.get('/api/calendar', async (req, res) => {
   const st = gmail.status();
   if (!st.hasToken) return res.json({ needsAuth: true, events: [] });
   if (!st.hasCalendar) return res.json({ needsScope: true, events: [] });
   try {
-    if (!calCache || req.query.refresh || Date.now() - calCache.at > 300e3) calCache = { at: Date.now(), data: await calendar.upcoming({ days: 7 }) };
-    res.json(calCache.data);
+    if (!calCache || req.query.refresh || Date.now() - calCache.at > 300e3) calCache = { at: Date.now(), data: await calendar.upcoming(calOpts()) };
+    res.json({ ...calCache.data, hidden: calState.hidden() });
   } catch (e) { res.status(500).json({ error: e.message, events: [] }); }
 });
+
+// Calendar triage — hide one event, or set an organiser to never show
+const dropCalCache = () => { calCache = null; };
+app.post('/api/calendar/hide', (req, res) => { calState.hide(String(req.body.id), { title: req.body.title, start: req.body.start }); dropCalCache(); res.json({ ok: true }); });
+app.post('/api/calendar/unhide', (req, res) => { req.body.all ? calState.unhideAll() : calState.unhide(String(req.body.id)); dropCalCache(); res.json({ ok: true }); });
+app.post('/api/calendar/organizer', (req, res) => { calState.organizer(req.body.addr, req.body.rule ?? null); dropCalCache(); res.json({ ok: true }); });
 
 app.get('/api/calendar/list', async (req, res) => {
   if (!gmail.status().hasCalendar) return res.json({ needsScope: true, calendars: [] });
@@ -124,7 +133,7 @@ async function standupContext(slot) {
   }));
   let agenda = [], mails = [];
   try {
-    const c = await calendar.upcoming({ days: 14, max: 20 });
+    const c = await calendar.upcoming({ ...calOpts(), days: 14, max: 20 });
     agenda = c.events.map(e => ({ titre: e.title, debut: e.start, journee_entiere: e.allDay, avec: e.attendees, lieu: e.location, organisateur: e.organizer }));
   } catch (e) { /* calendar optional */ }
   try {
@@ -203,7 +212,7 @@ async function briefingContext() {
   const projects = listProjects(cfg.secondBrain).map(p => ({ slug: p.slug, titre: p.title, stade: p.stage, prochaine_etape: p.next, revu_le: p.updated, etapes: p.steps }));
   const todo = readTodo(todoFile);
   let events = [], mails = [];
-  try { const c = await calendar.upcoming({ days: 3, max: 12 }); events = c.events.map(e => ({ titre: e.title, debut: e.start, journee_entiere: e.allDay, avec: e.attendees, lieu: e.location })); } catch (e) { /* calendar optional */ }
+  try { const c = await calendar.upcoming({ ...calOpts(), days: 3, max: 12 }); events = c.events.map(e => ({ titre: e.title, debut: e.start, journee_entiere: e.allDay, avec: e.attendees, lieu: e.location })); } catch (e) { /* calendar optional */ }
   try {
     const g = await gmail.flagged({ ...mailOpts(), maxThreads: 8 });
     mails = g.threads.map(t => ({ de: t.from, objet: t.subject, extrait: t.snippet.slice(0, 160), recu: t.date, non_lu: t.unread, contact_connu: t.known }));
@@ -246,11 +255,14 @@ app.post('/api/reveal', (req, res) => {
   res.json({ ok: true });
 });
 
-app.listen(cfg.port, () => {
+// ALPES_OS_PORT lets a worktree run its own instance for testing without
+// ever touching the port (and process) the user's own long-running server holds.
+const PORT = Number(process.env.ALPES_OS_PORT) || cfg.port;
+app.listen(PORT, () => {
   const st = gmail.status();
-  console.log(`Alpes IA OS  →  http://localhost:${cfg.port}`);
+  console.log(`Alpes IA OS  →  http://localhost:${PORT}`);
   console.log(`second brain: ${cfg.secondBrain}`);
   if (!st.hasSecret) console.log('gmail: credentials/client_secret.json manquant (Google Cloud Console → OAuth client "Desktop app")');
-  else if (!st.hasToken) console.log(`gmail: ouvrir http://localhost:${cfg.port}/auth/google pour autoriser`);
+  else if (!st.hasToken) console.log(`gmail: ouvrir http://localhost:${PORT}/auth/google pour autoriser`);
   else console.log('gmail: autorisé');
 });
