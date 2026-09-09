@@ -31,6 +31,9 @@
     "allowedTools": "Read,Write,Edit,Glob,Grep,Bash,Skill",
     "permissionMode": "acceptEdits"
   },
+  "chat": {
+    "model": "claude-opus-5"
+  },
   "apps": [
     {
       "id": "devis",

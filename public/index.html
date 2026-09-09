@@ -268,6 +268,34 @@ a.mail, .mail {
 .su .recap b { color: var(--ink); }
 .su .err { color: var(--crit); font-size: 13.5px; }
 .su-launch { display: flex; align-items: center; gap: 8px; }
+/* ---- chat: the bottom bar doubles as the agent's input ---- */
+.legend { pointer-events: none; }
+.chat { width: min(760px, 84%); max-height: 52vh; display: none; flex-direction: column; gap: 10px; overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px;
+  box-shadow: var(--shadow-lg); pointer-events: auto; }
+.chat.on { display: flex; }
+.chat .turn { display: grid; gap: 6px; }
+.chat .me { justify-self: end; max-width: 82%; background: var(--accent-soft); color: var(--ink); border-radius: 12px 12px 4px 12px; padding: 9px 13px; font: 400 14px/1.5 var(--font); }
+.chat .bot { font: 400 14.5px/1.65 var(--font); color: var(--ink-2); }
+.chat .bot b { color: var(--ink); }
+.chat .bot h1, .chat .bot h2, .chat .bot h3 { font: 600 15px/1.3 var(--font); color: var(--ink); margin: 10px 0 4px; }
+.chat .bot ul, .chat .bot ol { margin: 0 0 8px; padding-left: 20px; }
+.chat .bot code { font: 400 12.5px var(--mono); background: var(--sunken); border-radius: 4px; padding: 2px 5px; }
+.chat .bot a { color: var(--accent); cursor: pointer; }
+.chat .act { display: flex; align-items: center; gap: 8px; font: 400 12px/1.4 var(--font); color: var(--ink-3); }
+.chat .act i { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-3); flex-shrink: 0; }
+.chat .act.run i { background: var(--warn); animation: pulse 1.2s ease-in-out infinite; }
+.chat .card { border: 1px solid var(--accent); background: var(--accent-soft); border-radius: 10px; padding: 12px 14px; display: grid; gap: 9px; }
+.chat .card b { font: 600 13.5px/1.4 var(--font); color: var(--ink); }
+.chat .card pre { margin: 0; font: 400 11.5px/1.55 var(--mono); color: var(--ink-2); white-space: pre-wrap; word-break: break-word; max-height: 150px; overflow: auto; }
+.chat .card .row { display: flex; gap: 7px; }
+.chat .thinking { font: 400 13px/1.4 var(--font); color: var(--ink-3); }
+.chat .err { color: var(--crit); font-size: 13px; }
+.chat .head { display: flex; align-items: center; gap: 8px; font: 500 11.5px/1 var(--font); color: var(--ink-3); border-bottom: 1px solid var(--line-soft); padding-bottom: 9px; }
+.chat .head .sp { flex: 1; }
+.chat .head button { border: 0; background: transparent; color: var(--ink-3); cursor: pointer; font: 500 11.5px/1 var(--font); }
+.chat .head button:hover { color: var(--accent); }
+.search .mode { font: 500 10.5px/1 var(--font); color: var(--ink-3); white-space: nowrap; }
 .auth { display: grid; gap: 10px; }
 .auth p { margin: 0; color: var(--ink-2); font-size: 13px; }
 .auth code { font: 400 12px var(--mono); color: var(--ink-3); background: var(--sunken); padding: 6px 8px; border-radius: 4px; word-break: break-all; }
@@ -524,7 +552,8 @@ a.mail, .mail {
     <div class="panel" id="panel"></div>
     <div class="legend">
       <div class="doms" id="doms"></div>
-      <label class="search"><svg><use href="#i-search"/></svg><input id="q" type="search" placeholder="Chercher un concept, un client, un projet…"><kbd>⌘K</kbd></label>
+      <div class="chat" id="chat"></div>
+      <label class="search"><svg><use href="#i-search"/></svg><input id="q" type="search" placeholder="Filtre le graphe — Entrée pour demander à l'IA"><span class="mode" id="q-mode">⏎ demander</span></label>
     </div>
   </main>
 
@@ -1076,7 +1105,14 @@ async function select(n, fromNav) {
 function center(n) { const t0 = performance.now(), fx = cam.x, fy = cam.y, fk = cam.k, tk = Math.max(cam.k, 1.8); const off = panel.classList.contains('on') ? (panel.offsetWidth / 2 + 24) / tk : 0; /* keep the node clear of the panel */ (function anim() { const p = Math.min(1, (performance.now() - t0) / 450), e = 1 - Math.pow(1 - p, 3); cam.k = fk + (tk - fk) * e; cam.x = fx + (-n.x - off - fx) * e; cam.y = fy + (-n.y - fy) * e; if (p < 1) requestAnimationFrame(anim); })(); }
 const q = $('#q');
 q.addEventListener('input', () => query = q.value.trim().toLowerCase());
-addEventListener('keydown', e => { if (e.key === 'Escape' && !su.hidden) { suClose(); return; } if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); q.focus(); } if (e.key === 'Escape') { if (!viewer.hidden) { viewer.hidden = true; return; } if (!appview.hidden) { appview.hidden = true; return; } q.value = ''; query = ''; q.blur(); select(null); $('#modal').hidden = true; } });
+q.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || !q.value.trim()) return;
+  e.preventDefault();
+  const text = q.value.trim();
+  q.value = ''; query = '';          // hand the phrase to the agent, drop the filter
+  chatSend(text);
+});
+addEventListener('keydown', e => { if (e.key === 'Escape' && !su.hidden) { suClose(); return; } if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); q.focus(); } if (e.key === 'Escape') { if (!viewer.hidden) { viewer.hidden = true; return; } if (!appview.hidden) { appview.hidden = true; return; } if (chatOpen) { chatShow(false); return; } q.value = ''; query = ''; q.blur(); select(null); $('#modal').hidden = true; } });
 
 /* ---------- resizable side columns ---------- */
 (() => {
@@ -1205,8 +1241,11 @@ async function loadAgenda() {
       </div>`;
   };
   const hiddenN = c.hidden?.length ?? 0;
+  // the chat agent can only create events once the write scope is granted
+  const needWrite = cfg.gmail && cfg.gmail.hasCalendar && !cfg.gmail.hasCalendarWrite;
   el.innerHTML = (next.length ? next.map(row).join('') : '<div class="none">Rien de prévu dans les 7 jours.</div>')
-    + (hiddenN ? `<button class="more" id="cal-more">${hiddenN} événement${hiddenN > 1 ? 's' : ''} masqué${hiddenN > 1 ? 's' : ''} · réafficher</button>` : '');
+    + (hiddenN ? `<button class="more" id="cal-more">${hiddenN} événement${hiddenN > 1 ? 's' : ''} masqué${hiddenN > 1 ? 's' : ''} · réafficher</button>` : '')
+    + (needWrite ? `<div class="scope">Pour que l'assistant puisse créer des rendez-vous, <a href="/auth/google">autorise l'écriture de l'agenda</a>.</div>` : '');
   el.querySelectorAll('[data-evhide]').forEach(b => b.onclick = async () => {
     await api('/api/calendar/hide', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: b.dataset.evhide, title: b.dataset.title, start: b.dataset.start }) });
     toast('Événement masqué'); loadAgenda();
@@ -1379,6 +1418,99 @@ async function standupOnOpen() {
     if (st.slot === 'matin' && st.hour >= 5 && st.hour < 14) startStandup('matin');
     else if (st.slot === 'soir' && st.hour >= 17) startStandup('soir');
   } catch (e) { /* never block the dashboard */ }
+}
+
+/* ---------- chat: typing filters the graph, Enter asks the agent ---------- */
+const chatEl = $('#chat');
+const chatId = (() => { try { let v = localStorage.getItem('chat-id'); if (!v) { v = String(Date.now()); localStorage.setItem('chat-id', v); } return v; } catch (e) { return 'default'; } })();
+let chatOpen = false, chatStream = null, botEl = null, chatBusy = false;
+
+function chatShow(on) {
+  chatOpen = on;
+  chatEl.classList.toggle('on', on);
+  if (on && !chatEl.querySelector('.head')) {
+    const head = document.createElement('div');
+    head.className = 'head';
+    head.innerHTML = `<span>Assistant · agit sur ton tableau de bord</span><span class="sp"></span><button id="chat-clear">Nouvelle conversation</button><button id="chat-hide">Fermer</button>`;
+    chatEl.appendChild(head);
+    $('#chat-hide').onclick = () => chatShow(false);
+    $('#chat-clear').onclick = async () => {
+      await fetch('/api/chat?id=' + encodeURIComponent(chatId), { method: 'DELETE' });
+      chatEl.querySelectorAll('.turn').forEach(n => n.remove());
+      if (chatStream) { chatStream.close(); chatStream = null; }
+      toast('Conversation repartie de zéro');
+    };
+  }
+}
+const chatAdd = (cls, html) => {
+  const el = document.createElement('div');
+  el.className = 'turn ' + cls;
+  el.innerHTML = html;
+  chatEl.appendChild(el);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  return el;
+};
+
+function chatConnect() {
+  if (chatStream) return;
+  chatStream = new EventSource('/api/chat/stream?id=' + encodeURIComponent(chatId));
+  chatStream.onmessage = e => {
+    const m = JSON.parse(e.data);
+    if (m.type === 'text') {
+      // the agent's prose arrives token by token; keep appending to one block
+      if (!botEl) { botEl = chatAdd('bot', ''); botEl.dataset.raw = ''; chatEl.querySelector('.thinking')?.remove(); }
+      botEl.dataset.raw += m.text;
+      botEl.innerHTML = md(botEl.dataset.raw);
+      chatEl.scrollTop = chatEl.scrollHeight;
+      return;
+    }
+    if (m.type === 'tool') {
+      chatEl.querySelector('.thinking')?.remove();
+      const label = { chercher_second_brain: 'cherche dans le second brain', lire_note: 'lit une note', lister_projets: 'regarde les projets', lire_todo: 'regarde la todo', lister_agenda: "regarde l'agenda", lister_mails: 'regarde la boîte', lire_journal_standup: 'relit les stand-ups' }[m.name] ?? m.name.replace(/_/g, ' ');
+      const arg = m.input?.requete ?? m.input?.chemin ?? m.input?.titre ?? m.input?.texte ?? '';
+      chatAdd('', `<div class="act run"><i></i>${esc(label)}${arg ? ' · ' + esc(String(arg).slice(0, 60)) : ''}</div>`);
+      botEl = null;
+      return;
+    }
+    if (m.type === 'confirm') {
+      const el = chatAdd('', `<div class="card" data-key="${esc(m.key)}">
+        <b>${esc(m.summary)}</b>
+        <pre>${esc(JSON.stringify(m.details, null, 1))}</pre>
+        <div class="row"><button class="btn acc" data-yes>Valider</button><button class="btn" data-no>Annuler</button></div>
+      </div>`);
+      const decide = approved => fetch('/api/chat/decision', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: chatId, key: m.key, approved }) });
+      el.querySelector('[data-yes]').onclick = () => { decide(true); el.querySelector('.row').innerHTML = '<span class="act">validé</span>'; };
+      el.querySelector('[data-no]').onclick = () => { decide(false); el.querySelector('.row').innerHTML = '<span class="act">annulé</span>'; };
+      botEl = null;
+      return;
+    }
+    if (m.type === 'confirm-gone') {
+      const card = chatEl.querySelector(`.card[data-key="${m.key}"] .row`);
+      if (card && card.querySelector('button')) card.innerHTML = '<span class="act">expiré</span>';
+      return;
+    }
+    if (m.type === 'done') {
+      chatBusy = false;
+      chatEl.querySelector('.thinking')?.remove();
+      if (m.error) chatAdd('', `<div class="err">${esc(m.error)}</div>`);
+      botEl = null;
+      // the agent may have changed things behind the scenes
+      loadTodo(); loadProjects(); loadAgenda();
+      return;
+    }
+    if (m.type === 'closed') { chatStream?.close(); chatStream = null; }
+  };
+  chatStream.onerror = () => { chatStream?.close(); chatStream = null; };
+}
+
+function chatSend(text) {
+  chatShow(true);
+  chatConnect();
+  chatAdd('', `<div class="me">${esc(text)}</div>`);
+  chatAdd('', '<div class="thinking">…</div>');
+  botEl = null; chatBusy = true;
+  fetch('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: chatId, text }) })
+    .then(r => r.json()).then(r => { if (r.error) { chatEl.querySelector('.thinking')?.remove(); chatAdd('', `<div class="err">${esc(r.error)}</div>`); chatBusy = false; } });
 }
 
 /* ---------- boot ---------- */

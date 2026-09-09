@@ -7,13 +7,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getGraph, readNote } from './lib/brain.js';
-import { readTodo, writeTodo, completeCarried } from './lib/todo.js';
+import { readTodo, writeTodo, completeCarried, addItem } from './lib/todo.js';
 import { makeGmail } from './lib/gmail.js';
 import { makeRunner } from './lib/runs.js';
-import { listProjects, updateProject } from './lib/projects.js';
+import { listProjects, updateProject, createProject } from './lib/projects.js';
 import { makeCalendar } from './lib/calendar.js';
 import { makeMailState } from './lib/mailstate.js';
 import { makeCalendarState } from './lib/calendarstate.js';
+import { searchBrain } from './lib/search.js';
+import { makeChat } from './lib/chat.js';
 import { makeStandup, slotNow } from './lib/standup.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -37,6 +39,9 @@ const standup = makeStandup(cfg.secondBrain);
 const mailState = makeMailState(path.join(ROOT, 'output', 'mail-state.json'));
 const calState = makeCalendarState(path.join(ROOT, 'output', 'calendar-state.json'));
 const calendar = makeCalendar(() => gmail.accessToken(), () => gmail.status().hasCalendar, cfg.calendar ?? {});
+const PORT = Number(process.env.ALPES_OS_PORT) || cfg.port;
+const chat = makeChat(ROOT, { port: PORT, bin: cfg.claude.bin, model: cfg.chat?.model ?? 'claude-opus-5' });
+setInterval(() => chat.sweep(), 5 * 60e3).unref();
 const runner = makeRunner(ROOT, { ...cfg.claude, apps: cfg.apps, secondBrain: cfg.secondBrain });
 
 const app = express();
@@ -206,6 +211,52 @@ app.post('/api/standup/compose', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Search — full text across the second brain, for the chat agent and anything else
+app.get('/api/search', (req, res) => {
+  try { res.json(searchBrain(cfg.secondBrain, String(req.query.q ?? ''), { limit: Number(req.query.limit) || 8 })); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/projects', (req, res) => {
+  try { res.json(createProject(cfg.secondBrain, req.body ?? {})); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.post('/api/todo/add', (req, res) => {
+  try { res.json(addItem(todoFile, req.body ?? {})); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.post('/api/calendar/event', async (req, res) => {
+  if (!gmail.status().hasCalendarWrite) return res.status(403).json({ error: "l'écriture agenda n'est pas autorisée : reconnecte Google depuis le widget Aujourd'hui" });
+  try { const e = await calendar.createEvent(req.body ?? {}); dropCalCache(); res.json(e); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+// Chat — the agent behind the bottom bar. One SSE stream per conversation, the
+// message goes in over POST, and writes come back as confirmation cards.
+app.get('/api/chat/stream', (req, res) => {
+  const id = String(req.query.id ?? 'default');
+  res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
+  res.write(': ok\n\n');
+  const off = chat.subscribe(id, msg => res.write(`data: ${JSON.stringify(msg)}\n\n`));
+  const beat = setInterval(() => res.write(': ping\n\n'), 20e3);
+  req.on('close', () => { clearInterval(beat); off(); });
+});
+app.post('/api/chat', (req, res) => {
+  const text = String(req.body?.text ?? '').trim();
+  if (!text) return res.status(400).json({ error: 'message vide' });
+  try { res.json(chat.send(String(req.body.id ?? 'default'), text)); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.post('/api/chat/decision', (req, res) => res.json(chat.decide(String(req.body?.id ?? 'default'), String(req.body?.key ?? ''), !!req.body?.approved)));
+app.delete('/api/chat', (req, res) => { chat.close(String(req.query.id ?? 'default')); res.json({ ok: true }); });
+// called by the MCP server, which blocks until the user decides
+app.post('/api/chat/propose', async (req, res) => {
+  try { res.json(await chat.propose(String(req.body?.id ?? 'default'), req.body?.action ?? {})); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // Daily briefing — the server assembles what the agent cannot reach on its own
 // (live mail and calendar) and hands it over as context for the /briefing skill.
 async function briefingContext() {
@@ -255,9 +306,8 @@ app.post('/api/reveal', (req, res) => {
   res.json({ ok: true });
 });
 
-// ALPES_OS_PORT lets a worktree run its own instance for testing without
-// ever touching the port (and process) the user's own long-running server holds.
-const PORT = Number(process.env.ALPES_OS_PORT) || cfg.port;
+// ALPES_OS_PORT (resolved above) lets a worktree run its own instance for testing
+// without ever touching the port the user's own long-running server holds.
 app.listen(PORT, () => {
   const st = gmail.status();
   console.log(`Alpes IA OS  →  http://localhost:${PORT}`);
