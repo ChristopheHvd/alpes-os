@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getGraph, readNote } from './lib/brain.js';
-import { readTodo, writeTodo } from './lib/todo.js';
+import { readTodo, writeTodo, completeCarried } from './lib/todo.js';
 import { makeGmail } from './lib/gmail.js';
 import { makeRunner } from './lib/runs.js';
 import { listProjects, updateProject } from './lib/projects.js';
@@ -15,12 +15,24 @@ import { makeCalendar } from './lib/calendar.js';
 import { makeMailState } from './lib/mailstate.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
-const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'config/config.json'), 'utf8'));
-const branding = JSON.parse(fs.readFileSync(path.join(ROOT, 'config/branding.json'), 'utf8'));
+// Local config stays out of git: it holds real paths, identity and bank details.
+// On a fresh clone, seed each file from its .example.json neighbour.
+function loadConfig(name) {
+  const real = path.join(ROOT, 'config', `${name}.json`);
+  const example = path.join(ROOT, 'config', `${name}.example.json`);
+  if (!fs.existsSync(real)) {
+    if (!fs.existsSync(example)) throw new Error(`config/${name}.json manquant et aucun modèle à côté`);
+    fs.copyFileSync(example, real);
+    console.log(`config/${name}.json créé depuis le modèle — à compléter avant usage`);
+  }
+  return JSON.parse(fs.readFileSync(real, 'utf8'));
+}
+const cfg = loadConfig('config');
+const branding = loadConfig('branding');
 const todoFile = path.join(cfg.secondBrain, cfg.todoFile);
 const gmail = makeGmail(path.join(ROOT, 'credentials'), cfg.port, { secondBrain: cfg.secondBrain });
 const mailState = makeMailState(path.join(ROOT, 'output', 'mail-state.json'));
-const calendar = makeCalendar(() => gmail.accessToken(), () => gmail.status().hasCalendar);
+const calendar = makeCalendar(() => gmail.accessToken(), () => gmail.status().hasCalendar, cfg.calendar ?? {});
 const runner = makeRunner(ROOT, { ...cfg.claude, apps: cfg.apps, secondBrain: cfg.secondBrain });
 
 const app = express();
@@ -39,6 +51,7 @@ app.get('/api/note', (req, res) => { const n = readNote(cfg.secondBrain, String(
 // Todo — markdown file in the second brain
 app.get('/api/todo', (req, res) => res.json(readTodo(todoFile)));
 app.put('/api/todo', (req, res) => res.json(writeTodo(todoFile, Array.isArray(req.body.items) ? req.body.items : [])));
+app.post('/api/todo/carried', (req, res) => res.json(completeCarried(todoFile, String(req.body.from), String(req.body.t), req.body.done !== false)));
 
 // Applications — Gmail
 app.get('/auth/google', (req, res) => { const u = gmail.authUrl(); u ? res.redirect(u) : res.status(400).send('credentials/client_secret.json manquant'); });
@@ -55,7 +68,7 @@ app.get('/api/gmail', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Mail triage — what Christophe decided about each thread and each sender
+// Mail triage — what the user decided about each thread and each sender
 const dropCache = () => { gmailCache = null; };
 app.get('/api/mail/state', (req, res) => res.json(mailState.get()));
 app.post('/api/mail/hide', (req, res) => { mailState.hide(String(req.body.id), { subject: req.body.subject, from: req.body.from }); dropCache(); res.json({ ok: true }); });
@@ -88,6 +101,12 @@ app.get('/api/calendar', async (req, res) => {
     if (!calCache || req.query.refresh || Date.now() - calCache.at > 300e3) calCache = { at: Date.now(), data: await calendar.upcoming({ days: 7 }) };
     res.json(calCache.data);
   } catch (e) { res.status(500).json({ error: e.message, events: [] }); }
+});
+
+app.get('/api/calendar/list', async (req, res) => {
+  if (!gmail.status().hasCalendar) return res.json({ needsScope: true, calendars: [] });
+  try { res.json({ calendars: await calendar.calendars(), configured: cfg.calendar ?? {} }); }
+  catch (e) { res.status(500).json({ error: e.message, calendars: [] }); }
 });
 
 // Daily briefing — the server assembles what the agent cannot reach on its own

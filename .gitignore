@@ -1,11 +1,14 @@
-node_modules/
-credentials/
-output/
+node_modules
+credentials
+output
 runs.log
 .DS_Store
-# Real identity, SIRET, NDA and bank details — never versioned.
-# Copy config/branding.example.json to config/branding.json and fill it in.
+
+# Local configuration: paths, real identity, SIRET, NDA and bank details.
+# Copy the .example.json files next to them and fill them in.
+config/config.json
 config/branding.json
 
-# Claude Code worktree metadata
-.claude/worktrees/
+# Claude Code local settings. The three skills this dashboard runs live in the
+# private second brain and are exposed through ~/.claude/skills/ by symlink.
+.claude/

@@ -577,9 +577,16 @@ function renderTodo() {
   $('#pcount').textContent = `${d}/${todo.items.length}`;
   $('#todo-src').textContent = 'second-brain/brain/journal/todo.md';
 }
-$('#todo').addEventListener('change', e => {
+$('#todo').addEventListener('change', async e => {
   const i = +e.target.dataset.i;
-  if (e.target.dataset.c === '1') { const t = todo.carried[i]; todo.items.push({ ...t, done: true, from: undefined }); } else todo.items[i].done = e.target.checked;
+  if (e.target.dataset.c === '1') {
+    // close it in the day it came from, rather than copying it into today
+    const t = todo.carried[i];
+    todo = await api('/api/todo/carried', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ from: t.from, t: t.t, done: e.target.checked }) });
+    renderTodo();
+    return;
+  }
+  todo.items[i].done = e.target.checked;
   saveTodo();
 });
 $('#todo').addEventListener('click', e => { if (e.target.classList.contains('del')) { todo.items.splice(+e.target.dataset.i, 1); saveTodo(); } });
@@ -1117,7 +1124,8 @@ async function loadAgenda() {
     const d = new Date(e.start), isToday = d.toDateString() === today;
     const hour = e.allDay ? 'journée' : d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
     const day = isToday ? '' : d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
-    return `<a class="ev" href="${e.url}" target="_blank" rel="noopener"><span class="h">${hour}${day ? `<small>${day}</small>` : ''}</span><span class="t">${esc(e.title)}${e.attendees.length ? `<small>avec ${esc(e.attendees.join(', '))}</small>` : ''}</span></a>`;
+    const who = [e.calendar, e.organizer].filter(Boolean).join(' · ');
+    return `<a class="ev" href="${e.url}" target="_blank" rel="noopener" title="${esc(who)}"><span class="h">${hour}${day ? `<small>${day}</small>` : ''}</span><span class="t">${esc(e.title)}${e.attendees.length ? `<small>avec ${esc(e.attendees.join(', '))}</small>` : ''}</span></a>`;
   }).join('') : '<div class="none">Rien de prévu dans les 7 jours.</div>';
 }
 

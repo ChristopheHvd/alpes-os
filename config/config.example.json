@@ -1,6 +1,6 @@
 {
   "port": 4545,
-  "secondBrain": "/Users/christophehavard/Code/second-brain",
+  "secondBrain": "/chemin/vers/second-brain",
   "brainFolders": [
     "brain",
     "skills",
@@ -18,6 +18,12 @@
       "allow": [],
       "deny": []
     }
+  },
+  "calendar": {
+    "calendars": [
+      "primary"
+    ],
+    "excludeOrganizers": []
   },
   "claude": {
     "bin": "claude",
@@ -37,12 +43,12 @@
         {
           "id": "devis",
           "label": "Nouveau devis",
-          "placeholder": "Client, prestation, dates, prix HT, conditions. Ex : Simatis, formation Claude 2 jours les 21/09 et 08/10, 1800 €, acompte 30 %"
+          "placeholder": "Client, prestation, dates, prix HT, conditions. Ex : MantisCorp, formation Claude 2 jours, 1 500 €, acompte 30 %"
         },
         {
           "id": "facture",
           "label": "Nouvelle facture",
-          "placeholder": "Client, devis associé, montant ou % d'acompte, échéance. Ex : facture de solde 70 % sur DEV-2026-004"
+          "placeholder": "Client, devis associé, montant ou % d'acompte, échéance. Ex : facture de solde 70 % sur DEV-2026-001"
         }
       ],
       "skillsUsed": [
@@ -62,7 +68,7 @@
         {
           "id": "programme",
           "label": "Nouveau programme",
-          "placeholder": "Sujet, public, durée, niveau, objectif final. Ex : n8n pour Atomic Digitale, 2 jours, 12 personnes, non-devs, automatiser un process métier"
+          "placeholder": "Sujet, public, durée, niveau, objectif final. Ex : n8n pour MantisCorp, 2 jours, 12 personnes, non-devs, automatiser un process métier"
         },
         {
           "id": "audit",
@@ -88,7 +94,7 @@
         {
           "id": "jour",
           "label": "Composer ma journée",
-          "placeholder": "Optionnel : une contrainte du jour. Ex : après-midi bloqué, priorité à PoleBox"
+          "placeholder": "Optionnel : une contrainte du jour. Ex : après-midi bloqué, priorité au projet mobile"
         }
       ],
       "skillsUsed": [
