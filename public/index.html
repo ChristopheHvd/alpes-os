@@ -1486,7 +1486,7 @@ function chatConnect() {
     }
     if (m.type === 'confirm-gone') {
       const card = chatEl.querySelector(`.card[data-key="${m.key}"] .row`);
-      if (card && card.querySelector('button')) card.innerHTML = '<span class="act">expiré</span>';
+      if (card && card.querySelector('button')) card.innerHTML = '<span class="act">expiré · sans réponse à temps</span>';
       return;
     }
     if (m.type === 'done') {
