@@ -184,8 +184,9 @@ app.post('/api/standup/compose', async (req, res) => {
   const answers = req.body?.answers ?? {};
   try {
     const ctx = await standupContext(slot);
-    // journal the exchange first: what was said must survive a failed composition
-    standup.append({ date: ctx.date, slot, questions, answers });
+    // journal the exchange first: what was said must survive a failed composition.
+    // A retry resends the same answers, so skip it if already journaled.
+    if (!standup.hasExchange(ctx.date, slot, questions)) standup.append({ date: ctx.date, slot, questions, answers });
     const out = path.join(ROOT, 'output', 'standup', `compose-${ctx.date}-${slot}.md`);
     const withAnswers = { ...ctx, reponses: questions.map(q => ({ question: q.text, reponse: String(answers[q.id] ?? '').trim() })) };
     const r = await runStandup('compose',

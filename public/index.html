@@ -1204,9 +1204,21 @@ let briefWatch = null;
 const su = $('#standup');
 let suState = null;   // { slot, greeting, questions[], answers{}, i }
 
+// Answering is meant to take a moment, so an accidental click on the backdrop
+// must never close this — only the cross or Escape do. Progress survives a
+// close either way: it is saved to localStorage after every answer.
 const suClose = () => { su.hidden = true; };
 $('#su-close').onclick = suClose;
-su.addEventListener('click', e => { if (e.target === su) suClose(); });
+
+const suKey = slot => `standup-progress-${slot}`;
+function suSaveProgress() {
+  if (!suState || suState.phase !== 'ask') return;
+  try { localStorage.setItem(suKey(suState.slot), JSON.stringify({ date: suState.date, greeting: suState.greeting, questions: suState.questions, answers: suState.answers, i: suState.i })); } catch (e) {}
+}
+function suLoadProgress(slot) {
+  try { const raw = localStorage.getItem(suKey(slot)); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+}
+function suClearProgress(slot) { try { localStorage.removeItem(suKey(slot)); } catch (e) {} }
 
 function suRender() {
   const body = $('#su-body'), foot = $('#su-foot'), step = $('#su-step');
@@ -1270,6 +1282,7 @@ function suRender() {
   const prev = $('#su-prev'); if (prev) prev.onclick = () => { keep(); suState.i--; suRender(); };
   $('#su-skip').onclick = () => { suState.answers[q.id] = ''; suAdvance(); };
   $('#su-next').onclick = suNext;
+  suSaveProgress();
 }
 function suNext() { const q = suState.questions[suState.i]; const ta = $('#su-a'); if (ta) suState.answers[q.id] = ta.value.trim(); suAdvance(); }
 function suAdvance() {
@@ -1278,13 +1291,23 @@ function suAdvance() {
 }
 
 async function startStandup(slot) {
-  suState = { phase: 'loading', slot, answers: {}, i: 0, questions: [] };
   $('#su-title').textContent = slot === 'soir' ? 'Bilan du soir' : 'Point du matin';
-  su.hidden = false; suRender();
+  su.hidden = false;
+
+  // resume where it was left off rather than asking the same questions twice
+  const today = new Date().toISOString().slice(0, 10);
+  const saved = suLoadProgress(slot);
+  if (saved && saved.date === today && saved.questions?.length) {
+    suState = { phase: 'ask', slot, date: saved.date, greeting: saved.greeting, questions: saved.questions, answers: saved.answers, i: Math.min(saved.i, saved.questions.length - 1) };
+    return suRender();
+  }
+
+  suState = { phase: 'loading', slot, date: today, answers: {}, i: 0, questions: [] };
+  suRender();
   try {
     const r = await api('/api/standup/questions', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ slot }) });
     if (r.error || !r.questions?.length) throw new Error(r.error || 'aucune question produite');
-    suState = { ...suState, phase: 'ask', greeting: r.greeting, questions: r.questions };
+    suState = { ...suState, phase: 'ask', date: r.date || today, greeting: r.greeting, questions: r.questions };
   } catch (e) { suState = { ...suState, phase: 'error', error: e.message }; }
   suRender();
 }
@@ -1294,6 +1317,7 @@ async function suCompose() {
     const r = await api('/api/standup/compose', { method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ slot: suState.slot, questions: suState.questions, answers: suState.answers }) });
     if (r.error) throw new Error(r.error);
+    suClearProgress(suState.slot);
     suState = { ...suState, phase: 'done', outcome: r.outcome };
     loadTodo(); loadProjects(); loadRuns();
   } catch (e) { suState = { ...suState, phase: 'error', error: e.message }; }
