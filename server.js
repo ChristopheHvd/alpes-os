@@ -17,6 +17,7 @@ import { makeCalendarState } from './lib/calendarstate.js';
 import { searchBrain } from './lib/search.js';
 import { makeChat } from './lib/chat.js';
 import { makeStandup, slotNow } from './lib/standup.js';
+import { makeChatLog } from './lib/chatlog.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 // Local config stays out of git: it holds real paths, identity and bank details.
@@ -40,7 +41,8 @@ const mailState = makeMailState(path.join(ROOT, 'output', 'mail-state.json'));
 const calState = makeCalendarState(path.join(ROOT, 'output', 'calendar-state.json'));
 const calendar = makeCalendar(() => gmail.accessToken(), () => gmail.status().hasCalendar, cfg.calendar ?? {});
 const PORT = Number(process.env.ALPES_OS_PORT) || cfg.port;
-const chat = makeChat(ROOT, { port: PORT, bin: cfg.claude.bin, model: cfg.chat?.model ?? 'claude-opus-5' });
+const chatLog = makeChatLog(cfg.secondBrain);
+const chat = makeChat(ROOT, { port: PORT, bin: cfg.claude.bin, model: cfg.chat?.model ?? 'claude-opus-5', log: chatLog });
 setInterval(() => chat.sweep(), 5 * 60e3).unref();
 const runner = makeRunner(ROOT, { ...cfg.claude, apps: cfg.apps, secondBrain: cfg.secondBrain });
 
@@ -100,7 +102,7 @@ app.patch('/api/projects/:slug', (req, res) => {
   p ? res.json(p) : res.status(404).json({ error: 'projet introuvable' });
 });
 
-// Calendar — what is coming, used by the widget and by the daily briefing
+// Calendar — what is coming, used by the widget and by the daily standup
 let calCache = null;
 const calOpts = () => ({ days: 7, excludeOrganizers: calState.deniedOrganizers(), isHidden: id => calState.isHidden(id) });
 app.get('/api/calendar', async (req, res) => {
@@ -249,6 +251,13 @@ app.post('/api/chat', (req, res) => {
   try { res.json(chat.send(String(req.body.id ?? 'default'), text)); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
+// Past conversations, read back from the second brain: without an id the list,
+// with one the transcript.
+app.get('/api/chat/log', (req, res) => {
+  const id = req.query.id ? String(req.query.id) : '';
+  if (id) return res.json(chatLog.one(id) ?? { id, body: '' });
+  res.json(chatLog.sessions().map(({ body, ...s }) => s));
+});
 app.post('/api/chat/decision', (req, res) => res.json(chat.decide(String(req.body?.id ?? 'default'), String(req.body?.key ?? ''), !!req.body?.approved)));
 app.delete('/api/chat', (req, res) => { chat.close(String(req.query.id ?? 'default')); res.json({ ok: true }); });
 // called by the MCP server, which blocks until the user decides
@@ -257,27 +266,20 @@ app.post('/api/chat/propose', async (req, res) => {
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Daily briefing — the server assembles what the agent cannot reach on its own
-// (live mail and calendar) and hands it over as context for the /briefing skill.
-async function briefingContext() {
-  const projects = listProjects(cfg.secondBrain).map(p => ({ slug: p.slug, titre: p.title, stade: p.stage, prochaine_etape: p.next, revu_le: p.updated, etapes: p.steps }));
-  const todo = readTodo(todoFile);
-  let events = [], mails = [];
-  try { const c = await calendar.upcoming({ ...calOpts(), days: 3, max: 12 }); events = c.events.map(e => ({ titre: e.title, debut: e.start, journee_entiere: e.allDay, avec: e.attendees, lieu: e.location })); } catch (e) { /* calendar optional */ }
-  try {
-    const g = await gmail.flagged({ ...mailOpts(), maxThreads: 8 });
-    mails = g.threads.map(t => ({ de: t.from, objet: t.subject, extrait: t.snippet.slice(0, 160), recu: t.date, non_lu: t.unread, contact_connu: t.known }));
-  } catch (e) { /* mail optional */ }
-  return { date: new Date().toISOString().slice(0, 10), consignes_boite: mailState.get().notes, projets: projects, agenda: events, mails_a_traiter: mails, todo_du_jour: todo.items, taches_reportees: todo.carried };
-}
-app.get('/api/briefing/context', async (req, res) => res.json(await briefingContext()));
+// "Sans questions" — the same composition as the stand-up, minus the interview.
+// It used to be its own /briefing skill; standup's `compose` does exactly this
+// when `reponses` is empty, so there is one skill instead of two.
 app.post('/api/briefing', async (req, res) => {
-  const a = cfg.apps.find(x => x.id === 'briefing');
-  if (!a) return res.status(404).json({ error: 'app briefing absente de la config' });
-  const ctx = await briefingContext();
-  const note = String(req.body?.brief ?? '').trim();
-  const brief = `${note || 'Compose ma journée à partir du contexte ci-dessous.'}\n\nCONTEXTE:\n${JSON.stringify(ctx, null, 1)}`;
-  res.json(runner.start({ app: a, action: a.actions[0], brief, model: req.body?.model }));
+  try {
+    const slot = req.body?.slot || slotNow();
+    const ctx = await standupContext(slot);
+    const a = cfg.apps.find(x => x.id === 'standup');
+    const act = a?.actions.find(x => x.id === 'compose');
+    if (!a || !act) return res.status(404).json({ error: "l'app standup est absente de la config" });
+    const out = path.join(ROOT, 'output', 'standup', `compose-${ctx.date}-${slot}.md`);
+    const brief = `compose\n\nMoment : ${slot}. Aucune réponse à exploiter, compose à partir du seul contexte. Écris le compte rendu dans ${out}.\n\nCONTEXTE:\n${JSON.stringify({ ...ctx, reponses: [] }, null, 1)}`;
+    res.json(runner.start({ app: a, action: act, brief, model: req.body?.model ?? a.model }));
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/artifacts', (req, res) => res.json(runner.artifacts(req.query.app ? String(req.query.app) : null)));
