@@ -169,6 +169,13 @@ button { font-family: inherit; color: inherit; }
 .slide .md figure.shot figcaption {
   font-size: clamp(12px, 1.15vw, 15px); color: var(--ink-3); text-align: center;
 }
+.slide .md figure.shot:has(+ figure.shot), .slide .md figure.shot + figure.shot {
+  display: inline-flex; vertical-align: top; width: calc(50% - .35em);
+}
+.slide .md figure.shot:has(+ figure.shot) { margin-right: .5em; }
+.slide .md figure.shot:has(+ figure.shot) img, .slide .md figure.shot + figure.shot img {
+  max-width: 100%; max-height: 40vh;
+}
 
 /* ---------- slide types ---------- */
 /* titre : plein cadre, la couverture du module */
