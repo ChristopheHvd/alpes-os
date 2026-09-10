@@ -182,14 +182,18 @@ Règle de gestion : mesurer le coût **par tâche terminée**, pas par requête.
 ## Où est ce réglage, concrètement
 type: concept
 
-**Dans l'application grand public** — vous choisissez le modèle dans un menu, et parfois vous activez un mode de réflexion approfondie. Le curseur fin est décidé pour vous.
+**Dans l'application grand public** — un menu pour le modèle, et juste dessous un réglage d'effort. Trois niveaux ici, réglé sur « moyen » par défaut.
 
-**Dans l'API et les outils de développement** — le réglage est explicite, cran par cran, requête par requête.
+![Le sélecteur de modèle et d'effort, dans l'application Claude](img/claude-selecteur-modele-effort.png)
+
+**Dans l'API et les outils de développement** — les cinq crans, requête par requête.
 
 **Dans une tâche planifiée** — c'est là que ça compte le plus : elle tourne cent fois sans vous. Un cran de trop, multiplié par cent, se voit sur la facture ; un cran de moins sur une tâche à arbitrages produit cent résultats médiocres que personne ne relit.
 
 ::: notes
-Adapter selon l'accès du participant. Pour {{client.prenom}}, l'essentiel se joue dans l'app : choix du modèle et activation du mode réflexion.
+Adapter selon l'accès du participant. Pour {{client.prenom}}, l'essentiel se joue dans l'app : le choix du modèle et le réglage d'effort, tous deux dans le même menu.
+
+Faire ouvrir le menu en direct sur sa machine. Montrer que « moyen » est le défaut, et qu'on peut descendre à « faible » pour les tâches simples.
 
 Le point sur les tâches planifiées prépare le module 9. Y revenir explicitement à ce moment-là.
 :::
