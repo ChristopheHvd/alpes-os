@@ -306,6 +306,15 @@ a.mail, .mail {
   .chat .thinking i { animation-name: pulse; animation-duration: 1.6s; opacity: 1; }
 }
 .chat .err { color: var(--crit); font-size: 13px; }
+/* Reply to the open thread from inside the window; the bottom bar starts new
+   ones. Sticky so it stays in reach while the turns above it scroll. */
+.chat .composer { position: sticky; bottom: -16px; margin: 2px -18px -16px; padding: 10px 18px 14px;
+  background: var(--surface); border-top: 1px solid var(--line-soft); }
+.chat .composer textarea { width: 100%; resize: none; display: block; box-sizing: border-box;
+  border: 1px solid var(--line); border-radius: 9px; background: var(--bg); color: var(--ink);
+  font: 400 14px/1.5 var(--font); padding: 9px 12px; min-height: 38px; max-height: 132px; outline: none; }
+.chat .composer textarea:focus { border-color: var(--accent); }
+.chat.hist .composer { display: none; }
 .chat .head { display: flex; align-items: center; gap: 8px; font: 500 11.5px/1 var(--font); color: var(--ink-3); border-bottom: 1px solid var(--line-soft); padding-bottom: 9px; }
 .chat .head .sp { flex: 1; }
 .chat .head button { border: 0; background: transparent; color: var(--ink-3); cursor: pointer; font: 500 11.5px/1 var(--font); }
@@ -394,7 +403,11 @@ a.mail, .mail {
 .dom:hover { border-color: var(--c); }
 .dom.on { border-color: var(--c); color: var(--ink); box-shadow: inset 0 0 0 1px var(--c), var(--shadow); }
 .dom.off { opacity: .4; }
-.search { display: flex; align-items: center; gap: 10px; width: 440px; max-width: 80%; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 10px 13px; box-shadow: var(--shadow); pointer-events: auto; }
+.omni { display: flex; align-items: stretch; gap: 8px; max-width: 84%; pointer-events: auto; }
+.search { display: flex; align-items: center; gap: 10px; width: 440px; max-width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 10px 13px; box-shadow: var(--shadow); }
+.histbtn { width: auto; height: auto; padding: 0 11px; box-shadow: var(--shadow); color: var(--ink-3); }
+.histbtn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+.histbtn:hover { color: var(--accent); border-color: var(--accent); }
 .search:focus-within { border-color: var(--accent); }
 .search svg { width: 15px; height: 15px; stroke: var(--ink-3); fill: none; stroke-width: 1.8; }
 .search input { flex: 1; background: transparent; border: 0; color: var(--ink); font: 400 13.5px var(--font); outline: none; }
@@ -568,7 +581,10 @@ a.mail, .mail {
     <div class="legend">
       <div class="doms" id="doms"></div>
       <div class="chat" id="chat"></div>
-      <label class="search"><svg><use href="#i-search"/></svg><input id="q" type="search" placeholder="Filtre le graphe — Entrée pour demander à l'IA"><span class="mode" id="q-mode">⏎ demander</span></label>
+      <div class="omni">
+        <label class="search"><svg><use href="#i-search"/></svg><input id="q" type="search" placeholder="Filtre le graphe — Entrée pour une nouvelle question"><span class="mode" id="q-mode">⏎ demander</span></label>
+        <button class="icobtn histbtn" id="q-hist" title="Historique des conversations"><svg><use href="#i-clock"/></svg></button>
+      </div>
     </div>
   </main>
 
@@ -1149,8 +1165,9 @@ q.addEventListener('keydown', e => {
   e.preventDefault();
   const text = q.value.trim();
   q.value = ''; query = '';          // hand the phrase to the agent, drop the filter
-  chatSend(text);
+  chatAsk(text);                     // the bottom bar always starts a new thread
 });
+$('#q-hist').onclick = () => { chatShow(true); chatEl.querySelector('.histpane') ? chatBack() : chatHistory(); };
 addEventListener('keydown', e => { if (e.key === 'Escape' && !su.hidden) { suClose(); return; } if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); q.focus(); } if (e.key === 'Escape') { if (!viewer.hidden) { viewer.hidden = true; return; } if (!appview.hidden) { appview.hidden = true; return; } if (chatOpen) { chatShow(false); return; } q.value = ''; query = ''; q.blur(); select(null); $('#modal').hidden = true; } });
 
 /* ---------- resizable side columns ---------- */
@@ -1471,26 +1488,35 @@ function chatShow(on) {
   if (on && !chatEl.querySelector('.head')) {
     const head = document.createElement('div');
     head.className = 'head';
-    head.innerHTML = `<span>Assistant · agit sur ton tableau de bord</span><span class="sp"></span><button id="chat-log">Historique</button><button id="chat-clear">Nouvelle conversation</button><button id="chat-hide">Fermer</button>`;
-    chatEl.appendChild(head);
+    head.innerHTML = `<span>Assistant · agit sur ton tableau de bord</span><span class="sp"></span><button id="chat-log">Historique</button><button id="chat-hide">Fermer</button>`;
+    chatEl.prepend(head);   // header first, whatever turns chatReplay already dropped in
     $('#chat-hide').onclick = () => chatShow(false);
     $('#chat-log').onclick = () => (chatEl.querySelector('.histpane') ? chatBack() : chatHistory());
-    $('#chat-clear').onclick = async () => {
-      await fetch('/api/chat?id=' + encodeURIComponent(chatId), { method: 'DELETE' });
-      chatBack();
-      chatEl.querySelectorAll('.turn').forEach(n => n.remove());
-      if (chatStream) { chatStream.close(); chatStream = null; }
-      // a fresh id, so the new conversation gets its own section in the journal
-      try { chatIdSet(String(Date.now())); } catch (e) { /* private mode */ }
-      toast('Conversation repartie de zéro');
-    };
+
+    // Replying to the thread on screen. The bottom bar (chatAsk) opens new ones.
+    const composer = document.createElement('div');
+    composer.className = 'composer';
+    composer.innerHTML = '<textarea rows="1" placeholder="Répondre…"></textarea>';
+    chatEl.appendChild(composer);
+    const ta = composer.querySelector('textarea');
+    const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 132) + 'px'; };
+    ta.addEventListener('input', grow);
+    ta.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' || e.shiftKey) return;
+      e.preventDefault();
+      const v = ta.value.trim();
+      if (!v) return;
+      ta.value = ''; grow();
+      chatSend(v);
+    });
   }
 }
 const chatAdd = (cls, html) => {
   const el = document.createElement('div');
   el.className = 'turn ' + cls;
   el.innerHTML = html;
-  chatEl.appendChild(el);
+  // the composer, once built, is pinned last — turns slot in before it
+  chatEl.insertBefore(el, chatEl.querySelector('.composer'));
   chatEl.scrollTop = chatEl.scrollHeight;
   return el;
 };
@@ -1505,7 +1531,7 @@ async function chatHistory() {
   const pane = document.createElement('div');
   pane.className = 'histpane';
   pane.innerHTML = '<div class="log"><div class="none">…</div></div>';
-  chatEl.appendChild(pane);
+  chatEl.insertBefore(pane, chatEl.querySelector('.composer'));
   const list = await api('/api/chat/log');
   const log = pane.querySelector('.log');
   if (!list.length) { log.innerHTML = '<div class="none">Aucune conversation journalisée pour l\'instant.</div>'; return; }
@@ -1586,6 +1612,16 @@ function chatSend(text) {
   botEl = null; chatBusy = true;
   fetch('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: chatId, text }) })
     .then(r => r.json()).then(r => { if (r.error) { chatEl.querySelector('.thinking')?.remove(); chatAdd('', `<div class="err">${esc(r.error)}</div>`); chatBusy = false; } });
+}
+
+// The bottom bar opens a fresh thread every time. Replies to the thread on
+// screen go through the composer inside the window (chatSend, current id).
+function chatAsk(text) {
+  fetch('/api/chat?id=' + encodeURIComponent(chatId), { method: 'DELETE' });  // release the previous process
+  if (chatStream) { chatStream.close(); chatStream = null; }
+  chatEl.querySelectorAll('.turn').forEach(n => n.remove());
+  try { chatIdSet(String(Date.now())); } catch (e) { /* private mode: stays on the old id */ }
+  chatSend(text);
 }
 
 /* ---------- boot ---------- */
