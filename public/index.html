@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Alpes IA Agentic OS</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -110,11 +111,13 @@ body.resizing { cursor: col-resize; user-select: none; }
 .col.right > .w:last-child { flex: 1 1 26%; overflow: hidden; }
 .w-head { display: flex; align-items: center; gap: 10px; }
 .w-head h2 {
-  margin: 0; font: 600 15px/1.2 var(--font); letter-spacing: -.01em;
-  display: flex; align-items: center; gap: 9px; color: var(--ink);
+  margin: 0; font: 600 15px/1.2 var(--font); letter-spacing: -.01em; white-space: nowrap;
+  display: flex; align-items: center; gap: 9px; color: var(--ink); flex-shrink: 0;
 }
-.w-head h2 svg { width: 16px; height: 16px; stroke: var(--accent); fill: none; stroke-width: 1.7; }
-.w-head .meta { margin-left: auto; font: 400 11.5px/1 var(--font); color: var(--ink-3); }
+.w-head h2 svg { width: 16px; height: 16px; stroke: var(--accent); fill: none; stroke-width: 1.7; flex-shrink: 0; }
+.w-head .meta { margin-left: auto; font: 400 11.5px/1 var(--font); color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.w-head .tag { flex-shrink: 0; }
+.syncdot { flex-shrink: 0; margin-left: auto; width: 7px; height: 7px; border-radius: 50%; background: var(--good); cursor: default; }
 .lbl { font: 500 11.5px/1.4 var(--font); color: var(--ink-3); }
 .num { font: 600 34px/1 var(--display); color: var(--accent); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
 .tag {
@@ -165,24 +168,22 @@ a.mail, .mail {
 .mails .more { margin: 8px; text-align: left; font: 500 12px/1.4 var(--font); color: var(--ink-3); background: transparent; border: 1px dashed var(--line); border-radius: 6px; padding: 9px 10px; cursor: pointer; }
 .mails .more:hover { border-color: var(--ink-3); color: var(--ink-2); }
 #gm-others[hidden] { display: none; }
-.projects { display: grid; gap: 2px; overflow-y: auto; min-height: 0; margin: 0 -8px; }
-.pj { display: grid; grid-template-columns: 8px 1fr; gap: 11px; padding: 10px 8px; border-radius: 6px; align-items: start; }
+.projects { display: grid; gap: 2px; overflow-y: auto; overflow-x: hidden; min-height: 0; margin: 0 -8px; }
+/* Two lines per project: title + stage + last review, then the next step with
+   the push button revealed on hover. */
+.pj { min-width: 0; padding: 7px 8px; border-radius: 6px; }
 .pj:hover { background: var(--sunken); }
-.pj .stage { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; background: var(--ink-3); }
-.pj.actif .stage { background: var(--good); }
-.pj.incubation .stage { background: var(--warn); }
-.pj.pause .stage { background: var(--ink-3); }
-.pj.terminé .stage { background: var(--line); }
-.pj .name { display: flex; align-items: baseline; gap: 8px; }
-.pj .name b { font: 600 13.5px/1.35 var(--font); color: var(--ink); cursor: pointer; }
+.pj .name { display: flex; align-items: center; gap: 7px; }
+.pj .name b { min-width: 0; font: 600 13.5px/1.35 var(--font); color: var(--ink); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pj .name b:hover { color: var(--accent); }
 .pj .name .age { margin-left: auto; font: 400 11px/1 var(--font); color: var(--ink-3); white-space: nowrap; }
-.pj .next { font: 400 12.5px/1.45 var(--font); color: var(--ink-2); margin-top: 3px; cursor: text; border-radius: 4px; padding: 2px 4px; margin-left: -4px; }
+.pj .line2 { display: flex; align-items: center; gap: 8px; }
+.pj .next { flex: 1; min-width: 0; font: 400 12.5px/1.5 var(--font); color: var(--ink-2); cursor: text; border-radius: 4px; padding: 1px 4px; margin-left: -4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pj .next:hover { background: var(--bg); }
 .pj .next.empty { color: var(--ink-3); font-style: italic; }
-.pj .next[contenteditable="true"] { background: var(--bg); outline: 1px solid var(--accent); cursor: text; }
-.pj .row2 { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
-.stagebtn { display: inline-flex; align-items: center; gap: 4px; font: 500 10.5px/1 var(--font); text-transform: capitalize; color: var(--ink-3); background: var(--sunken); border: 0; border-radius: 20px; padding: 4px 7px 4px 9px; cursor: pointer; }
+.pj .next[contenteditable="true"] { background: var(--bg); outline: 1px solid var(--accent); cursor: text; white-space: normal; overflow: visible; text-overflow: clip; }
+.stagebtn { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; font: 500 10.5px/1 var(--font); text-transform: capitalize; color: var(--ink-3); background: var(--sunken); border: 0; border-radius: 20px; padding: 4px 7px 4px 9px; cursor: pointer; }
 .stagebtn svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2.2; opacity: .6; }
 .stagebtn:hover { color: var(--ink); }
 .stagemenu { position: fixed; z-index: 40; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 5px; box-shadow: var(--shadow-lg); display: grid; gap: 1px; min-width: 210px; }
@@ -195,16 +196,23 @@ a.mail, .mail {
 .stagebtn.actif { color: var(--good); background: color-mix(in srgb, var(--good) 15%, var(--sunken)); }
 .stagebtn.incubation { color: var(--warn); background: color-mix(in srgb, var(--warn) 15%, var(--sunken)); }
 .stagebtn.terminé { color: var(--ink-3); }
-.pj .push { display: none; font: 500 11px/1 var(--font); color: var(--accent); background: var(--accent-soft); border: 0; border-radius: 20px; padding: 5px 9px; cursor: pointer; }
+.pj .push { display: none; flex-shrink: 0; white-space: nowrap; font: 500 11px/1 var(--font); color: var(--accent); background: var(--accent-soft); border: 0; border-radius: 20px; padding: 5px 9px; cursor: pointer; }
 .pj:hover .push { display: inline-block; }
 .agenda { display: grid; gap: 1px; }
 .ev { display: grid; grid-template-columns: 54px 1fr; gap: 10px; padding: 6px 8px; border-radius: 6px; font-size: 12.5px; color: var(--ink-2); margin: 0 -8px; }
 .ev:hover { background: var(--sunken); }
-.ev .h { font: 500 12px/1.4 var(--font); color: var(--accent); font-variant-numeric: tabular-nums; }
+.ev .h { font: 500 12px/1.4 var(--font); color: var(--accent); font-variant-numeric: tabular-nums; padding-top: 1px; }
 .ev .h small { display: block; color: var(--ink-3); font-weight: 400; font-size: 11px; }
+.ev a { text-decoration: none; }
 .ev .t { color: var(--ink); font-weight: 500; }
 .ev .t small { display: block; color: var(--ink-3); font-weight: 400; }
+.ev .acts { display: none; gap: 5px; margin-top: 5px; }
+.ev:hover .acts { display: flex; }
+.ev .acts button { font: 500 10.5px/1 var(--font); color: var(--ink-3); background: var(--bg); border: 1px solid var(--line); border-radius: 20px; padding: 4px 8px; cursor: pointer; }
+.ev .acts button:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 .agenda .none { font: 400 12px/1.4 var(--font); color: var(--ink-3); padding: 4px 0; }
+.agenda .more { margin: 4px -8px 0; width: calc(100% + 16px); text-align: left; font: 500 11.5px/1.4 var(--font); color: var(--ink-3); background: transparent; border: 1px dashed var(--line); border-radius: 6px; padding: 7px 8px; cursor: pointer; }
+.agenda .more:hover { border-color: var(--ink-3); color: var(--ink-2); }
 .agenda .scope { font: 400 12px/1.5 var(--font); color: var(--ink-3); border: 1px dashed var(--line); border-radius: 6px; padding: 9px 10px; }
 .agenda .scope a { color: var(--accent); }
 .mail a { text-decoration: none; color: inherit; display: block; }
@@ -258,6 +266,51 @@ a.mail, .mail {
 .su .recap b { color: var(--ink); }
 .su .err { color: var(--crit); font-size: 13.5px; }
 .su-launch { display: flex; align-items: center; gap: 8px; }
+/* ---- chat: the bottom bar doubles as the agent's input ---- */
+.legend { pointer-events: none; }
+.chat { width: min(760px, 84%); max-height: 52vh; display: none; flex-direction: column; gap: 10px; overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px;
+  box-shadow: var(--shadow-lg); pointer-events: auto; }
+.chat.on { display: flex; }
+.chat.hist .turn { display: none; }
+.chat .turn { display: grid; gap: 6px; }
+.chat .me { justify-self: end; max-width: 82%; background: var(--accent-soft); color: var(--ink); border-radius: 12px 12px 4px 12px; padding: 9px 13px; font: 400 14px/1.5 var(--font); }
+.chat .bot { font: 400 14.5px/1.65 var(--font); color: var(--ink-2); }
+.chat .bot b { color: var(--ink); }
+.chat .bot h1, .chat .bot h2, .chat .bot h3 { font: 600 15px/1.3 var(--font); color: var(--ink); margin: 10px 0 4px; }
+.chat .bot ul, .chat .bot ol { margin: 0 0 8px; padding-left: 20px; }
+.chat .bot code { font: 400 12.5px var(--mono); background: var(--sunken); border-radius: 4px; padding: 2px 5px; }
+.chat .bot a { color: var(--accent); cursor: pointer; }
+.chat .act { display: flex; align-items: center; gap: 8px; font: 400 12px/1.4 var(--font); color: var(--ink-3); }
+.chat .act i { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-3); flex-shrink: 0; }
+.chat .act.run i { background: var(--warn); animation: pulse 1.2s ease-in-out infinite; }
+.chat .card { border: 1px solid var(--accent); background: var(--accent-soft); border-radius: 10px; padding: 12px 14px; display: grid; gap: 9px; }
+.chat .card b { font: 600 13.5px/1.4 var(--font); color: var(--ink); }
+.chat .log { display: grid; gap: 2px; }
+.chat .log button { display: grid; gap: 2px; text-align: left; border: 0; background: transparent; border-radius: 8px; padding: 9px 10px; cursor: pointer; }
+.chat .log button:hover { background: var(--sunken); }
+.chat .log .t { font: 400 13.5px/1.4 var(--font); color: var(--ink); }
+.chat .log .m { font: 400 11.5px/1 var(--font); color: var(--ink-3); }
+.chat .log .none { font: 400 13px/1.5 var(--font); color: var(--ink-3); padding: 6px 2px; }
+.chat .past { font: 400 14px/1.65 var(--font); color: var(--ink-2); }
+.chat .past b { color: var(--ink); }
+.chat .card .row { display: flex; gap: 7px; }
+/* Three dots rippling while the agent works — it is also the receipt for what
+   was just sent, so it appears the instant the message leaves the field. */
+.chat .thinking { display: flex; align-items: center; gap: 5px; height: 18px; }
+.chat .thinking i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); opacity: .25; animation: think 1.15s ease-in-out infinite; }
+.chat .thinking i:nth-child(2) { animation-delay: .16s; }
+.chat .thinking i:nth-child(3) { animation-delay: .32s; }
+@keyframes think { 30% { opacity: 1; transform: translateY(-3px); } 60%, 100% { opacity: .25; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .chat .thinking i { animation-name: pulse; animation-duration: 1.6s; opacity: 1; }
+}
+.chat .err { color: var(--crit); font-size: 13px; }
+.chat .head { display: flex; align-items: center; gap: 8px; font: 500 11.5px/1 var(--font); color: var(--ink-3); border-bottom: 1px solid var(--line-soft); padding-bottom: 9px; }
+.chat .head .sp { flex: 1; }
+.chat .head button { border: 0; background: transparent; color: var(--ink-3); cursor: pointer; font: 500 11.5px/1 var(--font); }
+.chat .head button:hover { color: var(--accent); }
+.search .mode { font: 500 10.5px/1 var(--font); color: var(--ink-3); white-space: nowrap; }
 .auth { display: grid; gap: 10px; }
 .auth p { margin: 0; color: var(--ink-2); font-size: 13px; }
 .auth code { font: 400 12px var(--mono); color: var(--ink-3); background: var(--sunken); padding: 6px 8px; border-radius: 4px; word-break: break-all; }
@@ -474,7 +527,7 @@ a.mail, .mail {
       <div class="w-head">
         <h2><svg><use href="#i-mail"/></svg>Boîte de réception</h2>
         <span class="tag acc" id="gm-label">ALPES-IA</span>
-        <span class="meta" id="gm-sync">—</span>
+        <i class="syncdot" id="gm-sync" title="Synchronisation"></i>
         <button class="wtoggle" aria-label="Réduire ou déplier" data-w="inbox" title="Réduire"><svg><use href="#i-chev"/></svg></button>
       </div>
       <div class="w-body" id="gmail"><span class="lbl">Chargement…</span></div>
@@ -514,7 +567,8 @@ a.mail, .mail {
     <div class="panel" id="panel"></div>
     <div class="legend">
       <div class="doms" id="doms"></div>
-      <label class="search"><svg><use href="#i-search"/></svg><input id="q" type="search" placeholder="Chercher un concept, un client, un projet…"><kbd>⌘K</kbd></label>
+      <div class="chat" id="chat"></div>
+      <label class="search"><svg><use href="#i-search"/></svg><input id="q" type="search" placeholder="Filtre le graphe — Entrée pour demander à l'IA"><span class="mode" id="q-mode">⏎ demander</span></label>
     </div>
   </main>
 
@@ -659,7 +713,7 @@ async function loadGmail(refresh) {
     el.innerHTML = `<div class="auth">${g.hasSecret ? `<p>Autorise l'accès en lecture à ta boîte Gmail (label ${esc(cfg.gmail.label)}).</p><a class="btn acc" href="/auth/google">Connecter Gmail</a>` : `<p>Dépose le client OAuth Google (type « Desktop app ») dans :</p><code>credentials/client_secret.json</code><p>puis relance le serveur.</p>`}</div>`;
     return;
   }
-  $('#gm-sync').textContent = 'sync ' + rel(g.syncedAt);
+  $('#gm-sync').title = 'Synchronisé ' + rel(g.syncedAt);
   const senderRule = a => g.senders?.[a]?.rule;
   const row = t => `<div class="mail${t.unread ? ' unread' : ''}${t.bucket !== 'personne' ? ' muted' : ''}" title="${esc(t.why.join(' · '))}">
       <i class="dot"></i>
@@ -677,11 +731,11 @@ async function loadGmail(refresh) {
     </div>`;
   const noise = g.counts.auto + g.counts.bulk;
   const noiseLabel = `Voir les ${noise} messages écartés · ${g.counts.auto} automatiques, ${g.counts.bulk} newsletters`;
-  el.innerHTML = `<div style="display:flex;gap:12px;align-items:baseline"><span class="num">${g.total}</span><div class="lbl" style="line-height:1.5">à traiter${g.unreadKept ? `<br>dont ${g.unreadKept} non lu${g.unreadKept > 1 ? 's' : ''}` : '<br>tous lus'}</div></div>
+  el.innerHTML = `<div style="display:flex;gap:12px;align-items:center"><span class="num">${g.total}</span><div class="lbl" style="line-height:1.5">à traiter${g.unreadKept ? `<br>dont ${g.unreadKept} non lu${g.unreadKept > 1 ? 's' : ''}` : '<br>tous lus'}</div></div>
     <div class="mails">${g.threads.length ? g.threads.map(row).join('') : '<span class="lbl" style="padding:8px">Rien qui demande une réponse.</span>'}
       ${noise ? `<button class="more" id="gm-more">${noiseLabel}</button><div id="gm-others" hidden>${g.others.map(row).join('')}</div>` : ''}</div>
     ${g.hidden?.length ? `<div class="hiddenbar"><span>${g.hidden.length} fil${g.hidden.length > 1 ? 's' : ''} marqué${g.hidden.length > 1 ? 's' : ''} traité${g.hidden.length > 1 ? 's' : ''}</span><button id="gm-unhide">Tout réafficher</button></div>` : ''}
-    <details class="rules"><summary>Consignes de tri</summary><textarea id="gm-notes" rows="3" placeholder="Ce que tu veux que je retienne. Ex : les rappels Noota ne demandent jamais de réponse, la compta IONOS part au classement.">${esc(g.notes ?? '')}</textarea><span class="lbl">Lu par le briefing du jour. Les boutons, eux, agissent tout de suite.</span></details>
+    <details class="rules"><summary>Consignes de tri</summary><textarea id="gm-notes" rows="3" placeholder="Ce que tu veux que je retienne. Ex : les rappels Noota ne demandent jamais de réponse, la compta IONOS part au classement.">${esc(g.notes ?? '')}</textarea><span class="lbl">Lu par le point du jour. Les boutons, eux, agissent tout de suite.</span></details>
     <div style="display:flex;gap:6px"><a class="btn acc" href="https://mail.google.com/mail/u/0/#label/${encodeURIComponent(g.label)}" target="_blank" rel="noopener">Ouvrir Gmail</a><button class="btn" id="gm-refresh">Rafraîchir</button></div>`;
   $('#gm-refresh').onclick = () => loadGmail(true);
   const post = (url, body) => api(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
@@ -865,8 +919,23 @@ const cv = $('#g'), ctx = cv.getContext('2d');
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let W = 0, H = 0, DPR = 1;
 const cam = { x: 0, y: 0, k: .8 };
-function resize() { const r = cv.getBoundingClientRect(); DPR = Math.min(2, devicePixelRatio || 1); W = r.width; H = r.height; cv.width = W * DPR; cv.height = H * DPR; }
-addEventListener('resize', resize); resize();
+function resize() {
+  const r = cv.getBoundingClientRect();
+  DPR = Math.min(2, devicePixelRatio || 1);
+  W = r.width; H = r.height;
+  const pw = Math.round(W * DPR), ph = Math.round(H * DPR);
+  if (cv.width !== pw) cv.width = pw;
+  if (cv.height !== ph) cv.height = ph;
+}
+// A single resize() at boot races the page's own layout: web fonts swapping in
+// (Fraunces, Instrument Sans) reflow the header after first paint, so the canvas's
+// CSS box changes size a moment after its pixel buffer was set — the browser then
+// stretches that buffer to fit, squashing every circle into an oval. A
+// ResizeObserver on the canvas itself catches every box change instead of only
+// the window resize event: font swaps, the initial layout settling, and the
+// column grips being dragged all go through the same, always-correct path.
+new ResizeObserver(resize).observe(cv);
+resize();
 const toWorld = (sx, sy) => [(sx - W / 2) / cam.k - cam.x, (sy - H / 2) / cam.k - cam.y];
 let alpha = 1, selected = null, hover = null, activeDom = null, query = '';
 const visible = n => (!activeDom || n.d === activeDom) && (!query || (n.t + ' ' + n.id + ' ' + n.tags.join(' ')).toLowerCase().includes(query));
@@ -1075,7 +1144,14 @@ async function select(n, fromNav) {
 function center(n) { const t0 = performance.now(), fx = cam.x, fy = cam.y, fk = cam.k, tk = Math.max(cam.k, 1.8); const off = panel.classList.contains('on') ? (panel.offsetWidth / 2 + 24) / tk : 0; /* keep the node clear of the panel */ (function anim() { const p = Math.min(1, (performance.now() - t0) / 450), e = 1 - Math.pow(1 - p, 3); cam.k = fk + (tk - fk) * e; cam.x = fx + (-n.x - off - fx) * e; cam.y = fy + (-n.y - fy) * e; if (p < 1) requestAnimationFrame(anim); })(); }
 const q = $('#q');
 q.addEventListener('input', () => query = q.value.trim().toLowerCase());
-addEventListener('keydown', e => { if (e.key === 'Escape' && !su.hidden) { suClose(); return; } if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); q.focus(); } if (e.key === 'Escape') { if (!viewer.hidden) { viewer.hidden = true; return; } if (!appview.hidden) { appview.hidden = true; return; } q.value = ''; query = ''; q.blur(); select(null); $('#modal').hidden = true; } });
+q.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || !q.value.trim()) return;
+  e.preventDefault();
+  const text = q.value.trim();
+  q.value = ''; query = '';          // hand the phrase to the agent, drop the filter
+  chatSend(text);
+});
+addEventListener('keydown', e => { if (e.key === 'Escape' && !su.hidden) { suClose(); return; } if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); q.focus(); } if (e.key === 'Escape') { if (!viewer.hidden) { viewer.hidden = true; return; } if (!appview.hidden) { appview.hidden = true; return; } if (chatOpen) { chatShow(false); return; } q.value = ''; query = ''; q.blur(); select(null); $('#modal').hidden = true; } });
 
 /* ---------- resizable side columns ---------- */
 (() => {
@@ -1117,14 +1193,14 @@ async function loadProjects() {
   $('#pj-meta').textContent = `${actifs} actif${actifs > 1 ? 's' : ''} sur ${projects.length}`;
   $('#projects').innerHTML = projects.map(p => `
     <div class="pj ${p.stage}" data-slug="${esc(p.slug)}">
-      <i class="stage" title="${esc(p.stage)}"></i>
-      <div>
-        <div class="name"><b data-open-note="${esc(p.id)}">${esc(p.title)}</b><span class="age">${p.updated ? 'revu ' + relDate(p.updated) : ''}</span></div>
+      <div class="name">
+        <b data-open-note="${esc(p.id)}">${esc(p.title)}</b>
+        <button class="stagebtn ${esc(p.stage)}" data-stage="${esc(p.slug)}" aria-haspopup="true">${esc(p.stage)}<svg><use href="#i-chev"/></svg></button>
+        <span class="age">${p.updated ? 'revu ' + relDate(p.updated) : ''}</span>
+      </div>
+      <div class="line2">
         <div class="next ${p.next ? '' : 'empty'}" data-next="${esc(p.slug)}" title="Cliquer pour modifier la prochaine étape">${esc(p.next || 'Pas de prochaine étape')}</div>
-        <div class="row2">
-          <button class="stagebtn ${esc(p.stage)}" data-stage="${esc(p.slug)}" aria-haspopup="true">${esc(p.stage)}<svg><use href="#i-chev"/></svg></button>
-          ${p.next ? `<button class="push" data-push="${esc(p.slug)}">→ Aujourd'hui</button>` : ''}
-        </div>
+        ${p.next ? `<button class="push" data-push="${esc(p.slug)}">→ Aujourd'hui</button>` : ''}
       </div>
     </div>`).join('');
 
@@ -1170,7 +1246,7 @@ async function patchProject(slug, patch) {
 }
 const relDate = iso => { const d = Math.round((Date.now() - new Date(iso)) / 864e5); return d <= 0 ? "aujourd'hui" : d === 1 ? 'hier' : `il y a ${d} j`; };
 
-/* ---------- agenda: what is coming, and what the briefing reads ---------- */
+/* ---------- agenda: what is coming, and what the standup reads ---------- */
 async function loadAgenda() {
   const c = await api('/api/calendar');
   const el = $('#agenda');
@@ -1188,26 +1264,50 @@ async function loadAgenda() {
   }
   const today = new Date().toDateString();
   const next = c.events.slice(0, 4);
-  el.innerHTML = next.length ? next.map(e => {
+  const row = e => {
     const d = new Date(e.start), isToday = d.toDateString() === today;
     const hour = e.allDay ? 'journée' : d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
     const day = isToday ? '' : d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
-    const who = [e.calendar, e.organizer].filter(Boolean).join(' · ');
-    return `<a class="ev" href="${e.url}" target="_blank" rel="noopener" title="${esc(who)}"><span class="h">${hour}${day ? `<small>${day}</small>` : ''}</span><span class="t">${esc(e.title)}${e.attendees.length ? `<small>avec ${esc(e.attendees.join(', '))}</small>` : ''}</span></a>`;
-  }).join('') : '<div class="none">Rien de prévu dans les 7 jours.</div>';
+    const who = [e.calendar, e.organizerName || e.organizer].filter(Boolean).join(' · ');
+    return `<div class="ev" title="${esc(who)}">
+        <span class="h">${hour}${day ? `<small>${day}</small>` : ''}</span>
+        <div><a href="${e.url}" target="_blank" rel="noopener"><span class="t">${esc(e.title)}${e.attendees.length ? `<small>avec ${esc(e.attendees.join(', '))}</small>` : ''}</span></a>
+          <div class="acts">
+            <button data-evhide="${esc(e.id)}" data-title="${esc(e.title)}" data-start="${esc(e.start)}" title="Masquer cet événement">Masquer</button>
+            ${e.organizer ? `<button data-evorg="${esc(e.organizer)}" title="Ne plus jamais afficher les invitations de cette personne">Jamais ${esc(e.organizerName || e.organizer)}</button>` : ''}
+          </div>
+        </div>
+      </div>`;
+  };
+  const hiddenN = c.hidden?.length ?? 0;
+  // the chat agent can only create events once the write scope is granted
+  const needWrite = cfg.gmail && cfg.gmail.hasCalendar && !cfg.gmail.hasCalendarWrite;
+  el.innerHTML = (next.length ? next.map(row).join('') : '<div class="none">Rien de prévu dans les 7 jours.</div>')
+    + (hiddenN ? `<button class="more" id="cal-more">${hiddenN} événement${hiddenN > 1 ? 's' : ''} masqué${hiddenN > 1 ? 's' : ''} · réafficher</button>` : '')
+    + (needWrite ? `<div class="scope">Pour que l'assistant puisse créer des rendez-vous, <a href="/auth/google">autorise l'écriture de l'agenda</a>.</div>` : '');
+  el.querySelectorAll('[data-evhide]').forEach(b => b.onclick = async () => {
+    await api('/api/calendar/hide', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: b.dataset.evhide, title: b.dataset.title, start: b.dataset.start }) });
+    toast('Événement masqué'); loadAgenda();
+  });
+  el.querySelectorAll('[data-evorg]').forEach(b => b.onclick = async () => {
+    await api('/api/calendar/organizer', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ addr: b.dataset.evorg, rule: 'deny' }) });
+    toast('Invitations de cette personne masquées désormais'); loadAgenda();
+  });
+  const more = $('#cal-more');
+  if (more) more.onclick = async () => { await api('/api/calendar/unhide', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ all: true }) }); toast('Événements réaffichés'); loadAgenda(); };
 }
 
-/* ---------- the daily briefing composes the todo ---------- */
+/* ---------- "sans questions": the standup skill composes the todo alone ---------- */
 $('#brief-run').onclick = async () => {
   const btn = $('#brief-run'); btn.disabled = true; btn.textContent = 'Composition…';
   try {
     const r = await api('/api/briefing', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({}) });
     if (r.error) throw new Error(r.error);
-    toast('Briefing lancé, la todo se met à jour dans une minute');
+    toast('Composition lancée, la todo se met à jour dans une minute');
     loadRuns();
     briefWatch = setInterval(async () => {
-      const rs = await api('/api/runs?app=briefing');
-      if (rs[0] && rs[0].status !== 'running') { clearInterval(briefWatch); loadTodo(); loadProjects(); loadRuns(); toast(rs[0].status === 'done' ? 'Journée composée' : 'Le briefing a échoué', rs[0].status !== 'done'); }
+      const rs = await api('/api/runs?app=standup');
+      if (rs[0] && rs[0].status !== 'running') { clearInterval(briefWatch); loadTodo(); loadProjects(); loadRuns(); toast(rs[0].status === 'done' ? 'Journée composée' : 'La composition a échoué', rs[0].status !== 'done'); }
     }, 5000);
   } catch (e) { toast('Échec : ' + e.message, true); }
   btn.disabled = false; btn.textContent = 'Composer ma journée';
@@ -1228,9 +1328,21 @@ let briefWatch = null;
 const su = $('#standup');
 let suState = null;   // { slot, greeting, questions[], answers{}, i }
 
+// Answering is meant to take a moment, so an accidental click on the backdrop
+// must never close this — only the cross or Escape do. Progress survives a
+// close either way: it is saved to localStorage after every answer.
 const suClose = () => { su.hidden = true; };
 $('#su-close').onclick = suClose;
-su.addEventListener('click', e => { if (e.target === su) suClose(); });
+
+const suKey = slot => `standup-progress-${slot}`;
+function suSaveProgress() {
+  if (!suState || suState.phase !== 'ask') return;
+  try { localStorage.setItem(suKey(suState.slot), JSON.stringify({ date: suState.date, greeting: suState.greeting, questions: suState.questions, answers: suState.answers, i: suState.i })); } catch (e) {}
+}
+function suLoadProgress(slot) {
+  try { const raw = localStorage.getItem(suKey(slot)); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+}
+function suClearProgress(slot) { try { localStorage.removeItem(suKey(slot)); } catch (e) {} }
 
 function suRender() {
   const body = $('#su-body'), foot = $('#su-foot'), step = $('#su-step');
@@ -1294,6 +1406,7 @@ function suRender() {
   const prev = $('#su-prev'); if (prev) prev.onclick = () => { keep(); suState.i--; suRender(); };
   $('#su-skip').onclick = () => { suState.answers[q.id] = ''; suAdvance(); };
   $('#su-next').onclick = suNext;
+  suSaveProgress();
 }
 function suNext() { const q = suState.questions[suState.i]; const ta = $('#su-a'); if (ta) suState.answers[q.id] = ta.value.trim(); suAdvance(); }
 function suAdvance() {
@@ -1302,13 +1415,23 @@ function suAdvance() {
 }
 
 async function startStandup(slot) {
-  suState = { phase: 'loading', slot, answers: {}, i: 0, questions: [] };
   $('#su-title').textContent = slot === 'soir' ? 'Bilan du soir' : 'Point du matin';
-  su.hidden = false; suRender();
+  su.hidden = false;
+
+  // resume where it was left off rather than asking the same questions twice
+  const today = new Date().toISOString().slice(0, 10);
+  const saved = suLoadProgress(slot);
+  if (saved && saved.date === today && saved.questions?.length) {
+    suState = { phase: 'ask', slot, date: saved.date, greeting: saved.greeting, questions: saved.questions, answers: saved.answers, i: Math.min(saved.i, saved.questions.length - 1) };
+    return suRender();
+  }
+
+  suState = { phase: 'loading', slot, date: today, answers: {}, i: 0, questions: [] };
+  suRender();
   try {
     const r = await api('/api/standup/questions', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ slot }) });
     if (r.error || !r.questions?.length) throw new Error(r.error || 'aucune question produite');
-    suState = { ...suState, phase: 'ask', greeting: r.greeting, questions: r.questions };
+    suState = { ...suState, phase: 'ask', date: r.date || today, greeting: r.greeting, questions: r.questions };
   } catch (e) { suState = { ...suState, phase: 'error', error: e.message }; }
   suRender();
 }
@@ -1318,6 +1441,7 @@ async function suCompose() {
     const r = await api('/api/standup/compose', { method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ slot: suState.slot, questions: suState.questions, answers: suState.answers }) });
     if (r.error) throw new Error(r.error);
+    suClearProgress(suState.slot);
     suState = { ...suState, phase: 'done', outcome: r.outcome };
     loadTodo(); loadProjects(); loadRuns();
   } catch (e) { suState = { ...suState, phase: 'error', error: e.message }; }
@@ -1335,9 +1459,139 @@ async function standupOnOpen() {
   } catch (e) { /* never block the dashboard */ }
 }
 
+/* ---------- chat: typing filters the graph, Enter asks the agent ---------- */
+const chatEl = $('#chat');
+let chatId = (() => { try { let v = localStorage.getItem('chat-id'); if (!v) { v = String(Date.now()); localStorage.setItem('chat-id', v); } return v; } catch (e) { return 'default'; } })();
+const chatIdSet = v => { chatId = v; localStorage.setItem('chat-id', v); };
+let chatOpen = false, chatStream = null, botEl = null, chatBusy = false;
+
+function chatShow(on) {
+  chatOpen = on;
+  chatEl.classList.toggle('on', on);
+  if (on && !chatEl.querySelector('.head')) {
+    const head = document.createElement('div');
+    head.className = 'head';
+    head.innerHTML = `<span>Assistant · agit sur ton tableau de bord</span><span class="sp"></span><button id="chat-log">Historique</button><button id="chat-clear">Nouvelle conversation</button><button id="chat-hide">Fermer</button>`;
+    chatEl.appendChild(head);
+    $('#chat-hide').onclick = () => chatShow(false);
+    $('#chat-log').onclick = () => (chatEl.querySelector('.histpane') ? chatBack() : chatHistory());
+    $('#chat-clear').onclick = async () => {
+      await fetch('/api/chat?id=' + encodeURIComponent(chatId), { method: 'DELETE' });
+      chatBack();
+      chatEl.querySelectorAll('.turn').forEach(n => n.remove());
+      if (chatStream) { chatStream.close(); chatStream = null; }
+      // a fresh id, so the new conversation gets its own section in the journal
+      try { chatIdSet(String(Date.now())); } catch (e) { /* private mode */ }
+      toast('Conversation repartie de zéro');
+    };
+  }
+}
+const chatAdd = (cls, html) => {
+  const el = document.createElement('div');
+  el.className = 'turn ' + cls;
+  el.innerHTML = html;
+  chatEl.appendChild(el);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  return el;
+};
+
+/* Conversations are journalled in the second brain (lib/chatlog.js), so past
+   ones can be read back — and the current one redrawn after a page reload. */
+const chatBack = () => { chatEl.querySelector('.histpane')?.remove(); chatEl.classList.remove('hist'); };
+
+async function chatHistory() {
+  chatEl.classList.add('hist');
+  chatEl.querySelector('.histpane')?.remove();
+  const pane = document.createElement('div');
+  pane.className = 'histpane';
+  pane.innerHTML = '<div class="log"><div class="none">…</div></div>';
+  chatEl.appendChild(pane);
+  const list = await api('/api/chat/log');
+  const log = pane.querySelector('.log');
+  if (!list.length) { log.innerHTML = '<div class="none">Aucune conversation journalisée pour l\'instant.</div>'; return; }
+  log.innerHTML = list.map(c => `<button data-conv="${esc(c.id)}"><span class="t">${esc(c.title)}</span><span class="m">${esc(c.date)} ${esc(c.time)} · ${c.turns} échange${c.turns > 1 ? 's' : ''}${c.actions ? ' · ' + c.actions + ' action' + (c.actions > 1 ? 's' : '') : ''}${c.id === chatId ? ' · en cours' : ''}</span></button>`).join('');
+  log.querySelectorAll('[data-conv]').forEach(b => b.onclick = async () => {
+    const conv = await api('/api/chat/log?id=' + encodeURIComponent(b.dataset.conv));
+    pane.innerHTML = `<div class="head" style="border:0;padding:0"><button id="chat-back">← Toutes les conversations</button></div><div class="past">${md(conv.body || '(vide)')}</div>`;
+    pane.querySelector('#chat-back').onclick = () => chatHistory();
+  });
+}
+
+// After a reload the server may still hold the conversation, but the browser has
+// forgotten what was said. The journal is what puts it back on screen.
+async function chatReplay() {
+  if (chatEl.querySelector('.turn')) return;
+  const conv = await api('/api/chat/log?id=' + encodeURIComponent(chatId)).catch(() => null);
+  if (!conv?.body || chatEl.querySelector('.turn')) return;
+  chatAdd('', `<div class="past">${md(conv.body)}</div>`);
+}
+
+function chatConnect() {
+  if (chatStream) return;
+  chatStream = new EventSource('/api/chat/stream?id=' + encodeURIComponent(chatId));
+  chatStream.onmessage = e => {
+    const m = JSON.parse(e.data);
+    if (m.type === 'text') {
+      // the agent's prose arrives token by token; keep appending to one block
+      if (!botEl) { botEl = chatAdd('bot', ''); botEl.dataset.raw = ''; chatEl.querySelector('.thinking')?.remove(); }
+      botEl.dataset.raw += m.text;
+      botEl.innerHTML = md(botEl.dataset.raw);
+      chatEl.scrollTop = chatEl.scrollHeight;
+      return;
+    }
+    if (m.type === 'tool') {
+      chatEl.querySelector('.thinking')?.remove();
+      const label = { chercher_second_brain: 'cherche dans le second brain', lire_note: 'lit une note', lister_projets: 'regarde les projets', lire_todo: 'regarde la todo', lister_agenda: "regarde l'agenda", lister_mails: 'regarde la boîte', lire_journal_standup: 'relit les stand-ups' }[m.name] ?? m.name.replace(/_/g, ' ');
+      const arg = m.input?.requete ?? m.input?.chemin ?? m.input?.titre ?? m.input?.texte ?? '';
+      chatAdd('', `<div class="act run"><i></i>${esc(label)}${arg ? ' · ' + esc(String(arg).slice(0, 60)) : ''}</div>`);
+      botEl = null;
+      return;
+    }
+    if (m.type === 'confirm') {
+      const el = chatAdd('', `<div class="card" data-key="${esc(m.key)}">
+        <b>${esc(m.summary)}</b>
+        <div class="row"><button class="btn acc" data-yes>Valider</button><button class="btn" data-no>Annuler</button></div>
+      </div>`);
+      const decide = approved => fetch('/api/chat/decision', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: chatId, key: m.key, approved }) });
+      el.querySelector('[data-yes]').onclick = () => { decide(true); el.querySelector('.row').innerHTML = '<span class="act">validé</span>'; };
+      el.querySelector('[data-no]').onclick = () => { decide(false); el.querySelector('.row').innerHTML = '<span class="act">annulé</span>'; };
+      botEl = null;
+      return;
+    }
+    if (m.type === 'confirm-gone') {
+      const card = chatEl.querySelector(`.card[data-key="${m.key}"] .row`);
+      if (card && card.querySelector('button')) card.innerHTML = '<span class="act">expiré · sans réponse à temps</span>';
+      return;
+    }
+    if (m.type === 'done') {
+      chatBusy = false;
+      chatEl.querySelector('.thinking')?.remove();
+      if (m.error) chatAdd('', `<div class="err">${esc(m.error)}</div>`);
+      botEl = null;
+      // the agent may have changed things behind the scenes
+      loadTodo(); loadProjects(); loadAgenda();
+      return;
+    }
+    if (m.type === 'closed') { chatStream?.close(); chatStream = null; }
+  };
+  chatStream.onerror = () => { chatStream?.close(); chatStream = null; };
+}
+
+function chatSend(text) {
+  chatShow(true);
+  chatBack();
+  chatConnect();
+  chatAdd('', `<div class="me">${esc(text)}</div>`);
+  chatAdd('', '<div class="thinking" aria-label="l\'assistant réfléchit"><i></i><i></i><i></i></div>');
+  botEl = null; chatBusy = true;
+  fetch('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: chatId, text }) })
+    .then(r => r.json()).then(r => { if (r.error) { chatEl.querySelector('.thinking')?.remove(); chatAdd('', `<div class="err">${esc(r.error)}</div>`); chatBusy = false; } });
+}
+
 /* ---------- boot ---------- */
 (async () => {
   cfg = await api('/api/config');
+  chatReplay();   // a reload should not wipe what was already said
   $('#gm-label').textContent = cfg.gmail.label;
   draw();
   await Promise.all([loadGraph(), loadTodo(), loadGmail(), loadRuns(), loadProjects(), loadAgenda(), loadDecks()]);

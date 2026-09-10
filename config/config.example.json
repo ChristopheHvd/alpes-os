@@ -31,6 +31,9 @@
     "allowedTools": "Read,Write,Edit,Glob,Grep,Bash,Skill",
     "permissionMode": "acceptEdits"
   },
+  "chat": {
+    "model": "claude-opus-5"
+  },
   "apps": [
     {
       "id": "devis",
@@ -81,27 +84,6 @@
         "exercise-factory",
         "module-auditor",
         "office-docx"
-      ]
-    },
-    {
-      "id": "briefing",
-      "name": "Briefing du jour",
-      "description": "Compose la todo à partir des projets, du calendrier et des mails",
-      "skill": "/briefing",
-      "model": "claude-opus-5",
-      "output": "output/briefings",
-      "actions": [
-        {
-          "id": "jour",
-          "label": "Composer ma journée",
-          "placeholder": "Optionnel : une contrainte du jour. Ex : après-midi bloqué, priorité au projet mobile"
-        }
-      ],
-      "skillsUsed": [
-        "brain/projects/",
-        "Google Calendar",
-        "Gmail",
-        "brain/journal/todo.md"
       ]
     },
     {
