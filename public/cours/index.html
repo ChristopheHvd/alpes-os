@@ -18,10 +18,12 @@
   <span class="right">
     <span class="client" id="b-client"></span>
     <button id="timer" title="Démarrer ou arrêter le chrono du module (T)">00:00</button>
+    <span class="save" id="b-save"></span>
+    <button class="icobtn" id="b-edit" title="Mode édition (E)">✎</button>
     <button class="icobtn" id="b-notes" title="Notes formateur (N)">N</button>
-    <button class="icobtn" id="b-toc" title="Sommaire (S)">☰</button>
+    <button class="icobtn" id="b-toc" title="Épingler le sommaire (S)">☰</button>
     <button class="icobtn" id="b-theme" title="Papier / Ardoise">◐</button>
-    <button class="icobtn" id="b-help" title="Raccourcis (?)">?</button>
+    <button class="icobtn" id="b-help" title="Épingler les raccourcis (?)">?</button>
   </span>
 </header>
 
@@ -35,6 +37,11 @@
     <button class="icobtn" id="f-next" title="Suivant (→)">›</button>
   </span>
 </footer>
+
+<nav class="rail" id="rail"></nav>
+<aside class="legend" id="legend"></aside>
+<div class="tip" id="tip" hidden></div>
+<div class="fmt" id="fmt" hidden></div>
 
 <aside class="notes" id="notes">
   <h3>Notes formateur <button class="icobtn" id="n-close" title="Fermer">×</button></h3>

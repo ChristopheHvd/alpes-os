@@ -4,6 +4,8 @@
    en vw plafonnées : lisible à 3 m en projection, lisible au bureau.
    ============================================================ */
 :root {
+  --notes-w: min(420px, 38vw);
+  --rail-w: min(266px, 30vw);
   --bg: #faf8f4;
   --surface: #ffffff;
   --sunken: #f2eee7;
@@ -65,7 +67,7 @@ button { font-family: inherit; color: inherit; }
   display: flex; align-items: center; gap: 14px; padding: 0 18px;
   font-size: 12.5px; color: var(--ink-3);
   background: linear-gradient(var(--bg) 62%, transparent);
-  transition: opacity .25s;
+  transition: opacity .25s, right .26s cubic-bezier(.2,.8,.3,1);
 }
 .bar.hide { opacity: 0; pointer-events: none; }
 .bar .home { color: var(--ink-3); text-decoration: none; font-weight: 500; letter-spacing: .04em; }
@@ -96,6 +98,7 @@ button { font-family: inherit; color: inherit; }
 .stage {
   position: absolute; inset: 0; display: grid; place-items: center;
   padding: 62px clamp(28px, 6vw, 110px) 74px;
+  transition: padding .26s cubic-bezier(.2,.8,.3,1);
 }
 .slide {
   width: 100%; max-width: 1180px; max-height: 100%; overflow-y: auto;
@@ -156,6 +159,16 @@ button { font-family: inherit; color: inherit; }
 .slide .md td { border-bottom: 1px solid var(--line-soft); padding: .5em .7em .5em 0; vertical-align: top; }
 .slide .md hr { border: 0; border-top: 1px solid var(--line); margin: 1.4em 0; }
 .slide .md img, .slide .md svg { max-width: 100%; height: auto; }
+.slide .md figure.shot {
+  margin: 0 0 1em; display: flex; flex-direction: column; align-items: center; gap: .5em;
+}
+.slide .md figure.shot img {
+  border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow);
+  max-height: 46vh; width: auto;
+}
+.slide .md figure.shot figcaption {
+  font-size: clamp(12px, 1.15vw, 15px); color: var(--ink-3); text-align: center;
+}
 
 /* ---------- slide types ---------- */
 /* titre : plein cadre, la couverture du module */
@@ -209,9 +222,12 @@ button { font-family: inherit; color: inherit; }
 .foot {
   position: fixed; inset: auto 0 0 0; z-index: 40; padding: 0 18px 14px;
   display: flex; align-items: center; gap: 14px;
-  transition: opacity .25s;
+  transition: opacity .25s, right .26s cubic-bezier(.2,.8,.3,1);
 }
 .foot.hide { opacity: 0; pointer-events: none; }
+/* le sommaire et la légende, quand ils sont visibles, poussent le chrome pour ne pas le masquer */
+body:has(.rail:not(.hide)) .bar,
+body:has(.rail:not(.hide)) .foot { padding-left: calc(var(--rail-w) + 16px); }
 .track { flex: 1; height: 3px; border-radius: 2px; background: var(--line-soft); overflow: hidden; cursor: pointer; }
 .track i { display: block; height: 100%; background: var(--accent); transition: width .3s cubic-bezier(.2,.8,.3,1); }
 .count { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
@@ -219,13 +235,17 @@ button { font-family: inherit; color: inherit; }
 
 /* ---------- notes formateur ---------- */
 .notes {
-  position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 38vw); z-index: 50;
+  position: fixed; top: 0; right: 0; bottom: 0; width: var(--notes-w); z-index: 50;
   background: var(--surface); border-left: 1px solid var(--line);
   box-shadow: var(--shadow-lg); padding: 22px 24px 26px;
   overflow-y: auto; transform: translateX(101%); transition: transform .26s cubic-bezier(.2,.8,.3,1);
   display: flex; flex-direction: column; gap: 14px;
 }
 .notes.on { transform: none; }
+/* panneau ouvert : la scène et le chrome se replient au lieu de passer dessous */
+body:has(.notes.on) .stage { padding-right: calc(var(--notes-w) + clamp(28px, 6vw, 110px)); }
+body:has(.notes.on) .bar,
+body:has(.notes.on) .foot { right: var(--notes-w); }
 .notes h3 {
   margin: 0; font: 600 11.5px/1 var(--font); letter-spacing: .16em;
   text-transform: uppercase; color: var(--accent);
@@ -263,21 +283,6 @@ button { font-family: inherit; color: inherit; }
   margin: 0 0 4px; font: 600 24px/1.2 var(--display); letter-spacing: -.01em; color: var(--ink);
 }
 .sheet .box > .sub { margin: 0 0 22px; font-size: 13px; color: var(--ink-3); }
-.toc { display: flex; flex-direction: column; gap: 2px; }
-.toc button {
-  display: grid; grid-template-columns: 28px 1fr auto; align-items: baseline; gap: 14px;
-  width: 100%; text-align: left; border: 0; background: none; cursor: pointer;
-  padding: 11px 12px; border-radius: var(--r); border-bottom: 1px solid var(--line-soft);
-  transition: background .12s;
-}
-.toc button:last-child { border-bottom: 0; }
-.toc button:hover { background: var(--sunken); }
-.toc button.on { background: var(--accent-soft); }
-.toc .n { font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
-.toc button.on .n { color: var(--accent); }
-.toc .tt { font-size: 15.5px; font-weight: 500; color: var(--ink); }
-.toc .tt small { display: block; font-weight: 400; font-size: 12.5px; color: var(--ink-3); margin-top: 3px; }
-.toc .d { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); white-space: nowrap; }
 
 /* ---------- vue d'ensemble ---------- */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
@@ -298,13 +303,72 @@ button { font-family: inherit; color: inherit; }
 .grid button[data-t="atelier"] .ty { color: var(--good); }
 .grid button[data-t="piege"] .ty { color: var(--crit); }
 
-/* ---------- aide ---------- */
-.keys { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 9px 20px; }
-.keys div { font-size: 13px; color: var(--ink-2); display: flex; align-items: center; gap: 9px; }
+/* ---------- touches ---------- */
 kbd {
   font-family: var(--mono); font-size: 11px; background: var(--sunken); color: var(--ink);
   border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px;
   padding: 2px 6px; min-width: 22px; text-align: center;
+}
+
+/* ---------- rail sommaire (apparaît au mouvement, s'efface à l'arrêt) ---------- */
+.rail {
+  position: fixed; inset: 0 auto 0 0; width: var(--rail-w); z-index: 45;
+  background: var(--surface); border-right: 1px solid var(--line); box-shadow: var(--shadow-lg);
+  padding: 12px 10px 16px; overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: 1px;
+  transition: transform .26s cubic-bezier(.2,.8,.3,1), opacity .2s;
+}
+.rail.hide { transform: translateX(-101%); opacity: 0; pointer-events: none; }
+.rail .rt {
+  font: 600 11px/1 var(--font); letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink-3); padding: 6px 10px 12px;
+}
+.rail .m {
+  display: grid; grid-template-columns: 20px 1fr auto; align-items: baseline; gap: 9px;
+  width: 100%; text-align: left; border: 0; background: none; cursor: pointer;
+  padding: 8px 10px; border-radius: 6px; transition: background .12s;
+}
+.rail .m:hover { background: var(--sunken); }
+.rail .m.cur { background: var(--accent-soft); }
+.rail .m .n { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+.rail .m.cur .n { color: var(--accent); }
+.rail .m .t { font-size: 13.5px; font-weight: 500; color: var(--ink); line-height: 1.3; }
+.rail .m.done .t { color: var(--ink-3); }
+.rail .m.done .t::after { content: " ✓"; color: var(--good); font-weight: 600; }
+.rail .m .d { font-family: var(--mono); font-size: 10px; color: var(--ink-3); }
+.rail .sl {
+  display: grid; grid-template-columns: 14px 1fr; gap: 8px; align-items: baseline;
+  width: 100%; text-align: left; border: 0; background: none; cursor: pointer;
+  padding: 4px 10px 4px 20px; border-radius: 6px; transition: background .12s;
+}
+.rail .sl:hover { background: var(--sunken); }
+.rail .sl .b { font-size: 10px; color: var(--accent); }
+.rail .sl .st { font-size: 12px; color: var(--ink-2); line-height: 1.3; }
+.rail .sl.cur .st { color: var(--accent); font-weight: 500; }
+
+/* ---------- légende raccourcis (haut droite, même effacement) ---------- */
+.legend {
+  position: fixed; top: 52px; right: 14px; z-index: 45; width: 244px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+  box-shadow: var(--shadow-lg); padding: 12px 14px;
+  transition: opacity .2s, transform .2s;
+}
+.legend.hide { opacity: 0; transform: translateY(-6px); pointer-events: none; }
+.legend h4 {
+  margin: 0 0 9px; font: 600 10px/1 var(--font); letter-spacing: .16em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.legend dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 5px 10px; align-items: baseline; }
+.legend dt { text-align: right; white-space: nowrap; }
+.legend dd { margin: 0; font-size: 12px; color: var(--ink-2); }
+.legend .pin { margin-top: 10px; font-size: 10.5px; line-height: 1.4; color: var(--ink-3); }
+
+/* ---------- infobulle de la barre du bas ---------- */
+.tip {
+  position: fixed; z-index: 60; transform: translate(-50%, -100%);
+  background: var(--ink); color: var(--bg); font-size: 11.5px; font-weight: 500;
+  padding: 5px 9px; border-radius: 5px; pointer-events: none;
+  max-width: 52vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 .loading { color: var(--ink-3); font-size: 14px; }
@@ -320,7 +384,7 @@ kbd {
   @page { size: A4; margin: 14mm 15mm 16mm; }
   :root { --bg: #fff; --surface: #fff; --sunken: #f6f4f0; }
   body { overflow: visible; height: auto; background: #fff; }
-  .bar, .foot, .notes, .sheet, .stage { display: none !important; }
+  .bar, .foot, .notes, .sheet, .stage, .rail, .legend, .tip { display: none !important; }
   .print { display: block !important; }
 }
 .print { display: none; }
@@ -344,3 +408,53 @@ kbd {
   font-size: 8.5pt; color: #6b6358; border-left: 2px solid #e5dfd5;
   padding-left: 9px; margin-top: 6px; font-style: italic;
 }
+
+/* ---------- édition ---------- */
+/* Les contours n'apparaissent qu'au survol : en édition la slide doit rester
+   une slide, pas devenir un formulaire. */
+.bar .save { font-size: 11px; color: var(--ink-3); margin-right: 4px; white-space: nowrap; }
+.bar .save.bad { color: var(--crit); }
+
+.editing .slide .blk,
+.editing .slide h2,
+.editing .slide [data-edit] {
+  border-radius: 4px; outline: 1px solid transparent; outline-offset: 4px;
+  transition: outline-color .12s, background .12s;
+}
+.editing .slide .blk:hover,
+.editing .slide [data-edit]:hover { outline-color: var(--line); }
+.editing .slide .blk:focus,
+.editing .slide [data-edit]:focus {
+  outline: 1px solid var(--accent); background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+.editing .slide .blk.src { cursor: text; }
+.editing .slide .blk.src:hover { outline-color: var(--accent); }
+.editing .slide [data-edit]:empty::before { content: '…'; color: var(--ink-3); }
+
+.slide .typesel {
+  font: inherit; color: inherit; background: none; border: 1px solid var(--line);
+  border-radius: 4px; padding: 1px 4px;
+}
+
+.srcbox {
+  width: 100%; font: 400 13px/1.5 var(--mono); color: inherit;
+  background: var(--sunken); border: 1px solid var(--accent);
+  border-radius: var(--r); padding: .6em .7em; resize: vertical;
+}
+.notes .srcbox { min-height: 40vh; }
+
+/* barre de mise en forme, posée au-dessus de la sélection.
+   Le display:flex ci-dessous l'emporterait sur le display:none que le
+   navigateur applique à [hidden] : il faut donc le redire explicitement. */
+.fmt[hidden] { display: none; }
+.fmt {
+  position: fixed; z-index: 40; transform: translate(-50%, -125%);
+  display: flex; gap: 2px; padding: 3px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r); box-shadow: var(--shadow-lg);
+}
+.fmt button {
+  min-width: 26px; height: 24px; padding: 0 5px; border: 0; border-radius: 4px;
+  background: none; font-size: 12px; cursor: pointer;
+}
+.fmt button:hover { background: var(--line-soft); }
