@@ -1541,7 +1541,7 @@ function chatConnect() {
     }
     if (m.type === 'tool') {
       chatEl.querySelector('.thinking')?.remove();
-      const label = { chercher_second_brain: 'cherche dans le second brain', lire_note: 'lit une note', lister_projets: 'regarde les projets', lire_todo: 'regarde la todo', lister_agenda: "regarde l'agenda", lister_mails: 'regarde la boîte', lire_journal_standup: 'relit les stand-ups' }[m.name] ?? m.name.replace(/_/g, ' ');
+      const label = { chercher_second_brain: 'cherche dans le second brain', lire_note: 'lit une note', lister_projets: 'regarde les projets', lister_clients: 'regarde les clients', lire_todo: 'regarde la todo', lister_agenda: "regarde l'agenda", lister_mails: 'regarde la boîte', lire_journal_standup: 'relit les stand-ups' }[m.name] ?? m.name.replace(/_/g, ' ');
       const arg = m.input?.requete ?? m.input?.chemin ?? m.input?.titre ?? m.input?.texte ?? '';
       chatAdd('', `<div class="act run"><i></i>${esc(label)}${arg ? ' · ' + esc(String(arg).slice(0, 60)) : ''}</div>`);
       botEl = null;

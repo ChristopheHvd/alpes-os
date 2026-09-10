@@ -11,6 +11,7 @@ import { readTodo, writeTodo, completeCarried, addItem } from './lib/todo.js';
 import { makeGmail } from './lib/gmail.js';
 import { makeRunner } from './lib/runs.js';
 import { listProjects, updateProject, createProject } from './lib/projects.js';
+import { listClients, createClient } from './lib/clients.js';
 import { makeCalendar } from './lib/calendar.js';
 import { makeMailState } from './lib/mailstate.js';
 import { makeCalendarState } from './lib/calendarstate.js';
@@ -138,6 +139,14 @@ app.get('/api/projects', (req, res) => res.json(listProjects(cfg.secondBrain)));
 app.patch('/api/projects/:slug', (req, res) => {
   const p = updateProject(cfg.secondBrain, req.params.slug, req.body ?? {});
   p ? res.json(p) : res.status(404).json({ error: 'projet introuvable' });
+});
+
+// Clients — same shape as projects: read the list, or create a note the chat
+// links to the project it belongs to.
+app.get('/api/clients', (req, res) => res.json(listClients(cfg.secondBrain)));
+app.post('/api/clients', (req, res) => {
+  try { res.json(createClient(cfg.secondBrain, req.body ?? {})); }
+  catch (e) { res.status(400).json({ error: e.message }); }
 });
 
 // Calendar — what is coming, used by the widget and by the daily standup
