@@ -1,0 +1,10 @@
+[
+  {
+    "id": "claude-fondamentaux",
+    "titre": "Maîtriser Claude",
+    "soustitre": "Du chat web à la posture d'opérateur",
+    "clients": [
+      { "id": "", "nom": "Générique" }
+    ]
+  }
+]

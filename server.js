@@ -46,6 +46,15 @@ app.use(express.static(path.join(ROOT, 'public')));
 app.use('/output', express.static(path.join(ROOT, 'output'), {
   setHeaders: (res, f) => { if (f.endsWith('.md') || f.endsWith('.txt')) res.type('text/plain; charset=utf-8'); },
 }));
+// La liste des supports nomme les clients pour qui ils sont déclinés : elle
+// reste locale, comme les profils de content/cours/<deck>/clients/. Sur un
+// clone neuf, on la sème depuis le modèle, comme pour la config.
+const decksDir = path.join(ROOT, 'content', 'cours');
+if (!fs.existsSync(path.join(decksDir, 'decks.json')) && fs.existsSync(path.join(decksDir, 'decks.example.json'))) {
+  fs.copyFileSync(path.join(decksDir, 'decks.example.json'), path.join(decksDir, 'decks.json'));
+  console.log('content/cours/decks.json créé depuis le modèle');
+}
+
 app.use('/content', express.static(path.join(ROOT, 'content'), {
   setHeaders: (res, f) => { if (f.endsWith('.md')) res.type('text/plain; charset=utf-8'); },
 }));

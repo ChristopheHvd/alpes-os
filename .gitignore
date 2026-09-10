@@ -12,3 +12,9 @@ config/branding.json
 # Claude Code local settings. The three skills this dashboard runs live in the
 # private second brain and are exposed through ~/.claude/skills/ by symlink.
 .claude/
+
+# Les profils clients d'une formation portent des noms et des situations réelles,
+# et ce dépôt est public. Ils restent sur le disque ; decks.json est semé depuis
+# decks.example.json au démarrage.
+content/cours/decks.json
+content/cours/*/clients/
