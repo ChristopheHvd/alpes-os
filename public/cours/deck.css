@@ -408,3 +408,53 @@ kbd {
   font-size: 8.5pt; color: #6b6358; border-left: 2px solid #e5dfd5;
   padding-left: 9px; margin-top: 6px; font-style: italic;
 }
+
+/* ---------- édition ---------- */
+/* Les contours n'apparaissent qu'au survol : en édition la slide doit rester
+   une slide, pas devenir un formulaire. */
+.bar .save { font-size: 11px; color: var(--ink-3); margin-right: 4px; white-space: nowrap; }
+.bar .save.bad { color: var(--crit); }
+
+.editing .slide .blk,
+.editing .slide h2,
+.editing .slide [data-edit] {
+  border-radius: 4px; outline: 1px solid transparent; outline-offset: 4px;
+  transition: outline-color .12s, background .12s;
+}
+.editing .slide .blk:hover,
+.editing .slide [data-edit]:hover { outline-color: var(--line); }
+.editing .slide .blk:focus,
+.editing .slide [data-edit]:focus {
+  outline: 1px solid var(--accent); background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+.editing .slide .blk.src { cursor: text; }
+.editing .slide .blk.src:hover { outline-color: var(--accent); }
+.editing .slide [data-edit]:empty::before { content: '…'; color: var(--ink-3); }
+
+.slide .typesel {
+  font: inherit; color: inherit; background: none; border: 1px solid var(--line);
+  border-radius: 4px; padding: 1px 4px;
+}
+
+.srcbox {
+  width: 100%; font: 400 13px/1.5 var(--mono); color: inherit;
+  background: var(--sunken); border: 1px solid var(--accent);
+  border-radius: var(--r); padding: .6em .7em; resize: vertical;
+}
+.notes .srcbox { min-height: 40vh; }
+
+/* barre de mise en forme, posée au-dessus de la sélection.
+   Le display:flex ci-dessous l'emporterait sur le display:none que le
+   navigateur applique à [hidden] : il faut donc le redire explicitement. */
+.fmt[hidden] { display: none; }
+.fmt {
+  position: fixed; z-index: 40; transform: translate(-50%, -125%);
+  display: flex; gap: 2px; padding: 3px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r); box-shadow: var(--shadow-lg);
+}
+.fmt button {
+  min-width: 26px; height: 24px; padding: 0 5px; border: 0; border-radius: 4px;
+  background: none; font-size: 12px; cursor: pointer;
+}
+.fmt button:hover { background: var(--line-soft); }

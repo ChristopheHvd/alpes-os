@@ -50,6 +50,33 @@ app.use('/content', express.static(path.join(ROOT, 'content'), {
   setHeaders: (res, f) => { if (f.endsWith('.md')) res.type('text/plain; charset=utf-8'); },
 }));
 
+// Le mode édition du support réécrit le module dans content/cours/. Un fichier
+// n'est acceptable que s'il est listé dans le manifest de son deck : c'est le
+// garde-fou contre la traversée de chemin. `lastModified` est celui reçu du
+// serveur au chargement — s'il ne colle plus, quelqu'un d'autre a écrit entre
+// temps (une session Claude dans un terminal) et on refuse plutôt qu'on écrase.
+app.put('/api/cours/:deck/:file', (req, res) => {
+  try {
+    const { deck, file } = req.params;
+    if (!/^[a-z0-9-]+$/.test(deck) || !/^[a-z0-9-]+\.md$/.test(file)) return res.status(400).json({ error: 'nom invalide' });
+    const dir = path.join(ROOT, 'content', 'cours', deck);
+    const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
+    if (!manifest.modules?.includes(file)) return res.status(404).json({ error: 'module inconnu de ce support' });
+
+    const target = path.join(dir, file);
+    const seen = Date.parse(req.body?.lastModified ?? '');
+    const now = fs.statSync(target).mtime.getTime();
+    // Last-Modified est à la seconde près, mtime à la milliseconde
+    if (Number.isFinite(seen) && Math.floor(now / 1000) !== Math.floor(seen / 1000)) {
+      return res.status(409).json({ error: 'le fichier a changé sur le disque' });
+    }
+    const src = String(req.body?.src ?? '');
+    if (!src.trim()) return res.status(400).json({ error: 'contenu vide' });
+    fs.writeFileSync(target, src);
+    res.json({ ok: true, lastModified: fs.statSync(target).mtime.toUTCString() });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/config', (req, res) => res.json({ apps: cfg.apps, gmail: { label: cfg.gmail.label, ...gmail.status() }, brand: { company: branding.company, owner: branding.owner }, secondBrain: cfg.secondBrain }));
 
 // Memory — the visual second brain
