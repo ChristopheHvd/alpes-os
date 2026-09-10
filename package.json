@@ -1,6 +1,6 @@
 {
   "name": "alpes-os",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Alpes IA Agentic OS — local command centre (ARMS)",
   "type": "module",
