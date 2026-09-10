@@ -32,7 +32,7 @@ Trois conséquences directes :
 Ces trois limites sont le point de départ de tout ce qu'on voit dans la journée.
 
 ::: notes
-Le point le plus important de la journée, tout en découle : la mémoire (module 6) répond à la première limite, les connecteurs (module 7) à la deuxième, la validation humaine (module 9) à la troisième.
+Le point le plus important de la journée, tout en découle : la mémoire (module 7) répond à la première limite, les connecteurs (module 8) à la deuxième, la validation humaine (module 10) à la troisième.
 
 Rester court sur la technique. Ce qui compte, c'est que le participant arrête d'attendre de l'outil ce qu'il ne peut pas donner.
 :::
@@ -81,7 +81,7 @@ La règle : **il est bon sur ce que vous lui fournissez, mauvais sur ce qu'il do
 ::: notes
 La dernière ligne du tableau surprend souvent : un modèle de langage n'est pas une calculatrice. Sur un total de colonne ou un décompte de lignes, il faut lui donner un outil, pas lui faire confiance.
 
-C'est ce qui justifie le module 10 : dès qu'il y a du volume ou du calcul, on passe au terminal.
+C'est ce qui justifie le module 11 : dès qu'il y a du volume ou du calcul, on passe au terminal.
 :::
 
 ---

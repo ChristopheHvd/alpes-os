@@ -103,7 +103,7 @@ vous revenez vers lui plutôt que d'avancer un chiffre.
 ```
 
 ::: notes
-Faire remarquer que c'est exactement le prompt en quatre blocs du module 4, structuré et rangé — y compris la phrase de *pourquoi* dans la section rédaction.
+Faire remarquer que c'est exactement le prompt en quatre blocs du module 5, structuré et rangé — y compris la phrase de *pourquoi* dans la section rédaction.
 
 La section « Limites » est celle qui manque presque toujours. Noter qu'elle est écrite en positif quand c'est possible : « dire que vous revenez vers lui » plutôt que « ne pas parler de prix ».
 :::
@@ -194,7 +194,7 @@ Ce qui la périme, dans l'ordre de fréquence :
 
 - **L'offre a changé** et la skill vend encore l'ancienne.
 - **L'outil source a changé** — un champ CRM renommé, un dossier déplacé.
-- **Le modèle a changé** et la skill est sur-écrite pour l'ancien : des consignes qui bordaient un modèle de 2024 font sur-analyser celui d'aujourd'hui (module 4).
+- **Le modèle a changé** et la skill est sur-écrite pour l'ancien : des consignes qui bordaient un modèle de 2024 font sur-analyser celui d'aujourd'hui (module 5).
 
 Le réflexe : quand une skill donne un résultat bizarre, relire la skill avant d'accuser le modèle.
 

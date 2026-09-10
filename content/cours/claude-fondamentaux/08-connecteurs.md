@@ -70,7 +70,7 @@ type: concept
 La règle : **brancher en lecture d'abord.** L'écriture, seulement quand le flux est éprouvé — et jamais vers l'extérieur sans validation humaine.
 
 ::: notes
-Cette règle est la première apparition de la règle d'architecture du module 9. L'annoncer comme telle, ça prépare le terrain.
+Cette règle est la première apparition de la règle d'architecture du module 10. L'annoncer comme telle, ça prépare le terrain.
 
 Cas réel à raconter si besoin : la première automatisation d'un commercial est presque toujours « envoyer des relances tout seul ». C'est exactement celle qu'il ne faut pas faire en premier.
 :::
@@ -146,7 +146,7 @@ livrable: Deux connecteurs actifs en lecture, une question multi-sources vérifi
 5. Notez l'écart, s'il y en a un, et classez-le : accès, contexte, ou prompt.
 
 ::: notes
-L'étape 5 est la plus formatrice, et le classement en trois causes est ce qu'il faut retenir. Un écart vient presque toujours d'un accès trop étroit ou d'un contexte manquant (module 5), rarement du prompt.
+L'étape 5 est la plus formatrice, et le classement en trois causes est ce qu'il faut retenir. Un écart vient presque toujours d'un accès trop étroit ou d'un contexte manquant (module 6), rarement du prompt.
 
 Si le participant conclut « l'outil est mauvais », c'est qu'on a sauté cette étape.
 :::

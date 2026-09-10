@@ -85,7 +85,7 @@ CONTRAINTES
 ```
 
 ::: notes
-Faire remarquer la dernière section : c'est celle qu'on oublie et celle qui évite le plus d'allers-retours. Le « pourquoi » y est essentiel — c'est la leçon du module 4 appliquée à la mémoire.
+Faire remarquer la dernière section : c'est celle qu'on oublie et celle qui évite le plus d'allers-retours. Le « pourquoi » y est essentiel — c'est la leçon du module 5 appliquée à la mémoire.
 
 Faire aussi remarquer que ça tient en une page. Un aboutme de dix pages n'est pas relu, il est dilué.
 :::

@@ -42,7 +42,7 @@ Le modèle a répondu à la question posée. Vague en entrée, vague en sortie.
 **Avant de conclure que l'outil est mauvais : relire son propre prompt.**
 
 ::: notes
-Renvoyer au module 4. Si le participant a gardé son prompt maître, lui faire promettre de le rouvrir avant de râler.
+Renvoyer au module 5. Si le participant a gardé son prompt maître, lui faire promettre de le rouvrir avant de râler.
 
 Et le symétrique, nouveau cette année : le prompt trop bavard. Si le résultat part dans tous les sens, la question est aussi « est-ce que j'en ai trop dit ? ».
 :::

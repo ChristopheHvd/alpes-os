@@ -72,7 +72,7 @@ Le chat n'oublie plus tout. La **mémoire** est active par défaut : pendant que
 - Elle est **visible et modifiable** dans Réglages > Mémoire, un fichier par sujet.
 - Elle retient des **faits résumés**, pas le fil mot à mot.
 
-Ce qui doit être fiable et rejouable à l'identique, vous l'écrivez dans un fichier (module 6). La mémoire, elle, vous évite juste de tout réexpliquer à chaque fois.
+Ce qui doit être fiable et rejouable à l'identique, vous l'écrivez dans un fichier (module 7). La mémoire, elle, vous évite juste de tout réexpliquer à chaque fois.
 
 ::: notes
 Corrige une idée reçue tenace : « le chat ne garde rien ». C'était vrai il y a deux ans, plus maintenant.
@@ -120,7 +120,7 @@ Une chose ne suit toujours pas : le contenu d'une conversation ne passe pas seul
 ::: notes
 Nuance clé et souvent mal comprise : la mémoire projet retient des faits, pas le transcript. Si vous avez passé une heure à mettre au point un argumentaire dans une conversation, la mémoire en gardera l'idée, pas les formulations exactes.
 
-D'où la règle qui prépare le module 6 : ce qui a de la valeur et doit se rejouer à l'identique, on l'écrit dans un fichier de la base de connaissance.
+D'où la règle qui prépare le module 7 : ce qui a de la valeur et doit se rejouer à l'identique, on l'écrit dans un fichier de la base de connaissance.
 :::
 
 ---
@@ -137,14 +137,14 @@ Avant d'ouvrir une conversation, une question :
 | Une réponse, un avis, tout de suite | **Chat** |
 | Un livrable, à partir de plusieurs sources | **Cowork** |
 | Travailler sur un dossier suivi | Dans un **Project** (Chat ou Cowork) |
-| Que ça tourne sans vous | Une **tâche planifiée** dans Cowork (module 9) |
-| Traiter du volume de fichiers, versionner | **Code** (module 10) |
+| Que ça tourne sans vous | Une **tâche planifiée** dans Cowork (module 10) |
+| Traiter du volume de fichiers, versionner | **Code** (module 11) |
 | Une maquette, une présentation | **Design** |
 
 ::: notes
 C'est la règle de tri la plus rentable de la journée. La faire appliquer tout de suite sur trois usages réels du participant.
 
-Si un usage tombe dans deux cases, c'est qu'il empile deux tâches. Le découper — ça prépare le module 4.
+Si un usage tombe dans deux cases, c'est qu'il empile deux tâches. Le découper — ça prépare le module 5.
 :::
 
 ---
@@ -206,7 +206,7 @@ Sur vos usages réels :
 ::: notes
 Pour {{client.prenom}} : le Project du mandat principal. Y déposer le contexte client et les contraintes connues.
 
-L'étape 6 est la validation : si l'outil repose une question dont la réponse est dans les instructions, c'est que les instructions sont mal écrites. On les corrigera au module 6.
+L'étape 6 est la validation : si l'outil repose une question dont la réponse est dans les instructions, c'est que les instructions sont mal écrites. On les corrigera au module 7.
 
 Ne pas chercher l'exhaustivité maintenant, on remplira ce Project plus tard.
 :::

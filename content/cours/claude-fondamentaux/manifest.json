@@ -17,13 +17,14 @@
     "01-panorama.md",
     "02-modes.md",
     "03-modeles-effort.md",
-    "04-prompting.md",
-    "05-context-engineering.md",
-    "06-memoire.md",
-    "07-connecteurs.md",
-    "08-skills.md",
-    "09-taches-planifiees.md",
-    "10-claude-code.md",
-    "11-pieges.md"
+    "04-couts.md",
+    "05-prompting.md",
+    "06-context-engineering.md",
+    "07-memoire.md",
+    "08-connecteurs.md",
+    "09-skills.md",
+    "10-taches-planifiees.md",
+    "11-claude-code.md",
+    "12-pieges.md"
   ]
 }

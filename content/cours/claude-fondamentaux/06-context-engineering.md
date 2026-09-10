@@ -184,7 +184,7 @@ Sur {{client.cas}} :
 6. Lancez-le et vérifiez deux citations au hasard contre la source.
 
 ::: notes
-Garder cette liste : elle devient le cœur du prompt de la tâche planifiée au module 9. C'est le même travail, fait une fois.
+Garder cette liste : elle devient le cœur du prompt de la tâche planifiée au module 10. C'est le même travail, fait une fois.
 
 L'étape 6 installe le réflexe de contrôle par échantillon, qu'on retrouvera aux modules 7 et 10.
 :::

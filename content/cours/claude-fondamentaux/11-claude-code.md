@@ -99,7 +99,7 @@ Le montrer plutôt que le dire : lancer une tâche qui échoue au premier essai 
 type: concept
 
 - Un **dossier de travail** : les fichiers doivent être quelque part, pas en pièces jointes éparpillées
-- Des **instructions permanentes** : le fichier de contexte du module 6, à la racine du projet
+- Des **instructions permanentes** : le fichier de contexte du module 7, à la racine du projet
 - Une **habitude de validation** : relire ce qui a été fait avant de garder
 - Une **copie de sauvegarde** : travailler sur un double tant qu'on n'est pas à l'aise
 

@@ -57,7 +57,7 @@ C'est aussi la réponse à l'objection « et si ça dit une bêtise à un client
 type: concept
 
 - **Un déclencheur** — une heure, un jour, une fréquence
-- **Des sources** — celles cadrées au module 5
+- **Des sources** — celles cadrées au module 6
 - **Une consigne** — le prompt en quatre blocs, ou une skill
 - **Un cran de raisonnement** — le curseur du module 3
 - **Une destination** — un fichier, un brouillon, un message
@@ -98,7 +98,7 @@ type: demo
 
 En direct, sur {{client.cas}} :
 
-- Reprendre la liste de sources écrite au module 5
+- Reprendre la liste de sources écrite au module 6
 - Écrire la consigne, avec le mode de défaillance explicite
 - Choisir le cran de raisonnement, et le justifier à voix haute
 - Choisir la fréquence et l'heure

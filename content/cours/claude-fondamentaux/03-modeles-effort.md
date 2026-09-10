@@ -195,7 +195,7 @@ Adapter selon l'accès du participant. Pour {{client.prenom}}, l'essentiel se jo
 
 Faire ouvrir le menu en direct sur sa machine. Montrer que « moyen » est le défaut, et qu'on peut descendre à « faible » pour les tâches simples.
 
-Le point sur les tâches planifiées prépare le module 9. Y revenir explicitement à ce moment-là.
+Le point sur les tâches planifiées prépare le module 10. Y revenir explicitement à ce moment-là.
 :::
 
 ---
@@ -229,5 +229,5 @@ type: recap
 - Un modèle récent réglé bas vaut souvent l'ancien réglé haut.
 
 ::: notes
-Enchaîner sur le prompting : « maintenant que vous savez qui vous avez en face et à quel régime, il reste à lui parler correctement. »
+Enchaîner sur les coûts : « avant d'apprendre à s'en servir, autant savoir ce que ça coûte — la question revient toujours. »
 :::

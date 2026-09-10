@@ -180,7 +180,7 @@ Découpez. Une demande, un résultat, une vérification.
 ::: notes
 Même principe qu'en délégation humaine. Analogie utile avec un dirigeant : personne ne confie quatre missions dans une phrase à un nouveau collaborateur.
 
-Cette règle redevient centrale au module 9, quand on automatise : une tâche planifiée qui empile quatre étapes est indébogable.
+Cette règle redevient centrale au module 10, quand on automatise : une tâche planifiée qui empile quatre étapes est indébogable.
 :::
 
 ---
