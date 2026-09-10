@@ -46,29 +46,25 @@ app.use(express.static(path.join(ROOT, 'public')));
 app.use('/output', express.static(path.join(ROOT, 'output'), {
   setHeaders: (res, f) => { if (f.endsWith('.md') || f.endsWith('.txt')) res.type('text/plain; charset=utf-8'); },
 }));
-// La liste des supports nomme les clients pour qui ils sont déclinés : elle
-// reste locale, comme les profils de content/cours/<deck>/clients/. Sur un
-// clone neuf, on la sème depuis le modèle, comme pour la config.
-const decksDir = path.join(ROOT, 'content', 'cours');
-if (!fs.existsSync(path.join(decksDir, 'decks.json')) && fs.existsSync(path.join(decksDir, 'decks.example.json'))) {
-  fs.copyFileSync(path.join(decksDir, 'decks.example.json'), path.join(decksDir, 'decks.json'));
-  console.log('content/cours/decks.json créé depuis le modèle');
-}
-
-app.use('/content', express.static(path.join(ROOT, 'content'), {
+// Les supports de formation vivent dans le second brain (dépôt privé) : ils
+// portent des formulations, une progression et des profils clients réels, et
+// ce dépôt-ci est public. Le dashboard les monte de là et les sert sous
+// /content/cours/, comme si de rien n'était pour le moteur de présentation.
+const coursDir = path.join(cfg.secondBrain, 'cours');
+app.use('/content/cours', express.static(coursDir, {
   setHeaders: (res, f) => { if (f.endsWith('.md')) res.type('text/plain; charset=utf-8'); },
 }));
 
-// Le mode édition du support réécrit le module dans content/cours/. Un fichier
-// n'est acceptable que s'il est listé dans le manifest de son deck : c'est le
-// garde-fou contre la traversée de chemin. `lastModified` est celui reçu du
-// serveur au chargement — s'il ne colle plus, quelqu'un d'autre a écrit entre
-// temps (une session Claude dans un terminal) et on refuse plutôt qu'on écrase.
+// Le mode édition du support réécrit le module dans <secondBrain>/cours/. Un
+// fichier n'est acceptable que s'il est listé dans le manifest de son deck :
+// c'est le garde-fou contre la traversée de chemin. `lastModified` est celui
+// reçu du serveur au chargement — s'il ne colle plus, quelqu'un d'autre a écrit
+// entre temps (une session Claude dans un terminal) et on refuse plutôt qu'on écrase.
 app.put('/api/cours/:deck/:file', (req, res) => {
   try {
     const { deck, file } = req.params;
     if (!/^[a-z0-9-]+$/.test(deck) || !/^[a-z0-9-]+\.md$/.test(file)) return res.status(400).json({ error: 'nom invalide' });
-    const dir = path.join(ROOT, 'content', 'cours', deck);
+    const dir = path.join(coursDir, deck);
     const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
     if (!manifest.modules?.includes(file)) return res.status(404).json({ error: 'module inconnu de ce support' });
 
