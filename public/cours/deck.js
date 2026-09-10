@@ -547,16 +547,24 @@ async function saveNow() {
 
 // On ne reconnaît que ce que inline() sait produire ; tout le reste est aplati
 // en texte, ce qui rend un collage depuis Word inoffensif.
+// Le navigateur laisse volontiers l'espace *à l'intérieur* du gras quand on
+// réécrit un mot. `**x** ` et `** x**` ne veulent pas dire la même chose en
+// markdown : l'espace doit ressortir des marqueurs, pas disparaître.
+function mark(inner, m, fn = t => m + t + m) {
+  const [, before, text, after] = inner.match(/^(\s*)([\s\S]*?)(\s*)$/);
+  return text ? before + fn(text) + after : inner;
+}
+
 function walk(n) {
   if (n.nodeType === 3) return n.nodeValue.replace(/\u00a0/g, ' ');
   if (n.nodeType !== 1) return '';
   const inner = [...n.childNodes].map(walk).join('');
   switch (n.tagName) {
     case 'BR': return ' ';
-    case 'STRONG': case 'B': return inner.trim() ? `**${inner.trim()}**` : '';
-    case 'EM': case 'I': return inner.trim() ? `*${inner.trim()}*` : '';
-    case 'CODE': return inner.trim() ? '`' + inner.trim() + '`' : '';
-    case 'A': return inner.trim() ? `[${inner.trim()}](${n.getAttribute('href') || ''})` : '';
+    case 'STRONG': case 'B': return mark(inner, '**');
+    case 'EM': case 'I': return mark(inner, '*');
+    case 'CODE': return mark(inner, '`');
+    case 'A': return mark(inner, '', t => `[${t}](${n.getAttribute('href') || ''})`);
     case 'IMG': return `![${n.getAttribute('alt') || ''}](${n.getAttribute('src') || ''})`;
     default: return inner;
   }
@@ -685,6 +693,11 @@ function buildFmt() {
 }
 
 const hideFmt = () => { fmtEl.hidden = true; };
+
+// selectionchange ne suffit pas : un clic qui ne déplace pas le curseur n'en
+// déclenche pas. Toute pression hors de la barre la referme, une vraie nouvelle
+// sélection la rouvre juste après.
+addEventListener('mousedown', e => { if (!e.target.closest?.('.fmt')) hideFmt(); }, true);
 
 document.addEventListener('selectionchange', () => {
   if (!editing) return hideFmt();

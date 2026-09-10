@@ -443,7 +443,10 @@ kbd {
 }
 .notes .srcbox { min-height: 40vh; }
 
-/* barre de mise en forme, posée au-dessus de la sélection */
+/* barre de mise en forme, posée au-dessus de la sélection.
+   Le display:flex ci-dessous l'emporterait sur le display:none que le
+   navigateur applique à [hidden] : il faut donc le redire explicitement. */
+.fmt[hidden] { display: none; }
 .fmt {
   position: fixed; z-index: 40; transform: translate(-50%, -125%);
   display: flex; gap: 2px; padding: 3px;
