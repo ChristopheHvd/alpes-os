@@ -215,6 +215,10 @@ a.mail, .mail {
 .agenda .more:hover { border-color: var(--ink-3); color: var(--ink-2); }
 .agenda .scope { font: 400 12px/1.5 var(--font); color: var(--ink-3); border: 1px dashed var(--line); border-radius: 6px; padding: 9px 10px; }
 .agenda .scope a { color: var(--accent); }
+.cal-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
+.cal-foot button { border: 0; background: transparent; color: var(--ink-3); cursor: pointer; font: 500 11.5px/1 var(--font); padding: 0; }
+.cal-foot button:hover { color: var(--accent); }
+.cal-foot .btn { font-size: 11.5px; padding: 5px 9px; }
 .mail a { text-decoration: none; color: inherit; display: block; }
 .mail .acts { display: none; gap: 5px; margin-top: 7px; }
 .mail:hover .acts { display: flex; }
@@ -1332,19 +1336,24 @@ async function patchProject(slug, patch) {
 const relDate = iso => { const d = Math.round((Date.now() - new Date(iso)) / 864e5); return d <= 0 ? "aujourd'hui" : d === 1 ? 'hier' : `il y a ${d} j`; };
 
 /* ---------- agenda: what is coming, and what the standup reads ---------- */
-async function loadAgenda() {
-  const c = await api('/api/calendar');
+// always-visible way out when the agenda looks disconnected: refetch, or redo Google consent
+const calFoot = () => `<div class="cal-foot"><button id="cal-refresh">Actualiser l'agenda</button><a class="btn" href="/auth/google" title="Refaire l'autorisation Google (Gmail + lecture et écriture de l'agenda)">Reconnecter Google</a></div>`;
+function calFootWire() {
+  const b = $('#cal-refresh');
+  if (b) b.onclick = async () => { b.disabled = true; b.textContent = 'Actualisation…'; await loadAgenda(true); };
+}
+async function loadAgenda(refresh) {
+  const c = await api('/api/calendar' + (refresh ? '?refresh=1' : ''));
   const el = $('#agenda');
-  if (c.needsScope) { el.innerHTML = `<div class="scope">Le calendrier a besoin d'une autorisation supplémentaire. <a href="/auth/google">Autoriser l'agenda</a></div>`; return; }
-  if (c.needsAuth) { el.innerHTML = ''; return; }
+  if (c.needsScope) { el.innerHTML = `<div class="scope">Le calendrier a besoin d'une autorisation supplémentaire. <a href="/auth/google">Autoriser l'agenda</a></div>` + calFoot(); calFootWire(); return; }
+  if (c.needsAuth) { el.innerHTML = calFoot(); calFootWire(); return; }
   if (c.error) {
     // the most common cause is the Calendar API simply not being switched on
     const link = c.error.match(/https:\/\/console\.developers\.google\.com\/apis\S*?(?=["\s\\]|$)/)?.[0];
-    el.innerHTML = link
-      ? `<div class="scope">L'API Google Calendar n'est pas activée sur ton projet Google Cloud. <a href="${esc(link)}" target="_blank" rel="noopener">L'activer</a>, puis <a href="#" id="cal-retry">réessayer</a>.</div>`
-      : `<div class="none">Agenda indisponible : ${esc(c.error.slice(0, 140))}</div>`;
-    const retry = $('#cal-retry');
-    if (retry) retry.onclick = e => { e.preventDefault(); api('/api/calendar?refresh=1').then(loadAgenda); };
+    el.innerHTML = (link
+      ? `<div class="scope">L'API Google Calendar n'est pas activée sur ton projet Google Cloud. <a href="${esc(link)}" target="_blank" rel="noopener">L'activer</a>, puis actualise.</div>`
+      : `<div class="none">Agenda indisponible : ${esc(c.error.slice(0, 140))}</div>`) + calFoot();
+    calFootWire();
     return;
   }
   const today = new Date().toDateString();
@@ -1365,11 +1374,13 @@ async function loadAgenda() {
       </div>`;
   };
   const hiddenN = c.hidden?.length ?? 0;
-  // the chat agent can only create events once the write scope is granted
+  // the chat agent and the standup can only create events once the write scope is granted
   const needWrite = cfg.gmail && cfg.gmail.hasCalendar && !cfg.gmail.hasCalendarWrite;
   el.innerHTML = (next.length ? next.map(row).join('') : '<div class="none">Rien de prévu dans les 7 jours.</div>')
     + (hiddenN ? `<button class="more" id="cal-more">${hiddenN} événement${hiddenN > 1 ? 's' : ''} masqué${hiddenN > 1 ? 's' : ''} · réafficher</button>` : '')
-    + (needWrite ? `<div class="scope">Pour que l'assistant puisse créer des rendez-vous, <a href="/auth/google">autorise l'écriture de l'agenda</a>.</div>` : '');
+    + (needWrite ? `<div class="scope">Pour que l'assistant puisse créer des rendez-vous, <a href="/auth/google">autorise l'écriture de l'agenda</a>.</div>` : '')
+    + calFoot();
+  calFootWire();
   el.querySelectorAll('[data-evhide]').forEach(b => b.onclick = async () => {
     await api('/api/calendar/hide', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: b.dataset.evhide, title: b.dataset.title, start: b.dataset.start }) });
     toast('Événement masqué'); loadAgenda();
