@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getGraph, readNote } from './lib/brain.js';
-import { readTodo, writeTodo, completeCarried, addItem } from './lib/todo.js';
+import { readTodo, writeTodo, completeCarried, addItem, tidyTodo } from './lib/todo.js';
 import { makeGmail } from './lib/gmail.js';
 import { makeRunner } from './lib/runs.js';
 import { listProjects, updateProject, createProject } from './lib/projects.js';
@@ -100,8 +100,8 @@ app.get('/api/note', (req, res) => { const n = readNote(cfg.secondBrain, String(
 
 // Todo — markdown file in the second brain
 app.get('/api/todo', (req, res) => res.json(readTodo(todoFile)));
-app.put('/api/todo', (req, res) => res.json(writeTodo(todoFile, Array.isArray(req.body.items) ? req.body.items : [])));
-app.post('/api/todo/carried', (req, res) => res.json(completeCarried(todoFile, String(req.body.from), String(req.body.t), req.body.done !== false)));
+app.put('/api/todo', (req, res) => res.json(writeTodo(todoFile, Array.isArray(req.body.items) ? req.body.items : [], Array.isArray(req.body.later) ? req.body.later : undefined)));
+app.post('/api/todo/carried', (req, res) => res.json(completeCarried(todoFile, String(req.body.from), String(req.body.t), ['x', ' ', '>', '-'].includes(req.body.st) ? req.body.st : req.body.done !== false ? 'x' : ' ')));
 
 // Applications — Gmail
 app.get('/auth/google', (req, res) => { const u = gmail.authUrl(); u ? res.redirect(u) : res.status(400).send('credentials/client_secret.json manquant'); });
@@ -202,6 +202,8 @@ async function standupContext(slot) {
     consignes_boite: mailState.get().notes,
     todo_du_jour: todo.items,
     taches_reportees: todo.carried,
+    plus_tard: todo.later,
+    max_taches_actives: todo.max,
     projets: projects,
     agenda,
     mails_a_traiter: mails,
@@ -214,7 +216,10 @@ function runStandup(action, brief, model) {
   const a = cfg.apps.find(x => x.id === 'standup');
   const act = a?.actions.find(x => x.id === action);
   if (!a || !act) throw new Error("l'app standup est absente de la config");
-  const run = runner.start({ app: a, action: act, brief, model: model ?? a.model });
+  return waitRun(runner.start({ app: a, action: act, brief, model: model ?? a.model }));
+}
+
+function waitRun(run) {
   return new Promise(resolve => {
     const tick = () => {
       const r = runner.get(run.id);
@@ -256,7 +261,7 @@ app.post('/api/standup/compose', async (req, res) => {
       `compose\n\nMoment : ${slot}. Écris le compte rendu dans ${out}.\n\nCONTEXTE:\n${JSON.stringify(withAnswers, null, 1)}`);
     const outcome = fs.existsSync(out) ? fs.readFileSync(out, 'utf8') : '';
     if (outcome) standup.append({ date: ctx.date, slot, questions: [], answers: {}, outcome });
-    res.json({ ok: r.status === 'done', outcome, todo: readTodo(todoFile), log: r.status === 'done' ? undefined : r.output.slice(-800) });
+    res.json({ ok: r.status === 'done', outcome, todo: tidyTodo(todoFile), log: r.status === 'done' ? undefined : r.output.slice(-800) });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -325,7 +330,9 @@ app.post('/api/briefing', async (req, res) => {
     if (!a || !act) return res.status(404).json({ error: "l'app standup est absente de la config" });
     const out = path.join(ROOT, 'output', 'standup', `compose-${ctx.date}-${slot}.md`);
     const brief = `compose\n\nMoment : ${slot}. Aucune réponse à exploiter, compose à partir du seul contexte. Écris le compte rendu dans ${out}.\n\nCONTEXTE:\n${JSON.stringify({ ...ctx, reponses: [] }, null, 1)}`;
-    res.json(runner.start({ app: a, action: act, brief, model: req.body?.model ?? a.model }));
+    const run = runner.start({ app: a, action: act, brief, model: req.body?.model ?? a.model });
+    waitRun(run).then(() => tidyTodo(todoFile));
+    res.json(run);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
