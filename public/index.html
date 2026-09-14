@@ -464,6 +464,79 @@ a.mail, .mail {
 .modal, .viewer, .appview { position: fixed; inset: 0; background: var(--scrim); display: grid; place-items: center; z-index: 25; backdrop-filter: blur(3px); }
 .modal[hidden], .viewer[hidden], .appview[hidden] { display: none; }
 .appview { z-index: 24; }
+/* ---- portfolio: clients and their projects, full screen ---- */
+#w-projects h2 { cursor: pointer; }
+#w-projects h2:hover { color: var(--accent); }
+.portfolio { position: fixed; inset: 0; z-index: 22; background: var(--bg); display: grid; grid-template-rows: auto 1fr; }
+.pf-top { display: flex; align-items: center; gap: 12px; padding: 14px 24px; border-bottom: 1px solid var(--line-soft); background: var(--surface); flex-wrap: wrap; }
+.pf-top h1 { margin: 0; font: 600 19px/1.2 var(--display); color: var(--ink); }
+.pf-top .sp { flex: 1; }
+.pf-top input { width: min(260px, 100%); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; color: var(--ink); font: 400 13px var(--font); outline: none; }
+.pf-top input:focus { border-color: var(--accent); }
+.pf-seg { display: flex; background: var(--sunken); border-radius: 7px; padding: 2px; }
+.pf-seg button { border: 0; background: transparent; color: var(--ink-3); font: 500 12px/1 var(--font); padding: 6px 10px; border-radius: 5px; cursor: pointer; }
+.pf-seg button.on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.pf-main { display: grid; grid-template-columns: 300px 1fr; min-height: 0; }
+.pf-side { border-right: 1px solid var(--line-soft); overflow-y: auto; padding: 14px 12px 24px; display: grid; align-content: start; gap: 2px; }
+.pf-side .grp { font: 600 10.5px/1 var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); padding: 14px 10px 6px; }
+.pf-side a { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px; color: var(--ink); text-decoration: none; font: 600 13.5px/1.3 var(--font); min-width: 0; }
+.pf-side a span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-side a small { margin-left: auto; font: 400 11px/1 var(--font); color: var(--ink-3); }
+.pf-side a.pj-l { padding-left: 26px; font-weight: 400; font-size: 13px; color: var(--ink-2); }
+.pf-side a:hover { background: var(--sunken); }
+.pf-side a.on { background: var(--accent-soft); color: var(--accent); }
+.pf-side a.dim { opacity: .55; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); flex-shrink: 0; }
+.dot.actif { background: var(--good); } .dot.incubation { background: var(--warn); } .dot.pause { background: var(--line); }
+.pf-detail { overflow-y: auto; padding: 28px 36px 60px; }
+.pf-detail .inner { max-width: 860px; display: grid; gap: 22px; }
+.pf-kicker { font: 500 12px/1.4 var(--font); color: var(--ink-3); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.pf-kicker a { color: var(--accent); cursor: pointer; text-decoration: none; }
+.pf-detail h2 { margin: 2px 0 0; font: 600 28px/1.15 var(--display); color: var(--ink); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pf-detail .lead { margin: 6px 0 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.55; }
+.pf-sec { display: grid; gap: 8px; }
+.pf-sec h3 { margin: 0; font: 600 10.5px/1 var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.pf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+.pf-card { background: var(--surface); border: 1px solid var(--line-soft); border-radius: 8px; padding: 12px 14px; display: grid; gap: 6px; min-width: 0; }
+.pf-card .h { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.pf-card .h b { font: 600 14px/1.3 var(--font); color: var(--ink); cursor: pointer; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-card .h b:hover { color: var(--accent); }
+.pf-card .h small, .pf-card > small { color: var(--ink-3); font-size: 12px; }
+.pf-card .h small { margin-left: auto; white-space: nowrap; }
+.pf-card p { margin: 0; color: var(--ink-2); font-size: 13px; line-height: 1.5; }
+.pf-next { font: 400 14px/1.5 var(--font); color: var(--ink); background: var(--surface); border: 1px solid var(--line-soft); border-radius: 8px; padding: 10px 12px; cursor: text; }
+.pf-next.empty { color: var(--ink-3); font-style: italic; }
+.pf-next[contenteditable="true"] { outline: 1px solid var(--accent); }
+.pf-rows { display: grid; gap: 1px; background: var(--surface); border: 1px solid var(--line-soft); border-radius: 8px; overflow: hidden; }
+.pf-rows > * { display: flex; gap: 12px; align-items: baseline; padding: 9px 12px; font-size: 13px; color: var(--ink); min-width: 0; }
+.pf-rows > * + * { border-top: 1px solid var(--line-soft); }
+.pf-rows .when { flex: 0 0 110px; color: var(--accent); font: 500 12px/1.4 var(--font); font-variant-numeric: tabular-nums; }
+.pf-rows .tag { margin-left: auto; flex-shrink: 0; color: var(--ink-3); font-size: 11.5px; }
+.pf-rows .tag.carried { color: var(--warn); }
+.pf-rows details { display: block; }
+.pf-rows summary { cursor: pointer; list-style: none; }
+.pf-rows summary::-webkit-details-marker { display: none; }
+.pf-rows summary small { display: block; color: var(--ink-3); font-size: 12px; margin-top: 2px; }
+.pf-rows .none { color: var(--ink-3); }
+.pf-note, .pf-rows .note { font-size: 13.5px; color: var(--ink-2); line-height: 1.6; }
+.pf-note { background: var(--surface); border: 1px solid var(--line-soft); border-radius: 8px; padding: 6px 18px 10px; }
+.pf-note h1, .pf-note h2, .pf-note h3, .pf-rows .note h1, .pf-rows .note h2, .pf-rows .note h3 { font: 600 14.5px/1.3 var(--font); color: var(--ink); margin: 16px 0 6px; }
+.pf-note a, .pf-rows .note a { color: var(--accent); cursor: pointer; }
+.pf-note table { border-collapse: collapse; font-size: 12.5px; display: block; overflow-x: auto; }
+.pf-note td, .pf-note th { border: 1px solid var(--line-soft); padding: 5px 8px; text-align: left; vertical-align: top; }
+.pf-client { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.pf-client select, .pf-client input { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; color: var(--ink); font: 400 13px var(--font); max-width: 100%; }
+.pf-empty { color: var(--ink-3); padding: 40px 0; }
+.pf-back { display: none; }
+@media (max-width: 800px) {
+  .pf-top { padding: 12px 16px; }
+  .pf-main { grid-template-columns: 1fr; }
+  .pf-main.focus .pf-side { display: none; }
+  .pf-main:not(.focus) .pf-detail { display: none; }
+  .pf-detail { padding: 18px 16px 48px; }
+  .pf-back { display: inline; }
+  .pf-rows .when { flex-basis: 80px; }
+}
 .dlg { width: 560px; max-width: 92vw; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: grid; gap: 14px; box-shadow: var(--shadow-lg); }
 .dlg .w-head h2 { font-size: 16px; }
 .dlg textarea { width: 100%; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; color: var(--ink); font: 400 14px/1.55 var(--font); padding: 12px; resize: vertical; outline: none; }
@@ -611,7 +684,7 @@ a.mail, .mail {
   <aside class="col right">
     <section class="w" id="w-projects" data-widget="projects">
       <div class="w-head">
-        <h2><svg><use href="#i-flow"/></svg>Projets en cours</h2>
+        <h2 id="pf-open" title="Ouvrir la vue clients & projets"><svg><use href="#i-flow"/></svg>Projets en cours</h2>
         <span class="meta" id="pj-meta"></span>
         <button class="wtoggle" aria-label="Réduire ou déplier" data-w="projects" title="Réduire"><svg><use href="#i-chev"/></svg></button>
       </div>
@@ -661,6 +734,20 @@ a.mail, .mail {
     <div class="top"><span class="ic"><svg id="av-icon"><use href="#i-grid"/></svg></span><div style="flex:1"><b id="av-name"></b><small id="av-desc"></small></div><button class="icobtn" id="av-close">×</button></div>
     <div class="bar" id="av-bar"></div>
     <div class="body" id="av-body"></div>
+  </div>
+</div>
+
+<div class="portfolio" id="portfolio" hidden>
+  <div class="pf-top">
+    <button class="btn" id="pf-close" title="Retour au dashboard (Échap)">← Dashboard</button>
+    <h1>Clients &amp; projets</h1>
+    <span class="sp"></span>
+    <input id="pf-q" type="search" placeholder="Chercher un client, un projet, un contact">
+    <div class="pf-seg" id="pf-seg"><button data-f="actif" class="on">Actifs</button><button data-f="tous">Tous</button></div>
+  </div>
+  <div class="pf-main" id="pf-main">
+    <nav class="pf-side" id="pf-side"></nav>
+    <section class="pf-detail" id="pf-detail"></section>
   </div>
 </div>
 
@@ -1332,8 +1419,157 @@ async function patchProject(slug, patch) {
   if (r.error) return toast(r.error, true);
   toast('Projet mis à jour dans le second brain');
   loadProjects();
+  if (!$('#portfolio').hidden) loadPortfolio();
 }
 const relDate = iso => { const d = Math.round((Date.now() - new Date(iso)) / 864e5); return d <= 0 ? "aujourd'hui" : d === 1 ? 'hier' : `il y a ${d} j`; };
+
+/* ---------- portfolio: clients and their projects (#portefeuille/client|projet/<slug>) ---------- */
+let pf = null, pfFilter = 'actif', pfQuery = '';
+const fold = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const pfRoute = () => { const m = location.hash.match(/^#portefeuille(?:\/(client|projet)\/([\w.-]+))?$/); return m && { kind: m[1], slug: m[2] }; };
+const pfHref = (kind, slug) => `#portefeuille/${kind}/${encodeURIComponent(slug)}`;
+async function loadPortfolio() {
+  const r = await api('/api/portfolio');
+  if (r.error) return toast(r.error, true);
+  pf = r; renderPortfolio();
+}
+function onPortfolioHash() {
+  const r = pfRoute(), el = $('#portfolio');
+  if (!r) { el.hidden = true; return; }
+  if (el.hidden) { el.hidden = false; loadPortfolio(); } else if (pf) renderPortfolio();
+}
+function closePortfolio() { window.history.pushState('', '', location.pathname + location.search); onPortfolioHash(); }
+$('#pf-open').onclick = () => { location.hash = 'portefeuille'; };
+$('#pf-close').onclick = closePortfolio;
+addEventListener('hashchange', onPortfolioHash);
+addEventListener('keydown', e => {
+  if (e.key !== 'Escape' || $('#portfolio').hidden || stageMenu || document.activeElement?.isContentEditable) return;
+  if (!$('#standup').hidden || !$('#appview').hidden || !$('#viewer').hidden) return;
+  closePortfolio();
+}, true);  // capture: runs before the stage menu's own Escape handler clears it
+$('#pf-q').oninput = e => { pfQuery = e.target.value; renderPortfolio(); };
+$('#pf-seg').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  pfFilter = b.dataset.f;
+  $('#pf-seg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  renderPortfolio();
+};
+
+function renderPortfolio() {
+  if (!pf) return;
+  const route = pfRoute() ?? {};
+  const P = Object.fromEntries(pf.projects.map(p => [p.slug, p]));
+  const C = Object.fromEntries(pf.clients.map(c => [c.slug, c]));
+  const q = fold(pfQuery.trim());
+  const hit = (...s) => !q || s.some(x => fold(x).includes(q));
+  const stageOk = p => pfFilter === 'tous' || p.stage === pfFilter;
+  const recent = ps => Math.max(0, ...ps.map(p => Date.parse(p.updated || 0) || 0));
+
+  const groups = pf.clients.map(c => {
+    const all = c.projects.map(s => P[s]).filter(Boolean);
+    const clientHit = hit(c.title, c.description, ...c.contacts.map(x => x.name));
+    const ps = all.filter(p => stageOk(p) && (clientHit || hit(p.title, p.description)));
+    const show = (clientHit || ps.length) && (!all.length || ps.length || pfFilter === 'tous');
+    return show && { c, ps, dim: all.length > 0 && !all.some(p => p.stage === 'actif') };
+  }).filter(Boolean).sort((a, b) => (a.dim - b.dim) || recent(b.ps) - recent(a.ps));
+  const orphans = pf.projects.filter(p => !C[p.client] && stageOk(p) && hit(p.title, p.description));
+
+  // no focus yet: open on the first client rather than an empty pane
+  if (!route.kind && (groups[0] || orphans[0]) && window.innerWidth > 800) {
+    const first = groups[0] ? pfHref('client', groups[0].c.slug) : pfHref('projet', orphans[0].slug);
+    window.history.replaceState('', '', first); route.kind = first.split('/')[1]; route.slug = decodeURIComponent(first.split('/')[2]);
+  }
+  const on = (k, s) => route.kind === k && route.slug === s ? ' on' : '';
+  const pjLink = (p, cls = 'pj-l') => `<a class="${cls}${on('projet', p.slug)}" href="${pfHref('projet', p.slug)}"><i class="dot ${esc(p.stage)}"></i><span>${esc(p.title)}</span></a>`;
+  $('#pf-side').innerHTML = (groups.length ? '<div class="grp">Clients</div>' : '')
+    + groups.map(g => `<a class="${on('client', g.c.slug)}${g.dim ? ' dim' : ''}" href="${pfHref('client', g.c.slug)}"><span>${esc(g.c.title)}</span><small>${g.c.projects.length || ''}</small></a>` + g.ps.map(p => pjLink(p)).join('')).join('')
+    + (orphans.length ? '<div class="grp">Sans client</div>' + orphans.map(p => pjLink(p, '')).join('') : '')
+    + (!groups.length && !orphans.length ? '<div class="pf-empty">Rien ne correspond.</div>' : '');
+
+  $('#pf-main').classList.toggle('focus', !!route.kind);
+  const el = $('#pf-detail');
+  const item = route.kind === 'client' ? C[route.slug] : route.kind === 'projet' ? P[route.slug] : null;
+  if (!item) { el.innerHTML = `<div class="inner"><div class="pf-empty">${route.kind ? 'Fiche introuvable.' : 'Choisis un client ou un projet.'}</div></div>`; return; }
+  el.innerHTML = `<div class="inner">${route.kind === 'client' ? pfClient(item, P) : pfProject(item, C)}</div>`;
+  el.scrollTop = 0;
+  pfWire(el, item, route.kind);
+}
+
+const pfDate = iso => { const d = new Date(iso); return d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) + (iso.length > 10 ? ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''); };
+const pfSections = x => {
+  const where = { today: "aujourd'hui", carried: 'reporté', later: 'plus tard' };
+  return `
+    <div class="pf-sec"><h3>Argent</h3><div class="pf-rows">${x.finance.length ? x.finance.map(f => `<details data-note="${esc(f.id)}"><summary>${esc(f.title)}<small>${esc(f.description)}</small></summary><div class="note"></div></details>`).join('') : '<div class="none">Aucun devis ni facture dans brain/finance.</div>'}</div></div>
+    <div class="pf-sec"><h3>Agenda à venir</h3><div class="pf-rows">${x.events.length ? x.events.map(e => `<a href="${esc(e.url)}" target="_blank" rel="noopener" style="text-decoration:none"><span class="when">${esc(pfDate(e.start))}</span><span>${esc(e.title)}</span></a>`).join('') : '<div class="none">Rien dans les 3 semaines.</div>'}</div></div>
+    <div class="pf-sec"><h3>Tâches ouvertes</h3><div class="pf-rows">${x.tasks.length ? x.tasks.map(t => `<div><span>${esc(t.t)}</span><span class="tag ${t.where}">${where[t.where]}</span></div>`).join('') : '<div class="none">Aucune tâche en cours.</div>'}</div></div>`;
+};
+
+function pfClient(c, P) {
+  const ps = c.projects.map(s => P[s]).filter(Boolean);
+  return `
+    <div><div class="pf-kicker"><a class="pf-back" href="#portefeuille">← Liste</a><span>Client</span></div>
+      <h2>${esc(c.title)}</h2>${c.description ? `<p class="lead">${esc(c.description)}</p>` : ''}</div>
+    ${c.contacts.length ? `<div class="pf-sec"><h3>Contacts</h3><div class="pf-grid">${c.contacts.map(x => `<div class="pf-card"><div class="h"><b style="cursor:default">${esc(x.name)}</b></div>${x.role ? `<p>${esc(x.role)}</p>` : ''}</div>`).join('')}</div></div>` : ''}
+    <div class="pf-sec"><h3>Projets</h3>${ps.length ? `<div class="pf-grid">${ps.map(p => `
+      <div class="pf-card"><div class="h"><i class="dot ${esc(p.stage)}"></i><b data-go="${pfHref('projet', p.slug)}">${esc(p.title)}</b><small>${p.updated ? 'revu ' + relDate(p.updated) : ''}</small></div>
+        <p>${esc(p.next || 'Pas de prochaine étape')}</p></div>`).join('')}</div>` : '<div class="pf-rows"><div class="none">Aucun projet rattaché. Ouvre un projet et choisis ce client.</div></div>'}</div>
+    ${pfSections(c)}
+    <div class="pf-sec"><h3>Fiche</h3><div class="pf-note">${md(c.body || '')}</div></div>`;
+}
+
+function pfProject(p, C) {
+  const c = C[p.client];
+  return `
+    <div><div class="pf-kicker"><a class="pf-back" href="#portefeuille">← Liste</a><span>Projet</span><span>·</span>${c ? `<a href="${pfHref('client', c.slug)}">${esc(c.title)}</a>` : '<span>sans client</span>'}</div>
+      <h2>${esc(p.title)} <button class="stagebtn ${esc(p.stage)}" data-stage="${esc(p.slug)}" aria-haspopup="true">${esc(p.stage)}<svg><use href="#i-chev"/></svg></button></h2>
+      ${p.description ? `<p class="lead">${esc(p.description)}</p>` : ''}</div>
+    <div class="pf-sec"><h3>Prochaine étape${p.updated ? ` · revu ${relDate(p.updated)}` : ''}</h3>
+      <div class="pf-next ${p.next ? '' : 'empty'}" id="pf-next" title="Cliquer pour modifier">${esc(p.next || 'Pas de prochaine étape')}</div>
+      ${p.next ? `<div><button class="btn sm" id="pf-push">→ Ajouter à aujourd'hui</button></div>` : ''}</div>
+    <div class="pf-sec"><h3>Client</h3><div class="pf-client">
+      <select id="pf-client"><option value="">Sans client</option>${pf.clients.map(x => `<option value="${esc(x.slug)}"${x.slug === p.client ? ' selected' : ''}>${esc(x.title)}</option>`).join('')}<option value="__new">+ Nouvelle fiche client…</option></select>
+      <span id="pf-newclient" hidden><input id="pf-nc-nom" placeholder="Nom du contact"> <input id="pf-nc-ent" placeholder="Entreprise"> <button class="btn acc sm" id="pf-nc-go">Créer et rattacher</button></span>
+    </div></div>
+    ${pfSections(p)}
+    <div class="pf-sec"><h3>Fiche</h3><div class="pf-note">${md(p.body || '')}</div></div>`;
+}
+
+function pfWire(el, item, kind) {
+  el.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { location.hash = b.dataset.go; });
+  // links between notes stay inside the view; anything else is left alone
+  el.querySelectorAll('a[data-link]').forEach(a => a.onclick = () => {
+    const m = a.dataset.link.match(/(projects|clients)\/([\w.-]+)\.md$/);
+    if (m && m[2] !== 'index') location.hash = pfHref(m[1] === 'projects' ? 'projet' : 'client', m[2]);
+  });
+  el.querySelectorAll('details[data-note]').forEach(d => d.ontoggle = async () => {
+    const box = d.querySelector('.note');
+    if (!d.open || box.dataset.loaded) return;
+    const n = await api('/api/note?id=' + encodeURIComponent(d.dataset.note));
+    box.innerHTML = md(n.body || ''); box.dataset.loaded = 1;
+  });
+  if (kind !== 'projet') return;
+  const p = item;
+  el.querySelector('[data-stage]').onclick = e => { e.stopPropagation(); openStageMenu(e.currentTarget); };
+  const next = $('#pf-next');
+  next.onclick = () => { if (next.isContentEditable) return; next.contentEditable = 'true'; next.classList.remove('empty'); if (!p.next) next.textContent = ''; next.focus(); };
+  next.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); next.blur(); } if (e.key === 'Escape') { next.contentEditable = 'false'; renderPortfolio(); } };
+  next.onblur = () => { if (!next.isContentEditable) return; next.contentEditable = 'false'; const v = next.textContent.trim(); if (v !== p.next) patchProject(p.slug, { next: v }); };
+  const push = $('#pf-push');
+  if (push) push.onclick = () => { todo.items.push({ t: p.next, s: p.title, p: '', done: false }); saveTodo(); toast(`Ajouté à aujourd'hui : ${p.next.slice(0, 40)}`); };
+  const sel = $('#pf-client');
+  sel.onchange = () => {
+    $('#pf-newclient').hidden = sel.value !== '__new';
+    if (sel.value === '__new') return $('#pf-nc-nom').focus();
+    patchProject(p.slug, { client: sel.value });
+  };
+  $('#pf-nc-go').onclick = async () => {
+    const nom = $('#pf-nc-nom').value.trim();
+    if (!nom) return $('#pf-nc-nom').focus();
+    const c = await api('/api/clients', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ nom, entreprise: $('#pf-nc-ent').value.trim(), description: `Client du projet ${p.title}.` }) });
+    if (c.error) return toast(c.error, true);
+    patchProject(p.slug, { client: c.slug });
+  };
+}
 
 /* ---------- agenda: what is coming, and what the standup reads ---------- */
 // always-visible way out when the agenda looks disconnected: refetch, or redo Google consent
@@ -1715,6 +1951,7 @@ function chatAsk(text) {
   setInterval(loadAgenda, 10 * 60e3);
   setInterval(loadProjects, 60e3);
   standupOnOpen();
+  onPortfolioHash();
 })();
 </script>
 </body>

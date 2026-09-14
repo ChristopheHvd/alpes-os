@@ -12,6 +12,7 @@ import { makeGmail } from './lib/gmail.js';
 import { makeRunner } from './lib/runs.js';
 import { listProjects, updateProject, createProject } from './lib/projects.js';
 import { listClients, createClient } from './lib/clients.js';
+import { portfolio } from './lib/portfolio.js';
 import { makeCalendar } from './lib/calendar.js';
 import { makeMailState } from './lib/mailstate.js';
 import { makeCalendarState } from './lib/calendarstate.js';
@@ -147,6 +148,14 @@ app.get('/api/clients', (req, res) => res.json(listClients(cfg.secondBrain)));
 app.post('/api/clients', (req, res) => {
   try { res.json(createClient(cfg.secondBrain, req.body ?? {})); }
   catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+// Portfolio — clients and their projects cross-read with finance, todo and agenda
+app.get('/api/portfolio', async (req, res) => {
+  let events = [];
+  try { if (gmail.status().hasCalendar) events = (await calendar.upcoming({ ...calOpts(), days: 21, max: 40 })).events; } catch (e) { /* calendar optional */ }
+  try { res.json(portfolio(cfg.secondBrain, { todo: readTodo(todoFile), events })); }
+  catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // Calendar — what is coming, used by the widget and by the daily standup
