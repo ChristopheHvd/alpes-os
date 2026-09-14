@@ -290,6 +290,17 @@ async function createStandupEvents(date, slot, report) {
   if (lines.length) fs.appendFileSync(report, `\n## Agenda\n\n${lines.join('\n')}\n`);
 }
 
+// The compose step writes the todo it proposes to output/standup/todo-<date>-<slot>.md;
+// the server adopts it, tidies it (5 open tasks, Plus tard, duplicates) and sends one
+// todo event. An older skill that still ships the todo inside its own event leaves no
+// such file, and then the todo is left alone so the two cannot contradict each other.
+function adoptComposedTodo(date, slot) {
+  const f = path.join(ROOT, 'output', 'standup', `todo-${date}-${slot}.md`);
+  if (!fs.existsSync(f)) return null;
+  bundle.replace(todoFile, fs.readFileSync(f, 'utf8'), { why: `todo composée par le point du ${date} (${slot})`, subject: 'Todo du jour' });
+  return tidyTodo(todoFile);
+}
+
 // runs the standup skill and waits for it, since both steps are interactive
 function runStandup(action, brief, model) {
   const a = cfg.apps.find(x => x.id === 'standup');
@@ -341,7 +352,7 @@ app.post('/api/standup/compose', async (req, res) => {
     await createStandupEvents(ctx.date, slot, out);
     const outcome = fs.existsSync(out) ? fs.readFileSync(out, 'utf8') : '';
     if (outcome) standup.append({ date: ctx.date, slot, questions: [], answers: {}, outcome });
-    res.json({ ok: r.status === 'done', outcome, todo: tidyTodo(todoFile), log: r.status === 'done' ? undefined : r.output.slice(-800) });
+    res.json({ ok: r.status === 'done', outcome, todo: adoptComposedTodo(ctx.date, slot) ?? readTodo(todoFile), log: r.status === 'done' ? undefined : r.output.slice(-800) });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -411,7 +422,7 @@ app.post('/api/briefing', async (req, res) => {
     const out = path.join(ROOT, 'output', 'standup', `compose-${ctx.date}-${slot}.md`);
     const brief = `compose\n\nMoment : ${slot}. Aucune réponse à exploiter, compose à partir du seul contexte. Écris le compte rendu dans ${out}.\n\nCONTEXTE:\n${JSON.stringify({ ...ctx, reponses: [] }, null, 1)}`;
     const run = runner.start({ app: a, action: act, brief, model: req.body?.model ?? a.model });
-    waitRun(run).then(async () => { tidyTodo(todoFile); await createStandupEvents(ctx.date, slot, out); });
+    waitRun(run).then(async () => { adoptComposedTodo(ctx.date, slot); await createStandupEvents(ctx.date, slot, out); });
     res.json(run);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
