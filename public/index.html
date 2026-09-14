@@ -215,6 +215,10 @@ a.mail, .mail {
 .agenda .more:hover { border-color: var(--ink-3); color: var(--ink-2); }
 .agenda .scope { font: 400 12px/1.5 var(--font); color: var(--ink-3); border: 1px dashed var(--line); border-radius: 6px; padding: 9px 10px; }
 .agenda .scope a { color: var(--accent); }
+.cal-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
+.cal-foot button { border: 0; background: transparent; color: var(--ink-3); cursor: pointer; font: 500 11.5px/1 var(--font); padding: 0; }
+.cal-foot button:hover { color: var(--accent); }
+.cal-foot .btn { font-size: 11.5px; padding: 5px 9px; }
 .mail a { text-decoration: none; color: inherit; display: block; }
 .mail .acts { display: none; gap: 5px; margin-top: 7px; }
 .mail:hover .acts { display: flex; }
@@ -347,6 +351,20 @@ a.mail, .mail {
 .todo .del { opacity: 0; font: 400 15px/1 var(--font); color: var(--ink-3); cursor: pointer; border: 0; background: transparent; padding: 0 2px; }
 .todo .it:hover .del { opacity: 1; }
 .todo .del:hover { color: var(--crit); }
+[data-widget="today"] > .w-body { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
+[data-widget="today"] > .w-body > :not(.todo) { flex-shrink: 0; }
+.todo { align-content: start; }
+.todo .it[draggable="true"] { cursor: grab; }
+.todo .it.dragging { opacity: .4; }
+.todo .it.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
+.todo .it.drop-after { box-shadow: inset 0 -2px 0 var(--accent); }
+.todo .later-head { display: flex; align-items: center; gap: 8px; margin: 8px 8px 2px; padding: 6px 0 2px; border: 0; border-top: 1px solid var(--line-soft); background: transparent; color: var(--ink-3); font: 500 12px/1.4 var(--font); cursor: pointer; text-align: left; }
+.todo .later-head::before { content: "›"; display: inline-block; transition: transform .15s; }
+.todo .later-head.open::before { transform: rotate(90deg); }
+.todo .later-head.drop-before, .todo .later-head.drop-after { color: var(--accent); border-top-color: var(--accent); }
+.todo .it.later { grid-template-columns: 1fr auto auto; }
+.todo .it.later .tx { color: var(--ink-2); font-weight: 400; }
+.prog span.full { color: var(--warn); }
 .add { display: flex; gap: 10px; align-items: center; border: 1px dashed var(--line); border-radius: 6px; padding: 9px 11px; }
 .add input { flex: 1; background: transparent; border: 0; color: var(--ink); font: 400 13px var(--font); outline: none; }
 .add input::placeholder { color: var(--ink-3); }
@@ -686,18 +704,69 @@ setTheme((() => { try { return localStorage.getItem('theme'); } catch (e) { retu
   ?? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
 
 /* ---------- todo (brain/journal/todo.md in the second brain) ---------- */
-let todo = { items: [], carried: [] };
+let todo = { items: [], carried: [], later: [], max: 5 };
+let laterOpen = false;
 async function loadTodo() { todo = await api('/api/todo'); renderTodo(); }
-async function saveTodo() { todo = await api('/api/todo', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ items: todo.items }) }); renderTodo(); }
+async function saveTodo() {
+  todo = await api('/api/todo', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ items: todo.items, later: todo.later }) });
+  if (todo.bumped) toast(`Limite de ${todo.max} tâches : ${todo.bumped} passée${todo.bumped > 1 ? 's' : ''} dans « Plus tard »`);
+  renderTodo();
+}
 function renderTodo() {
   const el = $('#todo');
-  const row = (t, i, carried) => `<div class="it${carried ? ' carried' : ''}"><input type="checkbox" id="td${carried ? 'c' : ''}${i}" data-i="${i}" data-c="${carried ? 1 : 0}" ${t.done ? 'checked' : ''}><label class="box" for="td${carried ? 'c' : ''}${i}"><svg><use href="#i-check"/></svg></label><div class="tx">${esc(t.t)}<small>${carried ? 'reporté du ' + t.from + (t.s ? ' · ' : '') : ''}${esc(t.s)}</small></div>${carried ? '<span></span>' : `<button class="del" data-i="${i}" title="Supprimer">×</button>`}<i class="pr ${t.p}"></i></div>`;
-  el.innerHTML = todo.items.map((t, i) => row(t, i, false)).join('') + todo.carried.map((t, i) => row(t, i, true)).join('');
+  const row = (t, i, carried) => `<div class="it${carried ? ' carried' : ''}" draggable="true" data-list="${carried ? 'carried' : 'items'}" data-i="${i}"><input type="checkbox" id="td${carried ? 'c' : ''}${i}" data-i="${i}" data-c="${carried ? 1 : 0}" ${t.done ? 'checked' : ''}><label class="box" for="td${carried ? 'c' : ''}${i}"><svg><use href="#i-check"/></svg></label><div class="tx">${esc(t.t)}<small>${carried ? 'reporté du ' + t.from + (t.s ? ' · ' : '') : ''}${esc(t.s)}</small></div>${carried ? '<span></span>' : `<button class="del" data-i="${i}" title="Supprimer">×</button>`}<i class="pr ${t.p}"></i></div>`;
+  const later = (t, i) => `<div class="it later" draggable="true" data-list="later" data-i="${i}"><div class="tx">${esc(t.t)}<small>${esc(t.s)}</small></div><button class="del" data-i="${i}" data-later="1" title="Supprimer">×</button><i class="pr ${t.p}"></i></div>`;
+  el.innerHTML = todo.items.map((t, i) => row(t, i, false)).join('') + todo.carried.map((t, i) => row(t, i, true)).join('')
+    + (todo.later.length ? `<button class="later-head${laterOpen ? ' open' : ''}" data-list="later" data-i="0">Plus tard · ${todo.later.length}</button>` + (laterOpen ? todo.later.map(later).join('') : '') : '');
   const d = todo.items.filter(t => t.done).length;
   $('#pbar').style.width = todo.items.length ? (d / todo.items.length * 100) + '%' : '0';
   $('#pcount').textContent = `${d}/${todo.items.length}`;
+  $('#pcount').classList.toggle('full', todo.items.length - d >= todo.max);
   $('#todo-src').textContent = 'second-brain/brain/journal/todo.md';
 }
+// drag & drop across today, carried and "Plus tard"; the server re-applies the cap
+let dragSrc = null;
+const clearDrop = () => $('#todo').querySelectorAll('.drop-before,.drop-after').forEach(n => n.classList.remove('drop-before', 'drop-after'));
+$('#todo').addEventListener('dragstart', e => {
+  const it = e.target.closest('[draggable="true"]');
+  if (!it) return;
+  dragSrc = { list: it.dataset.list, i: +it.dataset.i };
+  it.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', '');
+});
+$('#todo').addEventListener('dragend', e => { e.target.classList?.remove('dragging'); clearDrop(); dragSrc = null; });
+$('#todo').addEventListener('dragover', e => {
+  const tg = dragSrc && e.target.closest('.it, .later-head');
+  if (!tg) return;
+  e.preventDefault();
+  clearDrop();
+  const r = tg.getBoundingClientRect();
+  tg.classList.add(tg.classList.contains('later-head') || e.clientY < r.top + r.height / 2 ? 'drop-before' : 'drop-after');
+});
+$('#todo').addEventListener('drop', async e => {
+  const tg = dragSrc && e.target.closest('.it, .later-head');
+  if (!tg) return;
+  e.preventDefault();
+  const src = dragSrc, after = tg.classList.contains('drop-after');
+  clearDrop();
+  let list = tg.dataset.list, at = +tg.dataset.i + (after ? 1 : 0);
+  if (list === 'carried') { list = 'items'; at = todo.items.length; }
+  if (src.list === 'carried' && tg.dataset.list === 'carried') return;
+  let t;
+  if (src.list === 'carried') {
+    t = todo.carried[src.i];
+    const moved = { t: t.t, s: t.s, p: t.p, done: false };
+    todo = await api('/api/todo/carried', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ from: t.from, t: t.t, st: '>' }) });
+    t = moved;
+  } else {
+    [t] = todo[src.list].splice(src.i, 1);
+    if (src.list === list && src.i < at) at--;
+  }
+  if (list === 'later') t.done = false;
+  todo[list].splice(at, 0, t);
+  saveTodo();
+});
 $('#todo').addEventListener('change', async e => {
   const i = +e.target.dataset.i;
   if (e.target.dataset.c === '1') {
@@ -710,7 +779,10 @@ $('#todo').addEventListener('change', async e => {
   todo.items[i].done = e.target.checked;
   saveTodo();
 });
-$('#todo').addEventListener('click', e => { if (e.target.classList.contains('del')) { todo.items.splice(+e.target.dataset.i, 1); saveTodo(); } });
+$('#todo').addEventListener('click', e => {
+  if (e.target.classList.contains('later-head')) { laterOpen = !laterOpen; renderTodo(); return; }
+  if (e.target.classList.contains('del')) { todo[e.target.dataset.later ? 'later' : 'items'].splice(+e.target.dataset.i, 1); saveTodo(); }
+});
 $('#newtodo').addEventListener('keydown', e => {
   if (e.key !== 'Enter' || !e.target.value.trim()) return;
   let t = e.target.value.trim(), p = '';
@@ -1233,7 +1305,7 @@ async function loadProjects() {
   });
   $('#projects').querySelectorAll('[data-push]').forEach(el => el.onclick = () => {
     const p = projects.find(x => x.slug === el.dataset.push);
-    todos.items.push({ t: p.next, s: p.title, p: '', done: false });
+    todo.items.push({ t: p.next, s: p.title, p: '', done: false });
     saveTodo(); toast(`Ajouté à aujourd'hui : ${p.next.slice(0, 40)}`);
   });
 }
@@ -1264,19 +1336,24 @@ async function patchProject(slug, patch) {
 const relDate = iso => { const d = Math.round((Date.now() - new Date(iso)) / 864e5); return d <= 0 ? "aujourd'hui" : d === 1 ? 'hier' : `il y a ${d} j`; };
 
 /* ---------- agenda: what is coming, and what the standup reads ---------- */
-async function loadAgenda() {
-  const c = await api('/api/calendar');
+// always-visible way out when the agenda looks disconnected: refetch, or redo Google consent
+const calFoot = () => `<div class="cal-foot"><button id="cal-refresh">Actualiser l'agenda</button><a class="btn" href="/auth/google" title="Refaire l'autorisation Google (Gmail + lecture et écriture de l'agenda)">Reconnecter Google</a></div>`;
+function calFootWire() {
+  const b = $('#cal-refresh');
+  if (b) b.onclick = async () => { b.disabled = true; b.textContent = 'Actualisation…'; await loadAgenda(true); };
+}
+async function loadAgenda(refresh) {
+  const c = await api('/api/calendar' + (refresh ? '?refresh=1' : ''));
   const el = $('#agenda');
-  if (c.needsScope) { el.innerHTML = `<div class="scope">Le calendrier a besoin d'une autorisation supplémentaire. <a href="/auth/google">Autoriser l'agenda</a></div>`; return; }
-  if (c.needsAuth) { el.innerHTML = ''; return; }
+  if (c.needsScope) { el.innerHTML = `<div class="scope">Le calendrier a besoin d'une autorisation supplémentaire. <a href="/auth/google">Autoriser l'agenda</a></div>` + calFoot(); calFootWire(); return; }
+  if (c.needsAuth) { el.innerHTML = calFoot(); calFootWire(); return; }
   if (c.error) {
     // the most common cause is the Calendar API simply not being switched on
     const link = c.error.match(/https:\/\/console\.developers\.google\.com\/apis\S*?(?=["\s\\]|$)/)?.[0];
-    el.innerHTML = link
-      ? `<div class="scope">L'API Google Calendar n'est pas activée sur ton projet Google Cloud. <a href="${esc(link)}" target="_blank" rel="noopener">L'activer</a>, puis <a href="#" id="cal-retry">réessayer</a>.</div>`
-      : `<div class="none">Agenda indisponible : ${esc(c.error.slice(0, 140))}</div>`;
-    const retry = $('#cal-retry');
-    if (retry) retry.onclick = e => { e.preventDefault(); api('/api/calendar?refresh=1').then(loadAgenda); };
+    el.innerHTML = (link
+      ? `<div class="scope">L'API Google Calendar n'est pas activée sur ton projet Google Cloud. <a href="${esc(link)}" target="_blank" rel="noopener">L'activer</a>, puis actualise.</div>`
+      : `<div class="none">Agenda indisponible : ${esc(c.error.slice(0, 140))}</div>`) + calFoot();
+    calFootWire();
     return;
   }
   const today = new Date().toDateString();
@@ -1297,11 +1374,13 @@ async function loadAgenda() {
       </div>`;
   };
   const hiddenN = c.hidden?.length ?? 0;
-  // the chat agent can only create events once the write scope is granted
+  // the chat agent and the standup can only create events once the write scope is granted
   const needWrite = cfg.gmail && cfg.gmail.hasCalendar && !cfg.gmail.hasCalendarWrite;
   el.innerHTML = (next.length ? next.map(row).join('') : '<div class="none">Rien de prévu dans les 7 jours.</div>')
     + (hiddenN ? `<button class="more" id="cal-more">${hiddenN} événement${hiddenN > 1 ? 's' : ''} masqué${hiddenN > 1 ? 's' : ''} · réafficher</button>` : '')
-    + (needWrite ? `<div class="scope">Pour que l'assistant puisse créer des rendez-vous, <a href="/auth/google">autorise l'écriture de l'agenda</a>.</div>` : '');
+    + (needWrite ? `<div class="scope">Pour que l'assistant puisse créer des rendez-vous, <a href="/auth/google">autorise l'écriture de l'agenda</a>.</div>` : '')
+    + calFoot();
+  calFootWire();
   el.querySelectorAll('[data-evhide]').forEach(b => b.onclick = async () => {
     await api('/api/calendar/hide', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: b.dataset.evhide, title: b.dataset.title, start: b.dataset.start }) });
     toast('Événement masqué'); loadAgenda();
