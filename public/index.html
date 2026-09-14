@@ -412,6 +412,22 @@ a.mail, .mail {
 .brand p { margin: 5px 0 0; font: 400 12.5px/1 var(--font); color: var(--ink-3); }
 .hud { position: absolute; bottom: 18px; right: 18px; text-align: right; max-width: 190px; font: 400 11.5px/1.6 var(--font); color: var(--ink-3); z-index: 2; pointer-events: none; }
 .hud b { color: var(--ink-2); font-weight: 500; }
+.sbsync { position: absolute; left: 16px; top: 58px; z-index: 4; max-width: min(360px, calc(100% - 32px)); }
+.sb-pill { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line-soft); background: var(--surface); color: var(--ink-2); border-radius: 20px; padding: 6px 12px; font: 500 11.5px/1 var(--font); cursor: pointer; box-shadow: var(--shadow); }
+.sb-pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--good); flex-shrink: 0; }
+.sb-pill.wait i { background: var(--accent); } .sb-pill.run i { background: var(--accent); animation: sbpulse 1s ease-in-out infinite; }
+.sb-pill.warn { color: var(--crit); } .sb-pill.warn i { background: var(--crit); }
+@keyframes sbpulse { 50% { opacity: .3; } }
+.sb-panel { margin-top: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-lg); padding: 12px; display: grid; gap: 10px; font-size: 12.5px; color: var(--ink-2); }
+.sb-panel ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 240px; overflow-y: auto; }
+.sb-panel li { display: grid; gap: 1px; }
+.sb-panel li b { color: var(--ink); font-weight: 500; }
+.sb-panel li small { color: var(--ink-3); }
+.sb-panel .where { font-size: 10.5px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .05em; }
+.sb-panel .where.processing { color: var(--crit); }
+.sb-panel pre { margin: 0; white-space: pre-wrap; font: 400 11px/1.4 var(--mono); background: var(--sunken); border-radius: 6px; padding: 8px; max-height: 140px; overflow: auto; }
+.sb-panel .row { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+@media (prefers-reduced-motion: reduce) { .sb-pill.run i { animation: none; } }
 .zoom { position: absolute; right: 16px; top: 20px; display: grid; gap: 5px; z-index: 2; }
 .zoom button { width: 30px; height: 30px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); border-radius: 6px; cursor: pointer; font: 400 15px/1 var(--font); box-shadow: var(--shadow); }
 .zoom button:hover { border-color: var(--accent); color: var(--accent); }
@@ -775,6 +791,7 @@ a.pf-card.res-cours p { color: var(--accent); }
       <button data-theme="light">Papier</button>
       <button data-theme="dark">Ardoise</button>
     </div>
+    <div class="sbsync" id="sbsync" hidden></div>
     <header class="brand">
       <h1><svg><use href="#i-hex"/></svg>Alpes IA <span>Agentic OS</span></h1>
       <p>Second brain · <span id="stats">—</span></p>
@@ -1899,6 +1916,44 @@ function pfGrid(groups, orphans) {
     + (orphans.length ? `<div class="pf-sec"><h3>Sans client</h3><div class="g-grid">${orphans.map(orphanCard).join('')}</div></div>` : '');
 }
 
+/* ---------- second brain sync: changes waiting for the curator ---------- */
+let sb = null, sbOpen = false;
+async function loadSb() {
+  try { sb = await api('/api/sb/status'); } catch { sb = null; }
+  renderSb();
+}
+function renderSb() {
+  const el = $('#sbsync');
+  if (!sb?.active) { el.hidden = true; return; }
+  el.hidden = false;
+  const running = sb.run?.status === 'running';
+  const queued = Math.max(sb.waiting, sb.inbox);
+  let cls = 'ok', label = 'Second cerveau à jour';
+  if (running) { cls = 'run'; label = 'Intégration en cours…'; }
+  else if (sb.locked) { cls = 'warn'; label = 'Curateur verrouillé'; }
+  else if (sb.processing) { cls = 'warn'; label = `${sb.processing} à trancher`; }
+  else if (queued) { cls = 'wait'; label = `${queued} changement${queued > 1 ? 's' : ''} en attente`; }
+  const where = { local: 'pas encore envoyé', inbox: 'en file', processing: 'bloqué chez le curateur' };
+  const canRun = !running && !sb.locked && (sb.inbox || sb.processing || sb.unsent);
+  el.innerHTML = `<button class="sb-pill ${cls}" id="sb-pill" aria-expanded="${sbOpen}"><i></i>${label}</button>`
+    + (sbOpen ? `<div class="sb-panel">
+      ${sb.items.length ? `<ul>${sb.items.map(it => `<li><span class="where ${esc(it.where || '')}">${esc(where[it.where] || it.where || '')}</span><b>${esc(it.subject)}</b>${it.why.length ? `<small>${esc(it.why.join(' · '))}</small>` : ''}</li>`).join('')}</ul>`
+        : `<span>${sb.inbox ? `${sb.inbox} événement(s) d'autres producteurs en file.` : 'Aucun changement en attente.'}</span>`}
+      ${sb.locked ? '<span class="late">Le verrou <code>curator.lock</code> existe : un curateur tourne, ou une intervention est nécessaire.</span>' : ''}
+      ${sb.run && !running && sb.run.tail ? `<div><small>Dernier passage : ${esc(sb.run.status)}</small><pre>${esc(sb.run.tail)}</pre></div>` : ''}
+      <div class="row"><small>Le curateur committe et pousse sur main.</small><button class="btn sm acc" id="sb-run"${canRun ? '' : ' disabled'}>${running ? 'En cours…' : 'Intégrer maintenant'}</button></div>
+    </div>` : '');
+  $('#sb-pill').onclick = e => { e.stopPropagation(); sbOpen = !sbOpen; renderSb(); };
+  const run = $('#sb-run');
+  if (run) run.onclick = async e => {
+    e.stopPropagation(); run.disabled = true;
+    const r = await fetch('/api/sb/integrate', { method: 'POST' }).then(x => x.json());
+    toast(r.error ? r.error : 'Intégration lancée', !!r.error);
+    loadSb();
+  };
+}
+document.addEventListener('click', e => { if (sbOpen && !e.target.closest('#sbsync')) { sbOpen = false; renderSb(); } });
+
 function pfClient(c, P) {
   const ps = c.projects.map(s => P[s]).filter(Boolean);
   return `
@@ -2346,8 +2401,11 @@ function chatAsk(text) {
   setInterval(() => loadGmail(), 5 * 60e3);
   setInterval(loadAgenda, 10 * 60e3);
   setInterval(loadProjects, 60e3);
+  loadSb();
+  setInterval(loadSb, 10e3);
   setInterval(loadFinance, 60e3);
-  standupOnOpen();
+  // a test instance (own event queue) must not start a real stand-up on its own
+  if (!cfg.testQueue) standupOnOpen();
   onPortfolioHash();
   onFinHash();
   loadFinance();
