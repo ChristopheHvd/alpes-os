@@ -4,6 +4,7 @@
 import express from 'express';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getGraph, readNote } from './lib/brain.js';
@@ -21,6 +22,7 @@ import { searchBrain } from './lib/search.js';
 import { makeChat } from './lib/chat.js';
 import { makeStandup, slotNow } from './lib/standup.js';
 import { makeChatLog } from './lib/chatlog.js';
+import { bundle } from './lib/sbqueue.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 // Local config stays out of git: it holds real paths, identity and bank details.
@@ -37,6 +39,20 @@ function loadConfig(name) {
 }
 const cfg = loadConfig('config');
 const branding = loadConfig('branding');
+// Alpes OS never edits the second brain: its curator does (second-brain/AGENTS.md).
+// Every write below becomes an event in the external queue, shown at once through
+// a local overlay until the curator has archived it. Env overrides let a test
+// instance use its own queue.
+// the curator skill only knows this queue: an instance on another queue must never launch it
+const CURATOR_QUEUE = path.join(os.homedir(), '.local', 'share', 'second-brain');
+const sbQueue = path.resolve(process.env.ALPES_OS_SB_QUEUE || cfg.secondBrainQueue || CURATOR_QUEUE);
+bundle.configure({
+  root: cfg.secondBrain,
+  queueDir: sbQueue,
+  pendingFile: process.env.ALPES_OS_SB_PENDING || path.join(ROOT, 'output', 'sb-pending.json'),
+  // ticking boxes comes in bursts: one todo event per minute of activity at most
+  delays: { default: 15e3, [cfg.todoFile]: 60e3 },
+});
 const todoFile = path.join(cfg.secondBrain, cfg.todoFile);
 const gmail = makeGmail(path.join(ROOT, 'credentials'), cfg.port, { secondBrain: cfg.secondBrain });
 const standup = makeStandup(cfg.secondBrain);
@@ -66,6 +82,12 @@ const coursDir = path.join(cfg.secondBrain, 'cours');
 // Kits and reference files handed to clients, read-only — the client space links to them
 app.use('/content/kits', express.static(path.join(cfg.secondBrain, 'kits'), { dotfiles: 'ignore', index: false }));
 app.use('/content/references', express.static(path.join(cfg.secondBrain, 'brain', 'references'), { dotfiles: 'ignore', index: false }));
+// a module edited in the deck editor is served in its pending version until integrated
+app.use('/content/cours', (req, res, next) => {
+  const abs = path.join(coursDir, decodeURIComponent(req.path));
+  if (!abs.startsWith(coursDir + path.sep) || !abs.endsWith('.md') || !bundle.isPending(abs)) return next();
+  res.type('text/plain; charset=utf-8').set('Last-Modified', new Date(bundle.mtime(abs)).toUTCString()).send(bundle.read(abs));
+});
 app.use('/content/cours', express.static(coursDir, {
   setHeaders: (res, f) => { if (f.endsWith('.md')) res.type('text/plain; charset=utf-8'); },
 }));
@@ -85,15 +107,15 @@ app.put('/api/cours/:deck/:file', (req, res) => {
 
     const target = path.join(dir, file);
     const seen = Date.parse(req.body?.lastModified ?? '');
-    const now = fs.statSync(target).mtime.getTime();
+    const now = bundle.mtime(target);
     // Last-Modified est à la seconde près, mtime à la milliseconde
     if (Number.isFinite(seen) && Math.floor(now / 1000) !== Math.floor(seen / 1000)) {
       return res.status(409).json({ error: 'le fichier a changé sur le disque' });
     }
     const src = String(req.body?.src ?? '');
     if (!src.trim()) return res.status(400).json({ error: 'contenu vide' });
-    fs.writeFileSync(target, src);
-    res.json({ ok: true, lastModified: fs.statSync(target).mtime.toUTCString() });
+    bundle.replace(target, src, { why: `module ${file} du support ${deck} modifié dans l'éditeur de cours`, subject: `Cours ${deck}/${file}` });
+    res.json({ ok: true, lastModified: new Date(bundle.mtime(target)).toUTCString() });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -393,6 +415,36 @@ app.post('/api/briefing', async (req, res) => {
     res.json(run);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
+
+// Second brain sync — what is waiting for the curator, and a way to run it
+const CURATOR = {
+  id: 'curator', name: 'Second cerveau', description: 'Intègre les changements en attente', skill: '/second-brain-curator',
+  model: cfg.claude.defaultModel, output: 'output/curator',
+  actions: [{ id: 'integrer', label: 'Intégrer les changements', placeholder: '' }],
+};
+let curatorRun = null;
+function integrate(reason) {
+  if (sbQueue !== CURATOR_QUEUE) return { error: `file de test (${sbQueue}) : le curateur ne traite que ${CURATOR_QUEUE}` };
+  if (curatorRun && runner.get(curatorRun.id)?.status === 'running') return { error: 'intégration déjà en cours' };
+  bundle.flush();
+  const st = bundle.status();
+  if (st.locked) return { error: 'le curateur tient déjà le verrou (curator.lock)' };
+  if (!st.inbox && !st.processing) return { error: 'rien à intégrer' };
+  curatorRun = runner.start({
+    app: CURATOR, action: CURATOR.actions[0],
+    brief: `Traite la file externe du Second Brain (${reason}). Suis ton protocole exclusif : verrou atomique, arbre propre sur main, événements dans l'ordre, lint, commit et push, archivage, libération du verrou. Si un événement est en conflit, laisse-le dans processing et explique le point à trancher.`,
+  });
+  waitRun(curatorRun).then(() => bundle.settle());
+  return { run: curatorRun };
+}
+const runInfo = r => r && { id: r.id, status: r.status, startedAt: r.startedAt, endedAt: r.endedAt, tail: r.status === 'running' ? '' : r.output.slice(-600) };
+app.get('/api/sb/status', (req, res) => res.json({ ...bundle.status(), run: runInfo(curatorRun && runner.get(curatorRun.id)) }));
+app.post('/api/sb/integrate', (req, res) => {
+  const r = integrate('demandé depuis le dashboard');
+  r.error ? res.status(409).json(r) : res.json({ run: runInfo(r.run) });
+});
+// only new events trigger the automatic pass: one stuck in processing needs a human
+setInterval(() => { try { bundle.flush(); if (bundle.status().inbox && !bundle.status().locked) integrate('passage automatique'); } catch (e) { console.error('curator', e.message); } }, 30 * 60e3).unref();
 
 app.get('/api/artifacts', (req, res) => res.json(runner.artifacts(req.query.app ? String(req.query.app) : null)));
 // everything one app has ever done: its runs, and the files no run claims
