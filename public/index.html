@@ -1501,10 +1501,12 @@ const fold = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLow
 const pfRoute = () => { const m = location.hash.match(/^#portefeuille(?:\/(finances)|\/(client|projet)\/([\w.-]+))?$/); return m && { kind: m[1] || m[2], slug: m[3] }; };
 const pfHref = (kind, slug) => `#portefeuille/${kind}/${encodeURIComponent(slug)}`;
 async function loadPortfolio() {
-  const [r, f] = await Promise.all([api('/api/portfolio'), api('/api/finance')]);
-  if (r.error) return toast(r.error, true);
+  // a failing call (server not restarted, note unreadable) must not blank the whole view
+  const fail = what => () => ({ error: `${what} indisponible : relance le serveur (npm start)` });
+  const [r, f] = await Promise.all([api('/api/portfolio').catch(fail('Vue clients & projets')), api('/api/finance').catch(fail('Suivi financier'))]);
+  if (r.error) { $('#pf-detail').innerHTML = `<div class="inner"><div class="pf-empty">${esc(r.error)}</div></div>`; return toast(r.error, true); }
   if (f.error) toast(f.error, true);
-  pf = r; pfFin = f.error ? { notes: [], clients: [] } : f; renderPortfolio();
+  pf = r; pfFin = f.error ? { notes: [], clients: [], error: f.error } : f; renderPortfolio();
 }
 function onPortfolioHash() {
   const r = pfRoute(), el = $('#portfolio');
@@ -1559,6 +1561,7 @@ function renderPortfolio() {
 
   $('#pf-main').classList.toggle('focus', !!route.kind);
   const el = $('#pf-detail');
+  if (route.kind === 'finances' && pfFin.error) { el.innerHTML = `<div class="inner"><div class="pf-empty">${esc(pfFin.error)}</div></div>`; return; }
   if (route.kind === 'finances') { el.innerHTML = `<div class="inner">${pfFinance()}</div>`; el.scrollTop = 0; pfFinanceWire(el); return; }
   const item = route.kind === 'client' ? C[route.slug] : route.kind === 'projet' ? P[route.slug] : null;
   if (!item) { el.innerHTML = `<div class="inner"><div class="pf-empty">${route.kind ? 'Fiche introuvable.' : 'Choisis un client ou un projet.'}</div></div>`; return; }
