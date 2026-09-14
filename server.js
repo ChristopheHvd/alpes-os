@@ -2,7 +2,7 @@
 // One page, one address (http://localhost:4545), a window onto the second brain,
 // Gmail, the day's todo and headless micro-apps. It shows, it never stores truth.
 import express from 'express';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -84,7 +84,8 @@ app.use('/content/kits', express.static(path.join(cfg.secondBrain, 'kits'), { do
 app.use('/content/references', express.static(path.join(cfg.secondBrain, 'brain', 'references'), { dotfiles: 'ignore', index: false }));
 // a module edited in the deck editor is served in its pending version until integrated
 app.use('/content/cours', (req, res, next) => {
-  const abs = path.join(coursDir, decodeURIComponent(req.path));
+  let abs;
+  try { abs = path.join(coursDir, decodeURIComponent(req.path)); } catch { return next(); }
   if (!abs.startsWith(coursDir + path.sep) || !abs.endsWith('.md') || !bundle.isPending(abs)) return next();
   res.type('text/plain; charset=utf-8').set('Last-Modified', new Date(bundle.mtime(abs)).toUTCString()).send(bundle.read(abs));
 });
@@ -448,14 +449,25 @@ function integrate(reason) {
   waitRun(curatorRun).then(() => bundle.settle());
   return { run: curatorRun };
 }
+// the curator stops on a dirty tree: don't spend a run finding that out every 30 minutes
+function brainClean() {
+  try { return spawnSync('git', ['-C', cfg.secondBrain, 'status', '--porcelain'], { encoding: 'utf8', timeout: 5000 }).stdout.trim() === ''; }
+  catch { return false; }
+}
 const runInfo = r => r && { id: r.id, status: r.status, startedAt: r.startedAt, endedAt: r.endedAt, tail: r.status === 'running' ? '' : r.output.slice(-600) };
-app.get('/api/sb/status', (req, res) => res.json({ ...bundle.status(), run: runInfo(curatorRun && runner.get(curatorRun.id)) }));
+app.get('/api/sb/status', (req, res) => res.json({ ...bundle.status(), clean: brainClean(), run: runInfo(curatorRun && runner.get(curatorRun.id)) }));
 app.post('/api/sb/integrate', (req, res) => {
   const r = integrate('demandé depuis le dashboard');
   r.error ? res.status(409).json(r) : res.json({ run: runInfo(r.run) });
 });
 // only new events trigger the automatic pass: one stuck in processing needs a human
-setInterval(() => { try { bundle.flush(); if (bundle.status().inbox && !bundle.status().locked) integrate('passage automatique'); } catch (e) { console.error('curator', e.message); } }, 30 * 60e3).unref();
+setInterval(() => {
+  try {
+    bundle.flush();
+    const st = bundle.status();
+    if (st.inbox && !st.locked && brainClean()) integrate('passage automatique');
+  } catch (e) { console.error('curator', e.message); }
+}, 30 * 60e3).unref();
 
 app.get('/api/artifacts', (req, res) => res.json(runner.artifacts(req.query.app ? String(req.query.app) : null)));
 // everything one app has ever done: its runs, and the files no run claims

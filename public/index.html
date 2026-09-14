@@ -1932,6 +1932,7 @@ function renderSb() {
   if (running) { cls = 'run'; label = 'Intégration en cours…'; }
   else if (sb.locked) { cls = 'warn'; label = 'Curateur verrouillé'; }
   else if (sb.processing) { cls = 'warn'; label = `${sb.processing} à trancher`; }
+  else if (queued && !sb.clean) { cls = 'warn'; label = `${queued} en attente · second-brain non propre`; }
   else if (queued) { cls = 'wait'; label = `${queued} changement${queued > 1 ? 's' : ''} en attente`; }
   const where = { local: 'pas encore envoyé', inbox: 'en file', processing: 'bloqué chez le curateur' };
   const canRun = !running && !sb.locked && (sb.inbox || sb.processing || sb.unsent);
@@ -1939,6 +1940,7 @@ function renderSb() {
     + (sbOpen ? `<div class="sb-panel">
       ${sb.items.length ? `<ul>${sb.items.map(it => `<li><span class="where ${esc(it.where || '')}">${esc(where[it.where] || it.where || '')}</span><b>${esc(it.subject)}</b>${it.why.length ? `<small>${esc(it.why.join(' · '))}</small>` : ''}</li>`).join('')}</ul>`
         : `<span>${sb.inbox ? `${sb.inbox} événement(s) d'autres producteurs en file.` : 'Aucun changement en attente.'}</span>`}
+      ${!sb.clean ? '<span class="late">second-brain a des modifications non committées : le curateur refusera de tourner tant qu\'elles restent (pas de passage automatique).</span>' : ''}
       ${sb.locked ? '<span class="late">Le verrou <code>curator.lock</code> existe : un curateur tourne, ou une intervention est nécessaire.</span>' : ''}
       ${sb.run && !running && sb.run.tail ? `<div><small>Dernier passage : ${esc(sb.run.status)}</small><pre>${esc(sb.run.tail)}</pre></div>` : ''}
       <div class="row"><small>Le curateur committe et pousse sur main.</small><button class="btn sm acc" id="sb-run"${canRun ? '' : ' disabled'}>${running ? 'En cours…' : 'Intégrer maintenant'}</button></div>
