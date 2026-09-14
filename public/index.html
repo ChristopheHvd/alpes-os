@@ -25,6 +25,7 @@
   --accent: #cf5520;      /* Alpes IA orange, deepened to hold on paper */
   --accent-ink: #ffffff;
   --accent-soft: #fbeade;
+  --c-signed: #cf5520; --c-pipe: #2f7cb0;   /* finance chart, validated with dataviz/validate_palette */
   --good: #3f8a5c;
   --warn: #b07d1c;
   --crit: #c0392b;
@@ -56,6 +57,7 @@
   --accent: #ff8a3d;
   --accent-ink: #17150f;
   --accent-soft: #2e2317;
+  --c-signed: #e0702a; --c-pipe: #4b8fc2;
   --good: #7cc48a;
   --warn: #e0b24f;
   --crit: #e0685c;
@@ -106,7 +108,8 @@ body.resizing { cursor: col-resize; user-select: none; }
 .col.left > .w:last-child { flex: 1 1 56%; overflow: hidden; }
 .todo { flex: 1 1 auto; min-height: 96px; }
 #w-projects { flex: 1 1 34%; overflow: hidden; }
-.col.right > .w:nth-child(2) { flex: 1 1 40%; overflow: hidden; }
+[data-widget="apps"] { flex: 1 1 40%; overflow: hidden; }
+#w-finance { flex: 0 0 auto; }
 #apps { overflow-y: auto; min-height: 0; flex: 1; display: flex; flex-direction: column; gap: 10px; }
 .col.right > .w:last-child { flex: 1 1 26%; overflow: hidden; }
 .w-head { display: flex; align-items: center; gap: 10px; }
@@ -464,6 +467,147 @@ a.mail, .mail {
 .modal, .viewer, .appview { position: fixed; inset: 0; background: var(--scrim); display: grid; place-items: center; z-index: 25; backdrop-filter: blur(3px); }
 .modal[hidden], .viewer[hidden], .appview[hidden] { display: none; }
 .appview { z-index: 24; }
+/* ---- portfolio: clients and their projects, full screen ---- */
+#w-projects h2, #fin-open { cursor: pointer; }
+#w-projects h2:hover, #fin-open:hover { color: var(--accent); }
+.pf-go { width: 24px; height: 24px; padding: 0; display: grid; place-items: center; flex-shrink: 0; border: 0; border-radius: 50%; background: var(--accent-soft); color: var(--accent); cursor: pointer; }
+.pf-go svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.2; }
+.pf-go:hover { background: var(--accent); color: var(--accent-ink); }
+.portfolio { position: fixed; inset: 0; z-index: 22; background: var(--bg); display: grid; grid-template-rows: auto 1fr; }
+.portfolio[hidden] { display: none; }
+.pf-top { display: flex; align-items: center; gap: 12px; padding: 14px 24px; border-bottom: 1px solid var(--line-soft); background: var(--surface); flex-wrap: wrap; }
+.pf-top h1 { margin: 0; font: 600 19px/1.2 var(--display); color: var(--ink); }
+.pf-top .sp { flex: 1; }
+.pf-top input { width: min(260px, 100%); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; color: var(--ink); font: 400 13px var(--font); outline: none; }
+.pf-top input:focus { border-color: var(--accent); }
+.pf-seg { display: flex; background: var(--sunken); border-radius: 7px; padding: 2px; }
+.pf-seg button { border: 0; background: transparent; color: var(--ink-3); font: 500 12px/1 var(--font); padding: 6px 10px; border-radius: 5px; cursor: pointer; }
+.pf-seg button.on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.pf-main { display: grid; grid-template-columns: 300px 1fr; min-height: 0; }
+.pf-side { border-right: 1px solid var(--line-soft); overflow-y: auto; padding: 14px 12px 24px; display: grid; align-content: start; gap: 2px; }
+.pf-side .grp { font: 600 10.5px/1 var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); padding: 14px 10px 6px; }
+.pf-side a { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px; color: var(--ink); text-decoration: none; font: 600 13.5px/1.3 var(--font); min-width: 0; }
+.pf-side a span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-side a small { margin-left: auto; font: 400 11px/1 var(--font); color: var(--ink-3); }
+.pf-side a.pj-l { padding-left: 26px; font-weight: 400; font-size: 13px; color: var(--ink-2); }
+.pf-side a:hover { background: var(--sunken); }
+.pf-side a.on { background: var(--accent-soft); color: var(--accent); }
+.pf-side a.dim { opacity: .55; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); flex-shrink: 0; }
+.dot.actif { background: var(--good); } .dot.incubation { background: var(--warn); } .dot.pause { background: var(--line); }
+.pf-detail { overflow-y: auto; padding: 28px 36px 60px; }
+.pf-detail .inner { max-width: 1040px; display: grid; gap: 22px; }
+.pf-kicker { font: 500 12px/1.4 var(--font); color: var(--ink-3); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.pf-kicker a { color: var(--accent); cursor: pointer; text-decoration: none; }
+.pf-detail h2 { margin: 2px 0 0; font: 600 28px/1.15 var(--display); color: var(--ink); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pf-detail .lead { margin: 6px 0 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.55; }
+.pf-sec { display: grid; gap: 8px; }
+.pf-sec h3 { margin: 0; font: 600 10.5px/1 var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.pf-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+.pf-card { background: var(--surface); border: 1px solid var(--line-soft); border-radius: 8px; padding: 12px 14px; display: grid; gap: 6px; min-width: 0; }
+.pf-card .h { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.pf-card .h b { font: 600 14px/1.3 var(--font); color: var(--ink); cursor: pointer; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-card .h b:hover { color: var(--accent); }
+.pf-card .h small, .pf-card > small { color: var(--ink-3); font-size: 12px; }
+.pf-card .h small { margin-left: auto; white-space: nowrap; }
+.pf-card p { margin: 0; color: var(--ink-2); font-size: 13px; line-height: 1.5; }
+.pf-next { font: 400 14px/1.5 var(--font); color: var(--ink); background: var(--surface); border: 1px solid var(--line-soft); border-radius: 8px; padding: 10px 12px; cursor: text; }
+.pf-next.empty { color: var(--ink-3); font-style: italic; }
+.pf-next[contenteditable="true"] { outline: 1px solid var(--accent); }
+.pf-rows { display: grid; gap: 1px; background: var(--surface); border: 1px solid var(--line-soft); border-radius: 8px; overflow: hidden; }
+.pf-rows > * { display: flex; gap: 12px; align-items: baseline; padding: 9px 12px; font-size: 13px; color: var(--ink); min-width: 0; }
+.pf-rows > * + * { border-top: 1px solid var(--line-soft); }
+.pf-rows .when { flex: 0 0 110px; color: var(--accent); font: 500 12px/1.4 var(--font); font-variant-numeric: tabular-nums; }
+.pf-rows .tag { margin-left: auto; flex-shrink: 0; color: var(--ink-3); font-size: 11.5px; }
+.pf-rows .tag.carried { color: var(--warn); }
+.pf-rows details { display: block; }
+.pf-rows summary { cursor: pointer; list-style: none; }
+.pf-rows summary::-webkit-details-marker { display: none; }
+.pf-rows summary small { display: block; color: var(--ink-3); font-size: 12px; margin-top: 2px; }
+.pf-rows .none { color: var(--ink-3); }
+.pf-note, .pf-rows .note { font-size: 13.5px; color: var(--ink-2); line-height: 1.6; }
+.pf-note { background: var(--surface); border: 1px solid var(--line-soft); border-radius: 8px; padding: 6px 18px 10px; }
+.pf-note h1, .pf-note h2, .pf-note h3, .pf-rows .note h1, .pf-rows .note h2, .pf-rows .note h3 { font: 600 14.5px/1.3 var(--font); color: var(--ink); margin: 16px 0 6px; }
+.pf-note a, .pf-rows .note a { color: var(--accent); cursor: pointer; }
+.pf-note table { border-collapse: collapse; font-size: 12.5px; display: block; overflow-x: auto; }
+.pf-note td, .pf-note th { border: 1px solid var(--line-soft); padding: 5px 8px; text-align: left; vertical-align: top; }
+.pf-client { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.pf-client select, .pf-client input { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; color: var(--ink); font: 400 13px var(--font); max-width: 100%; }
+.pf-empty { color: var(--ink-3); padding: 40px 0; }
+.pf-back { display: none; }
+/* ---- finance ---- */
+.fin-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.fin-tile { background: var(--surface); border: 1px solid var(--line-soft); border-radius: 8px; padding: 14px 16px; display: grid; gap: 4px; min-width: 0; }
+.fin-tile small { font: 500 12px/1.3 var(--font); color: var(--ink-3); }
+.fin-tile b { font: 600 24px/1.15 var(--font); color: var(--ink); letter-spacing: -.01em; }
+.fin-tile.hero b { font-size: 34px; }
+.fin-tile span { font-size: 12px; color: var(--ink-2); }
+.fin-tile em { font-style: normal; }
+.late { color: var(--crit); font-weight: 600; }
+.fin-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.fin-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); }
+.fin-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.key { display: inline-block; width: 16px; height: 0; border-top: 2px solid var(--c-signed); vertical-align: middle; }
+.key.pipe { border-top: 2px dashed var(--c-pipe); }
+.fin-chart { position: relative; background: var(--surface); border: 1px solid var(--line-soft); border-radius: 8px; padding: 8px 0 0; min-height: 288px; overflow: hidden; }
+.fin-chart svg { display: block; }
+.fin-chart .grid { stroke: var(--line-soft); stroke-width: 1; }
+.fin-chart .tick { fill: var(--ink-3); font: 400 11px var(--font); font-variant-numeric: tabular-nums; }
+.fin-chart .ln { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.fin-chart .ln.signed { stroke: var(--c-signed); }
+.fin-chart .ln.pipe { stroke: var(--c-pipe); stroke-dasharray: 5 4; }
+.fin-chart .wash { fill: var(--c-signed); opacity: .1; }
+.fin-chart .today { stroke: var(--ink-3); stroke-width: 1; }
+.fin-chart .cross { stroke: var(--ink-3); stroke-width: 1; }
+.fin-chart .dot-signed { fill: var(--c-signed); stroke: var(--surface); stroke-width: 2; }
+.fin-chart .dot-pipe { fill: var(--c-pipe); stroke: var(--surface); stroke-width: 2; }
+.fin-chart .hit { cursor: crosshair; }
+.fin-tip[hidden] { display: none; }
+.fin-tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-lg); padding: 9px 11px; font-size: 12px; color: var(--ink-2); display: grid; gap: 3px; max-width: 280px; }
+.fin-tip b { color: var(--ink); font-weight: 600; }
+.fin-tip div { display: flex; align-items: center; gap: 6px; }
+.fin-tip div span { margin-left: auto; padding-left: 12px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.fin-tip small { color: var(--ink-3); }
+.fin-foot { color: var(--ink-3); font-size: 12px; }
+.fin-table { overflow-x: auto; background: var(--surface); border: 1px solid var(--line-soft); border-radius: 8px; }
+.fin-table table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.fin-table th { text-align: left; font: 500 11.5px/1.2 var(--font); color: var(--ink-3); padding: 9px 12px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
+.fin-table td { padding: 8px 12px; border-top: 1px solid var(--line-soft); vertical-align: middle; color: var(--ink); }
+.fin-table tr:first-child td { border-top: 0; }
+.fin-table td small { display: block; color: var(--ink-3); font-size: 11.5px; margin-top: 1px; }
+.fin-table .amt { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fin-table a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); }
+.fin-table a:hover { color: var(--accent); }
+.fin-table tr.encaisse td { color: var(--ink-2); }
+.fin-table tr.is-late td { background: color-mix(in srgb, var(--crit) 6%, transparent); }
+.fin-table input[type=date] { background: transparent; border: 1px solid transparent; border-radius: 5px; color: inherit; font: 400 12.5px var(--font); padding: 3px 4px; }
+.fin-table input[type=date]:hover, .fin-table input[type=date]:focus { border-color: var(--line); }
+.fin-table .muted { color: var(--ink-3); }
+.fin-table .btn { white-space: nowrap; }
+.st { display: inline-block; white-space: nowrap; font: 500 11.5px/1 var(--font); padding: 4px 8px; border-radius: 20px; background: var(--sunken); color: var(--ink-2); }
+.st.ok { color: var(--good); background: color-mix(in srgb, var(--good) 12%, transparent); }
+.st.late { color: var(--crit); background: color-mix(in srgb, var(--crit) 12%, transparent); }
+.st.devis { background: transparent; border: 1px dashed var(--line); color: var(--ink-3); }
+.fin-add summary { cursor: pointer; font: 500 13px var(--font); color: var(--accent); list-style: none; }
+.fin-add summary::-webkit-details-marker { display: none; }
+.fin-add form { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; align-items: end; margin-top: 10px; }
+.fin-add label { display: grid; gap: 4px; font-size: 12px; color: var(--ink-3); }
+.fin-add input, .fin-add select { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px; color: var(--ink); font: 400 13px var(--font); min-width: 0; }
+.finview { grid-template-rows: auto 1fr; }
+.finview .pf-detail .inner { margin: 0 auto; }
+.finw { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.finw div { display: grid; gap: 3px; min-width: 0; }
+.finw small { color: var(--ink-3); font-size: 11.5px; }
+.finw b { font: 600 15px/1.2 var(--font); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 800px) {
+  .pf-top { padding: 12px 16px; }
+  .pf-main { grid-template-columns: 1fr; }
+  .pf-main.focus .pf-side { display: none; }
+  .pf-main:not(.focus) .pf-detail { display: none; }
+  .pf-detail { padding: 18px 16px 48px; }
+  .pf-back { display: inline; }
+  .pf-rows .when { flex-basis: 80px; }
+}
 .dlg { width: 560px; max-width: 92vw; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: grid; gap: 14px; box-shadow: var(--shadow-lg); }
 .dlg .w-head h2 { font-size: 16px; }
 .dlg textarea { width: 100%; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; color: var(--ink); font: 400 14px/1.55 var(--font); padding: 12px; resize: vertical; outline: none; }
@@ -548,6 +692,8 @@ a.mail, .mail {
     <symbol id="i-hex" viewBox="0 0 24 24"><path d="M12 2l8 4.6v9.2L12 20.5 4 15.8V6.6z"/><path d="M12 7l4 2.3v4.6L12 16l-4-2.1V9.3z"/></symbol>
     <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></symbol>
     <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/></symbol>
+    <symbol id="i-flow" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
     <symbol id="i-list" viewBox="0 0 24 24"><path d="M4 6h2M9 6h11M4 12h2M9 12h11M4 18h2M9 18h11"/></symbol>
   </defs>
 </svg>
@@ -611,11 +757,22 @@ a.mail, .mail {
   <aside class="col right">
     <section class="w" id="w-projects" data-widget="projects">
       <div class="w-head">
-        <h2><svg><use href="#i-flow"/></svg>Projets en cours</h2>
+        <h2 id="pf-open" title="Ouvrir la vue clients & projets"><svg><use href="#i-flow"/></svg>Projets en cours</h2>
         <span class="meta" id="pj-meta"></span>
+        <button class="pf-go" id="pf-go" title="Ouvrir la vue clients & projets" aria-label="Ouvrir la vue clients et projets"><svg><use href="#i-arrow"/></svg></button>
         <button class="wtoggle" aria-label="Réduire ou déplier" data-w="projects" title="Réduire"><svg><use href="#i-chev"/></svg></button>
       </div>
       <div class="projects w-body" id="projects"></div>
+    </section>
+
+    <section class="w" id="w-finance" data-widget="finance">
+      <div class="w-head">
+        <h2 id="fin-open" title="Ouvrir le suivi financier"><svg><use href="#i-euro"/></svg>Suivi financier</h2>
+        <span class="meta late" id="finw-meta"></span>
+        <button class="pf-go" id="fin-go" title="Ouvrir le suivi financier" aria-label="Ouvrir le suivi financier"><svg><use href="#i-arrow"/></svg></button>
+        <button class="wtoggle" aria-label="Réduire ou déplier" data-w="finance" title="Réduire"><svg><use href="#i-chev"/></svg></button>
+      </div>
+      <div class="w-body" id="finw"></div>
     </section>
 
     <section class="w" data-widget="apps">
@@ -662,6 +819,28 @@ a.mail, .mail {
     <div class="bar" id="av-bar"></div>
     <div class="body" id="av-body"></div>
   </div>
+</div>
+
+<div class="portfolio" id="portfolio" hidden>
+  <div class="pf-top">
+    <button class="btn" id="pf-close" title="Retour au dashboard (Échap)">← Dashboard</button>
+    <h1>Clients &amp; projets</h1>
+    <span class="sp"></span>
+    <input id="pf-q" type="search" placeholder="Chercher un client, un projet, un contact">
+    <div class="pf-seg" id="pf-seg"><button data-f="actif" class="on">Actifs</button><button data-f="tous">Tous</button></div>
+  </div>
+  <div class="pf-main" id="pf-main">
+    <nav class="pf-side" id="pf-side"></nav>
+    <section class="pf-detail" id="pf-detail"></section>
+  </div>
+</div>
+
+<div class="portfolio finview" id="finview" hidden>
+  <div class="pf-top">
+    <button class="btn" id="fin-close" title="Retour au dashboard (Échap)">← Dashboard</button>
+    <h1>Suivi financier</h1>
+  </div>
+  <section class="pf-detail" id="fin-detail"></section>
 </div>
 
 <div class="viewer" id="viewer" hidden>
@@ -1332,8 +1511,358 @@ async function patchProject(slug, patch) {
   if (r.error) return toast(r.error, true);
   toast('Projet mis à jour dans le second brain');
   loadProjects();
+  if (!$('#portfolio').hidden) loadPortfolio();
 }
 const relDate = iso => { const d = Math.round((Date.now() - new Date(iso)) / 864e5); return d <= 0 ? "aujourd'hui" : d === 1 ? 'hier' : `il y a ${d} j`; };
+
+/* ---------- portfolio: clients and their projects (#portefeuille/client|projet/<slug>) ---------- */
+let pf = null, pfFilter = 'actif', pfQuery = '';
+const fold = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const pfRoute = () => { const m = location.hash.match(/^#portefeuille(?:\/(client|projet)\/([\w.-]+))?$/); return m && { kind: m[1], slug: m[2] }; };
+const pfHref = (kind, slug) => `#portefeuille/${kind}/${encodeURIComponent(slug)}`;
+async function loadPortfolio() {
+  // a failing call (server not restarted, note unreadable) must not blank the view
+  const r = await api('/api/portfolio').catch(() => ({ error: 'Vue clients & projets indisponible : relance le serveur (npm start)' }));
+  if (r.error) { $('#pf-detail').innerHTML = `<div class="inner"><div class="pf-empty">${esc(r.error)}</div></div>`; return toast(r.error, true); }
+  pf = r; renderPortfolio();
+}
+function onPortfolioHash() {
+  const r = pfRoute(), el = $('#portfolio');
+  if (!r) { el.hidden = true; return; }
+  if (el.hidden) { el.hidden = false; loadPortfolio(); } else if (pf) renderPortfolio();
+}
+function closePortfolio() { window.history.pushState('', '', location.pathname + location.search); onPortfolioHash(); }
+$('#pf-open').onclick = $('#pf-go').onclick = () => { location.hash = 'portefeuille'; };
+$('#pf-close').onclick = closePortfolio;
+addEventListener('hashchange', onPortfolioHash);
+addEventListener('keydown', e => {
+  if (e.key !== 'Escape' || $('#portfolio').hidden || stageMenu || document.activeElement?.isContentEditable) return;
+  if (!$('#standup').hidden || !$('#appview').hidden || !$('#viewer').hidden) return;
+  closePortfolio();
+}, true);  // capture: runs before the stage menu's own Escape handler clears it
+$('#pf-q').oninput = e => { pfQuery = e.target.value; renderPortfolio(); };
+$('#pf-seg').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  pfFilter = b.dataset.f;
+  $('#pf-seg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  renderPortfolio();
+};
+
+function renderPortfolio() {
+  if (!pf) return;
+  const route = pfRoute() ?? {};
+  const P = Object.fromEntries(pf.projects.map(p => [p.slug, p]));
+  const C = Object.fromEntries(pf.clients.map(c => [c.slug, c]));
+  const q = fold(pfQuery.trim());
+  const hit = (...s) => !q || s.some(x => fold(x).includes(q));
+  const stageOk = p => pfFilter === 'tous' || p.stage === pfFilter;
+  const recent = ps => Math.max(0, ...ps.map(p => Date.parse(p.updated || 0) || 0));
+
+  const groups = pf.clients.map(c => {
+    const all = c.projects.map(s => P[s]).filter(Boolean);
+    const clientHit = hit(c.title, c.description, ...c.contacts.map(x => x.name));
+    const ps = all.filter(p => stageOk(p) && (clientHit || hit(p.title, p.description)));
+    const show = (clientHit || ps.length) && (!all.length || ps.length || pfFilter === 'tous');
+    return show && { c, ps, dim: all.length > 0 && !all.some(p => p.stage === 'actif') };
+  }).filter(Boolean).sort((a, b) => (a.dim - b.dim) || recent(b.ps) - recent(a.ps));
+  const orphans = pf.projects.filter(p => !C[p.client] && stageOk(p) && hit(p.title, p.description));
+
+  // no focus yet: open on the first client rather than an empty pane
+  if (!route.kind && (groups[0] || orphans[0]) && window.innerWidth > 800) {
+    const first = groups[0] ? pfHref('client', groups[0].c.slug) : pfHref('projet', orphans[0].slug);
+    window.history.replaceState('', '', first); route.kind = first.split('/')[1]; route.slug = decodeURIComponent(first.split('/')[2]);
+  }
+  const on = (k, s) => route.kind === k && route.slug === s ? ' on' : '';
+  const pjLink = (p, cls = 'pj-l') => `<a class="${cls}${on('projet', p.slug)}" href="${pfHref('projet', p.slug)}"><i class="dot ${esc(p.stage)}"></i><span>${esc(p.title)}</span></a>`;
+  $('#pf-side').innerHTML = (groups.length ? '<div class="grp">Clients</div>' : '')
+    + groups.map(g => `<a class="${on('client', g.c.slug)}${g.dim ? ' dim' : ''}" href="${pfHref('client', g.c.slug)}"><span>${esc(g.c.title)}</span><small>${g.c.projects.length || ''}</small></a>` + g.ps.map(p => pjLink(p)).join('')).join('')
+    + (orphans.length ? '<div class="grp">Sans client</div>' + orphans.map(p => pjLink(p, '')).join('') : '')
+    + (!groups.length && !orphans.length ? '<div class="pf-empty">Rien ne correspond.</div>' : '');
+
+  $('#pf-main').classList.toggle('focus', !!route.kind);
+  const el = $('#pf-detail');
+  const item = route.kind === 'client' ? C[route.slug] : route.kind === 'projet' ? P[route.slug] : null;
+  if (!item) { el.innerHTML = `<div class="inner"><div class="pf-empty">${route.kind ? 'Fiche introuvable.' : 'Choisis un client ou un projet.'}</div></div>`; return; }
+  el.innerHTML = `<div class="inner">${route.kind === 'client' ? pfClient(item, P) : pfProject(item, C)}</div>`;
+  el.scrollTop = 0;
+  pfWire(el, item, route.kind);
+}
+
+const pfDate = iso => { const d = new Date(iso); return d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) + (iso.length > 10 ? ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''); };
+const pfSections = x => {
+  const where = { today: "aujourd'hui", carried: 'reporté', later: 'plus tard' };
+  return `
+    <div class="pf-sec"><h3>Argent</h3><div class="pf-rows">${x.finance.length ? x.finance.map(f => `<details data-note="${esc(f.id)}"><summary>${esc(f.title)}<small>${esc(f.description)}</small></summary><div class="note"></div></details>`).join('') : '<div class="none">Aucun devis ni facture dans brain/finance.</div>'}</div></div>
+    <div class="pf-sec"><h3>Agenda à venir</h3><div class="pf-rows">${x.events.length ? x.events.map(e => `<a href="${esc(e.url)}" target="_blank" rel="noopener" style="text-decoration:none"><span class="when">${esc(pfDate(e.start))}</span><span>${esc(e.title)}</span></a>`).join('') : '<div class="none">Rien dans les 3 semaines.</div>'}</div></div>
+    <div class="pf-sec"><h3>Tâches ouvertes</h3><div class="pf-rows">${x.tasks.length ? x.tasks.map(t => `<div><span>${esc(t.t)}</span><span class="tag ${t.where}">${where[t.where]}</span></div>`).join('') : '<div class="none">Aucune tâche en cours.</div>'}</div></div>`;
+};
+
+/* ---- money: schedules from brain/finance frontmatter ---- */
+const EUR = n => n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 });
+const isoToday = () => new Date().toLocaleDateString('sv-SE');
+let fin = null;
+function pfFinRows() {
+  if (!fin) return [];
+  const P = Object.fromEntries(fin.projects.map(p => [p.slug, p]));
+  const today = isoToday();
+  return fin.notes.flatMap(n => {
+    const client = n.client || n.clients[0] || P[n.projet || n.projects[0]]?.client || '';
+    return n.echeances.map((e, idx) => ({ ...e, idx, note: n, client, late: e.statut === 'a_encaisser' && !!e.date && e.date < today }));
+  });
+}
+const pfSum = (rows, st) => rows.filter(r => r.statut === st).reduce((a, r) => a + r.montant, 0);
+const pfClientTitle = slug => fin.clients.find(c => c.slug === slug)?.title || slug || 'Sans client';
+
+function pfFinance() {
+  const rows = pfFinRows(), today = isoToday();
+  const cashed = pfSum(rows, 'encaisse'), due = pfSum(rows, 'a_encaisser'), pipe = pfSum(rows, 'devis');
+  const late = rows.filter(r => r.late), lateSum = late.reduce((a, r) => a + r.montant, 0);
+  const next = rows.filter(r => r.statut === 'a_encaisser' && r.date >= today).sort((a, b) => a.date.localeCompare(b.date))[0];
+  const undated = rows.filter(r => r.statut !== 'encaisse' && !r.date).reduce((a, r) => a + r.montant, 0);
+  const d = iso => new Date(iso + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  const sorted = [...rows].sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999'));
+  const byClient = Object.values(rows.reduce((acc, r) => {
+    const c = acc[r.client] ??= { slug: r.client, encaisse: 0, a_encaisser: 0, devis: 0 };
+    c[r.statut] += r.montant; return acc;
+  }, {})).sort((a, b) => (b.encaisse + b.a_encaisser + b.devis) - (a.encaisse + a.a_encaisser + a.devis));
+  const chip = r => r.late ? '<span class="st late">! En retard</span>'
+    : r.statut === 'encaisse' ? '<span class="st ok">✓ Encaissé</span>'
+    : r.statut === 'devis' ? '<span class="st devis">Devis non signé</span>' : '<span class="st due">À encaisser</span>';
+  const act = r => r.statut === 'a_encaisser' ? `<button class="btn sm" data-fin-set="encaisse" data-slug="${esc(r.note.slug)}" data-idx="${r.idx}">Marquer encaissé</button>`
+    : r.statut === 'devis' ? `<button class="btn sm" data-fin-set="a_encaisser" data-slug="${esc(r.note.slug)}" data-idx="${r.idx}">Signé</button>` : '';
+
+  return `
+    <p class="lead">Échéances lues dans le frontmatter des notes <code>brain/finance</code>. Montants HT, TVA non applicable.</p>
+    <div class="fin-tiles">
+      <div class="fin-tile hero"><small>Déjà encaissé</small><b>${EUR(cashed)}</b><span>${rows.filter(r => r.statut === 'encaisse').length} paiement(s) reçu(s)</span></div>
+      <div class="fin-tile"><small>Reste à encaisser (signé)</small><b>${EUR(due)}</b><span>${lateSum ? `<em class="late">! ${EUR(lateSum)} en retard</em>` : next ? `prochain : ${EUR(next.montant)} le ${d(next.date)}` : 'rien de prévu'}</span></div>
+      <div class="fin-tile"><small>Devis en cours</small><b>${EUR(pipe)}</b><span>non signés, hors reste à encaisser</span></div>
+      <div class="fin-tile"><small>Total si tout signe</small><b>${EUR(cashed + due + pipe)}</b><span>encaissé + signé + devis</span></div>
+    </div>
+    <div class="pf-sec"><div class="fin-head"><h3>Trésorerie cumulée et projection</h3>
+      <div class="fin-legend"><span><i class="key signed"></i>Signé (encaissé puis attendu)</span><span><i class="key pipe"></i>Si les devis en cours signent</span></div></div>
+      <div class="fin-chart" id="fin-chart"></div>
+      ${undated ? `<small class="fin-foot">${EUR(undated)} sans date d'encaissement, hors courbe.</small>` : ''}
+    </div>
+    <div class="pf-sec"><h3>Échéancier</h3><div class="fin-table"><table>
+      <thead><tr><th>Date</th><th>Client</th><th>Libellé</th><th class="amt">Montant</th><th>Statut</th><th></th></tr></thead>
+      <tbody>${sorted.map(r => `<tr class="${r.statut}${r.late ? ' is-late' : ''}">
+        <td><input type="date" value="${esc(r.date)}" data-fin-date data-slug="${esc(r.note.slug)}" data-idx="${r.idx}" title="Modifier la date"></td>
+        <td>${r.client ? `<a href="${pfHref('client', r.client)}">${esc(pfClientTitle(r.client))}</a>` : '<span class="muted">Sans client</span>'}</td>
+        <td>${esc(r.libelle)}<small>${esc(r.note.title)}${r.ref ? ' · ' + esc(r.ref) : ''}</small></td>
+        <td class="amt">${EUR(r.montant)}</td><td>${chip(r)}</td><td>${act(r)}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">Aucune échéance renseignée.</td></tr>'}</tbody>
+    </table></div></div>
+    <div class="pf-sec"><h3>Par client</h3><div class="fin-table"><table>
+      <thead><tr><th>Client</th><th class="amt">Encaissé</th><th class="amt">À encaisser</th><th class="amt">Devis</th><th class="amt">Total</th></tr></thead>
+      <tbody>${byClient.map(c => `<tr><td>${c.slug ? `<a href="${pfHref('client', c.slug)}">${esc(pfClientTitle(c.slug))}</a>` : 'Sans client'}</td>
+        <td class="amt">${EUR(c.encaisse)}</td><td class="amt">${EUR(c.a_encaisser)}</td><td class="amt">${EUR(c.devis)}</td><td class="amt"><b>${EUR(c.encaisse + c.a_encaisser + c.devis)}</b></td></tr>`).join('')}</tbody>
+    </table></div></div>
+    <details class="pf-sec fin-add"><summary>+ Ajouter une échéance</summary><form id="fin-form">
+      <label>Note finance<select name="slug" required>${fin.notes.map(n => `<option value="${esc(n.slug)}">${esc(pfClientTitle(n.client || n.clients[0]))} — ${esc(n.title)}</option>`).join('')}</select></label>
+      <label>Libellé<input name="libelle" required placeholder="Solde 70 %"></label>
+      <label>Montant (€)<input name="montant" required inputmode="decimal" placeholder="1 260"></label>
+      <label>Date<input name="date" type="date"></label>
+      <label>Statut<select name="statut"><option value="a_encaisser">À encaisser</option><option value="encaisse">Encaissé</option><option value="devis">Devis non signé</option></select></label>
+      <label>Réf.<input name="ref" placeholder="FAC-2026-009"></label>
+      <button class="btn acc" type="submit">Ajouter</button>
+    </form><small class="fin-foot">Pour un nouveau client sans note finance, crée d'abord la note (devis via la micro-app, ou le chat).</small></details>`;
+}
+
+// cumulative cash as a step line: solid = signed (paid, then expected), dashed = plus unsigned quotes
+function drawFinanceChart(box) {
+  const rows = pfFinRows(), today = isoToday();
+  const day = iso => new Date(iso + 'T12:00:00').getTime();
+  // anything signed but overdue is still expected: it lands on today, not in the past
+  const when = r => (r.statut !== 'encaisse' && r.date < today) ? today : r.date;
+  const signed = rows.filter(r => r.date && r.statut !== 'devis').map(r => [day(when(r)), r.montant, r]);
+  const pipe = [...signed, ...rows.filter(r => r.date && r.statut === 'devis').map(r => [day(when(r)), r.montant, r])];
+  const W = box.clientWidth, H = 280, m = { l: 64, r: 18, t: 22, b: 30 };
+  if (!pipe.length) { box.innerHTML = '<div class="pf-empty">Aucune échéance datée.</div>'; return; }
+  const t0 = day(today), dates = pipe.map(p => p[0]);
+  const s = new Date(Math.min(t0, ...dates)); const start = new Date(s.getFullYear(), s.getMonth(), 1).getTime();
+  const e = new Date(Math.max(t0 + 120 * 864e5, ...dates)); const end = new Date(e.getFullYear(), e.getMonth() + 1, 1).getTime();
+  const cum = (evs, t) => evs.reduce((a, [d, v]) => d <= t ? a + v : a, 0);
+  const total = cum(pipe, end);
+  const step = 10 ** Math.floor(Math.log10(total || 1)), yMax = Math.ceil((total * 1.08) / step) * step || 1000;
+  const x = t => m.l + (t - start) / (end - start) * (W - m.l - m.r), y = v => m.t + (1 - v / yMax) * (H - m.t - m.b);
+  const path = evs => {
+    const pts = [...new Set(evs.map(p => p[0]))].sort((a, b) => a - b);
+    let dstr = `M${x(start)},${y(0)}`;
+    for (const t of pts) dstr += `H${x(t).toFixed(1)}V${y(cum(evs, t)).toFixed(1)}`;
+    return dstr + `H${x(end)}`;
+  };
+  const ticks = Array.from({ length: 5 }, (_, i) => yMax / 4 * i);
+  const months = [];
+  for (let dt = new Date(start); dt.getTime() <= end; dt.setMonth(dt.getMonth() + 1)) months.push(dt.getTime());
+  const every = Math.ceil(months.length / Math.max(2, Math.floor((W - m.l - m.r) / 70)));
+  const signedPath = path(signed);
+  box.innerHTML = `<svg width="${W}" height="${H}" role="img" aria-label="Trésorerie cumulée : ${EUR(cum(signed, end))} signés, ${EUR(total)} avec les devis en cours">
+    ${ticks.map(v => `<line x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}" class="grid"/><text x="${m.l - 8}" y="${y(v) + 4}" text-anchor="end" class="tick">${v.toLocaleString('fr-FR')} €</text>`).join('')}
+    ${months.map((t, i) => i % every || x(t) + 44 > W ? '' : `<text x="${x(t)}" y="${H - 10}" text-anchor="start" class="tick">${new Date(t).toLocaleDateString('fr-FR', { month: 'short', year: i === 0 || new Date(t).getMonth() === 0 ? '2-digit' : undefined })}</text>`).join('')}
+    <path d="${signedPath}V${y(0)}H${x(start)}Z" class="wash"/>
+    <path d="${path(pipe)}" class="ln pipe"/>
+    <path d="${signedPath}" class="ln signed"/>
+    <line x1="${x(t0)}" x2="${x(t0)}" y1="${m.t - 8}" y2="${H - m.b}" class="today"/><text x="${x(t0) + 5}" y="${m.t - 10}" class="tick">aujourd'hui</text>
+    <g class="hover" style="display:none"><line class="cross" y1="${m.t}" y2="${H - m.b}"/><circle r="4" class="dot-pipe"/><circle r="4" class="dot-signed"/></g>
+    <rect x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}" fill="transparent" class="hit"/>
+  </svg><div class="fin-tip" hidden></div>`;
+  const svg = box.querySelector('svg'), g = svg.querySelector('.hover'), tip = box.querySelector('.fin-tip');
+  svg.querySelector('.hit').onpointermove = ev => {
+    const px = ev.clientX - svg.getBoundingClientRect().left;
+    const t = Math.max(start, Math.min(end, start + (px - m.l) / (W - m.l - m.r) * (end - start)));
+    const vs = cum(signed, t), vp = cum(pipe, t), X = x(t);
+    g.style.display = '';
+    g.querySelector('.cross').setAttribute('x1', X); g.querySelector('.cross').setAttribute('x2', X);
+    const a = g.querySelector('.dot-signed'), b = g.querySelector('.dot-pipe');
+    a.setAttribute('cx', X); a.setAttribute('cy', y(vs)); b.setAttribute('cx', X); b.setAttribute('cy', y(vp));
+    const mo = new Date(t), mStart = new Date(mo.getFullYear(), mo.getMonth(), 1).getTime(), mEnd = new Date(mo.getFullYear(), mo.getMonth() + 1, 1).getTime();
+    const inMonth = pipe.filter(p => p[0] >= mStart && p[0] < mEnd);
+    tip.hidden = false;
+    tip.innerHTML = `<b>${mo.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</b>
+      <div><i class="key signed"></i>Signé <span>${EUR(vs)}</span></div>
+      <div><i class="key pipe"></i>Avec devis <span>${EUR(vp)}</span></div>
+      ${inMonth.length ? `<small>${mo.toLocaleDateString('fr-FR', { month: 'long' })} : ${inMonth.map(p => `${esc(pfClientTitle(p[2].client))} ${EUR(p[1])}${p[2].statut === 'devis' ? ' (devis)' : ''}`).join(' · ')}</small>` : ''}`;
+    const tw = tip.offsetWidth;
+    tip.style.left = Math.min(Math.max(0, X + 12), W - tw) + 'px';
+    tip.style.top = Math.max(0, Math.min(y(vp), y(vs)) - 10) + 'px';
+  };
+  svg.querySelector('.hit').onpointerleave = () => { g.style.display = 'none'; tip.hidden = true; };
+}
+
+let finResize = null;
+function pfFinanceWire(el) {
+  const box = $('#fin-chart');
+  drawFinanceChart(box);
+  finResize?.disconnect();
+  let lastW = box.clientWidth;
+  finResize = new ResizeObserver(() => { if (box.isConnected && box.clientWidth !== lastW) { lastW = box.clientWidth; drawFinanceChart(box); } });
+  finResize.observe(box);
+  const patch = async (slug, idx, body) => {
+    const r = await api(`/api/finance/${encodeURIComponent(slug)}/echeances/${idx}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    if (r.error) return toast(r.error, true);
+    toast('Échéance mise à jour dans le second brain');
+    loadFinance();
+  };
+  el.querySelectorAll('[data-fin-set]').forEach(b => b.onclick = () => {
+    const body = { statut: b.dataset.finSet };
+    if (body.statut === 'encaisse') body.date = isoToday();
+    patch(b.dataset.slug, b.dataset.idx, body);
+  });
+  el.querySelectorAll('[data-fin-date]').forEach(i => i.onchange = () => patch(i.dataset.slug, i.dataset.idx, { date: i.value }));
+  $('#fin-form').onsubmit = async e => {
+    e.preventDefault();
+    const f = Object.fromEntries(new FormData(e.target));
+    const r = await api(`/api/finance/${encodeURIComponent(f.slug)}/echeances`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(f) });
+    if (r.error) return toast(r.error, true);
+    toast('Échéance ajoutée'); loadFinance();
+  };
+}
+
+// #finances: a space of its own, opened from the dashboard widget
+async function loadFinance() {
+  const r = await api('/api/finance').catch(() => ({ error: 'Suivi financier indisponible : relance le serveur (npm start)' }));
+  fin = r.error ? null : r;
+  renderFinWidget(r.error);
+  if (!$('#finview').hidden) renderFinview(r.error);
+}
+function renderFinview(error) {
+  const el = $('#fin-detail');
+  if (error || !fin) { el.innerHTML = `<div class="inner"><div class="pf-empty">${esc(error || 'Chargement…')}</div></div>`; return; }
+  const top = el.scrollTop;
+  el.innerHTML = `<div class="inner">${pfFinance()}</div>`;
+  el.scrollTop = top;
+  pfFinanceWire(el);
+}
+function renderFinWidget(error) {
+  const el = $('#finw');
+  if (error || !fin) { el.innerHTML = `<span class="lbl">${esc(error || 'Chargement…')}</span>`; return; }
+  const rows = pfFinRows(), late = rows.filter(r => r.late).reduce((a, r) => a + r.montant, 0);
+  $('#finw-meta').textContent = late ? `${EUR(late)} en retard` : '';
+  el.innerHTML = `<div class="finw"><div><small>Encaissé</small><b>${EUR(pfSum(rows, 'encaisse'))}</b></div><div><small>À encaisser</small><b>${EUR(pfSum(rows, 'a_encaisser'))}</b></div><div><small>Devis</small><b>${EUR(pfSum(rows, 'devis'))}</b></div></div>`;
+}
+function onFinHash() {
+  const on = location.hash === '#finances', el = $('#finview');
+  if (!on) { el.hidden = true; return; }
+  el.hidden = false;
+  renderFinview();
+  loadFinance();
+}
+const closeFinview = () => { window.history.pushState('', '', location.pathname + location.search); onFinHash(); };
+$('#fin-open').onclick = $('#fin-go').onclick = () => { location.hash = 'finances'; };
+$('#fin-close').onclick = closeFinview;
+addEventListener('hashchange', onFinHash);
+addEventListener('keydown', e => {
+  if (e.key !== 'Escape' || $('#finview').hidden || document.activeElement?.matches('input, select')) return;
+  if (!$('#standup').hidden || !$('#appview').hidden || !$('#viewer').hidden) return;
+  closeFinview();
+}, true);
+
+function pfClient(c, P) {
+  const ps = c.projects.map(s => P[s]).filter(Boolean);
+  return `
+    <div><div class="pf-kicker"><a class="pf-back" href="#portefeuille">← Liste</a><span>Client</span></div>
+      <h2>${esc(c.title)}</h2>${c.description ? `<p class="lead">${esc(c.description)}</p>` : ''}</div>
+    ${c.contacts.length ? `<div class="pf-sec"><h3>Contacts</h3><div class="pf-grid">${c.contacts.map(x => `<div class="pf-card"><div class="h"><b style="cursor:default">${esc(x.name)}</b></div>${x.role ? `<p>${esc(x.role)}</p>` : ''}</div>`).join('')}</div></div>` : ''}
+    <div class="pf-sec"><h3>Projets</h3>${ps.length ? `<div class="pf-grid">${ps.map(p => `
+      <div class="pf-card"><div class="h"><i class="dot ${esc(p.stage)}"></i><b data-go="${pfHref('projet', p.slug)}">${esc(p.title)}</b><small>${p.updated ? 'revu ' + relDate(p.updated) : ''}</small></div>
+        <p>${esc(p.next || 'Pas de prochaine étape')}</p></div>`).join('')}</div>` : '<div class="pf-rows"><div class="none">Aucun projet rattaché. Ouvre un projet et choisis ce client.</div></div>'}</div>
+    ${pfSections(c)}
+    <div class="pf-sec"><h3>Fiche</h3><div class="pf-note">${md(c.body || '')}</div></div>`;
+}
+
+function pfProject(p, C) {
+  const c = C[p.client];
+  return `
+    <div><div class="pf-kicker"><a class="pf-back" href="#portefeuille">← Liste</a><span>Projet</span><span>·</span>${c ? `<a href="${pfHref('client', c.slug)}">${esc(c.title)}</a>` : '<span>sans client</span>'}</div>
+      <h2>${esc(p.title)} <button class="stagebtn ${esc(p.stage)}" data-stage="${esc(p.slug)}" aria-haspopup="true">${esc(p.stage)}<svg><use href="#i-chev"/></svg></button></h2>
+      ${p.description ? `<p class="lead">${esc(p.description)}</p>` : ''}</div>
+    <div class="pf-sec"><h3>Prochaine étape${p.updated ? ` · revu ${relDate(p.updated)}` : ''}</h3>
+      <div class="pf-next ${p.next ? '' : 'empty'}" id="pf-next" title="Cliquer pour modifier">${esc(p.next || 'Pas de prochaine étape')}</div>
+      ${p.next ? `<div><button class="btn sm" id="pf-push">→ Ajouter à aujourd'hui</button></div>` : ''}</div>
+    <div class="pf-sec"><h3>Client</h3><div class="pf-client">
+      <select id="pf-client"><option value="">Sans client</option>${pf.clients.map(x => `<option value="${esc(x.slug)}"${x.slug === p.client ? ' selected' : ''}>${esc(x.title)}</option>`).join('')}<option value="__new">+ Nouvelle fiche client…</option></select>
+      <span id="pf-newclient" hidden><input id="pf-nc-nom" placeholder="Nom du contact"> <input id="pf-nc-ent" placeholder="Entreprise"> <button class="btn acc sm" id="pf-nc-go">Créer et rattacher</button></span>
+    </div></div>
+    ${pfSections(p)}
+    <div class="pf-sec"><h3>Fiche</h3><div class="pf-note">${md(p.body || '')}</div></div>`;
+}
+
+function pfWire(el, item, kind) {
+  el.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { location.hash = b.dataset.go; });
+  // links between notes stay inside the view; anything else is left alone
+  el.querySelectorAll('a[data-link]').forEach(a => a.onclick = () => {
+    const m = a.dataset.link.match(/(projects|clients)\/([\w.-]+)\.md$/);
+    if (m && m[2] !== 'index') location.hash = pfHref(m[1] === 'projects' ? 'projet' : 'client', m[2]);
+  });
+  el.querySelectorAll('details[data-note]').forEach(d => d.ontoggle = async () => {
+    const box = d.querySelector('.note');
+    if (!d.open || box.dataset.loaded) return;
+    const n = await api('/api/note?id=' + encodeURIComponent(d.dataset.note));
+    box.innerHTML = md(n.body || ''); box.dataset.loaded = 1;
+  });
+  if (kind !== 'projet') return;
+  const p = item;
+  el.querySelector('[data-stage]').onclick = e => { e.stopPropagation(); openStageMenu(e.currentTarget); };
+  const next = $('#pf-next');
+  next.onclick = () => { if (next.isContentEditable) return; next.contentEditable = 'true'; next.classList.remove('empty'); if (!p.next) next.textContent = ''; next.focus(); };
+  next.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); next.blur(); } if (e.key === 'Escape') { next.contentEditable = 'false'; renderPortfolio(); } };
+  next.onblur = () => { if (!next.isContentEditable) return; next.contentEditable = 'false'; const v = next.textContent.trim(); if (v !== p.next) patchProject(p.slug, { next: v }); };
+  const push = $('#pf-push');
+  if (push) push.onclick = () => { todo.items.push({ t: p.next, s: p.title, p: '', done: false }); saveTodo(); toast(`Ajouté à aujourd'hui : ${p.next.slice(0, 40)}`); };
+  const sel = $('#pf-client');
+  sel.onchange = () => {
+    $('#pf-newclient').hidden = sel.value !== '__new';
+    if (sel.value === '__new') return $('#pf-nc-nom').focus();
+    patchProject(p.slug, { client: sel.value });
+  };
+  $('#pf-nc-go').onclick = async () => {
+    const nom = $('#pf-nc-nom').value.trim();
+    if (!nom) return $('#pf-nc-nom').focus();
+    const c = await api('/api/clients', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ nom, entreprise: $('#pf-nc-ent').value.trim(), description: `Client du projet ${p.title}.` }) });
+    if (c.error) return toast(c.error, true);
+    patchProject(p.slug, { client: c.slug });
+  };
+}
 
 /* ---------- agenda: what is coming, and what the standup reads ---------- */
 // always-visible way out when the agenda looks disconnected: refetch, or redo Google consent
@@ -1714,7 +2243,11 @@ function chatAsk(text) {
   setInterval(() => loadGmail(), 5 * 60e3);
   setInterval(loadAgenda, 10 * 60e3);
   setInterval(loadProjects, 60e3);
+  setInterval(loadFinance, 60e3);
   standupOnOpen();
+  onPortfolioHash();
+  onFinHash();
+  loadFinance();
 })();
 </script>
 </body>
