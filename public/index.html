@@ -1600,7 +1600,6 @@ const pfSections = x => {
 /* ---- money: schedules from brain/finance frontmatter ---- */
 const EUR = n => n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 });
 const isoToday = () => new Date().toLocaleDateString('sv-SE');
-const STATUT = { encaisse: 'Encaissé', a_encaisser: 'À encaisser', devis: 'Devis non signé' };
 let fin = null;
 function pfFinRows() {
   if (!fin) return [];
@@ -1794,6 +1793,7 @@ $('#fin-close').onclick = closeFinview;
 addEventListener('hashchange', onFinHash);
 addEventListener('keydown', e => {
   if (e.key !== 'Escape' || $('#finview').hidden || document.activeElement?.matches('input, select')) return;
+  if (!$('#standup').hidden || !$('#appview').hidden || !$('#viewer').hidden) return;
   closeFinview();
 }, true);
 
@@ -2243,6 +2243,7 @@ function chatAsk(text) {
   setInterval(() => loadGmail(), 5 * 60e3);
   setInterval(loadAgenda, 10 * 60e3);
   setInterval(loadProjects, 60e3);
+  setInterval(loadFinance, 60e3);
   standupOnOpen();
   onPortfolioHash();
   onFinHash();

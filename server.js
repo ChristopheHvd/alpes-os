@@ -166,9 +166,15 @@ app.patch('/api/finance/:slug/echeances/:idx', (req, res) => {
 });
 
 // Portfolio — clients and their projects cross-read with finance, todo and agenda
+let pfEvents = null;
 app.get('/api/portfolio', async (req, res) => {
   let events = [];
-  try { if (gmail.status().hasCalendar) events = (await calendar.upcoming({ ...calOpts(), days: 21, max: 40 })).events; } catch (e) { /* calendar optional */ }
+  try {
+    if (gmail.status().hasCalendar) {
+      if (!pfEvents || Date.now() - pfEvents.at > 300e3) pfEvents = { at: Date.now(), events: (await calendar.upcoming({ ...calOpts(), days: 21, max: 40 })).events };
+      events = pfEvents.events;
+    }
+  } catch (e) { /* calendar optional */ }
   try { res.json(portfolio(cfg.secondBrain, { todo: readTodo(todoFile), events })); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
