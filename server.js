@@ -153,7 +153,7 @@ app.post('/api/clients', (req, res) => {
 
 // Finance — payment schedules kept in the frontmatter of brain/finance notes
 app.get('/api/finance', (req, res) => {
-  try { res.json({ notes: listFinance(cfg.secondBrain), clients: listClients(cfg.secondBrain).map(c => ({ slug: c.slug, title: c.title })) }); }
+  try { res.json({ notes: listFinance(cfg.secondBrain), clients: listClients(cfg.secondBrain).map(c => ({ slug: c.slug, title: c.title })), projects: listProjects(cfg.secondBrain).map(p => ({ slug: p.slug, client: p.client })) }); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 app.post('/api/finance/:slug/echeances', (req, res) => {

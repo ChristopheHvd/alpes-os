@@ -108,7 +108,8 @@ body.resizing { cursor: col-resize; user-select: none; }
 .col.left > .w:last-child { flex: 1 1 56%; overflow: hidden; }
 .todo { flex: 1 1 auto; min-height: 96px; }
 #w-projects { flex: 1 1 34%; overflow: hidden; }
-.col.right > .w:nth-child(2) { flex: 1 1 40%; overflow: hidden; }
+[data-widget="apps"] { flex: 1 1 40%; overflow: hidden; }
+#w-finance { flex: 0 0 auto; }
 #apps { overflow-y: auto; min-height: 0; flex: 1; display: flex; flex-direction: column; gap: 10px; }
 .col.right > .w:last-child { flex: 1 1 26%; overflow: hidden; }
 .w-head { display: flex; align-items: center; gap: 10px; }
@@ -467,8 +468,8 @@ a.mail, .mail {
 .modal[hidden], .viewer[hidden], .appview[hidden] { display: none; }
 .appview { z-index: 24; }
 /* ---- portfolio: clients and their projects, full screen ---- */
-#w-projects h2 { cursor: pointer; }
-#w-projects h2:hover { color: var(--accent); }
+#w-projects h2, #fin-open { cursor: pointer; }
+#w-projects h2:hover, #fin-open:hover { color: var(--accent); }
 .pf-go { width: 24px; height: 24px; padding: 0; display: grid; place-items: center; flex-shrink: 0; border: 0; border-radius: 50%; background: var(--accent-soft); color: var(--accent); cursor: pointer; }
 .pf-go svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.2; }
 .pf-go:hover { background: var(--accent); color: var(--accent-ink); }
@@ -592,11 +593,12 @@ a.mail, .mail {
 .fin-add form { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; align-items: end; margin-top: 10px; }
 .fin-add label { display: grid; gap: 4px; font-size: 12px; color: var(--ink-3); }
 .fin-add input, .fin-add select { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px; color: var(--ink); font: 400 13px var(--font); min-width: 0; }
-.fin-mini { display: flex; gap: 10px 22px; flex-wrap: wrap; align-items: baseline; background: var(--surface); border: 1px solid var(--line-soft); border-radius: 8px; padding: 12px 14px; }
-.fin-mini div { display: grid; gap: 2px; }
-.fin-mini small { color: var(--ink-3); font-size: 11.5px; }
-.fin-mini b { font: 600 17px/1.2 var(--font); color: var(--ink); }
-.fin-mini a { margin-left: auto; color: var(--accent); font-size: 12.5px; text-decoration: none; }
+.finview { grid-template-rows: auto 1fr; }
+.finview .pf-detail .inner { margin: 0 auto; }
+.finw { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.finw div { display: grid; gap: 3px; min-width: 0; }
+.finw small { color: var(--ink-3); font-size: 11.5px; }
+.finw b { font: 600 15px/1.2 var(--font); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 800px) {
   .pf-top { padding: 12px 16px; }
   .pf-main { grid-template-columns: 1fr; }
@@ -763,6 +765,16 @@ a.mail, .mail {
       <div class="projects w-body" id="projects"></div>
     </section>
 
+    <section class="w" id="w-finance" data-widget="finance">
+      <div class="w-head">
+        <h2 id="fin-open" title="Ouvrir le suivi financier"><svg><use href="#i-euro"/></svg>Suivi financier</h2>
+        <span class="meta late" id="finw-meta"></span>
+        <button class="pf-go" id="fin-go" title="Ouvrir le suivi financier" aria-label="Ouvrir le suivi financier"><svg><use href="#i-arrow"/></svg></button>
+        <button class="wtoggle" aria-label="Réduire ou déplier" data-w="finance" title="Réduire"><svg><use href="#i-chev"/></svg></button>
+      </div>
+      <div class="w-body" id="finw"></div>
+    </section>
+
     <section class="w" data-widget="apps">
       <div class="w-head">
         <h2><svg><use href="#i-grid"/></svg>Micro apps</h2>
@@ -821,6 +833,14 @@ a.mail, .mail {
     <nav class="pf-side" id="pf-side"></nav>
     <section class="pf-detail" id="pf-detail"></section>
   </div>
+</div>
+
+<div class="portfolio finview" id="finview" hidden>
+  <div class="pf-top">
+    <button class="btn" id="fin-close" title="Retour au dashboard (Échap)">← Dashboard</button>
+    <h1>Suivi financier</h1>
+  </div>
+  <section class="pf-detail" id="fin-detail"></section>
 </div>
 
 <div class="viewer" id="viewer" hidden>
@@ -1496,17 +1516,15 @@ async function patchProject(slug, patch) {
 const relDate = iso => { const d = Math.round((Date.now() - new Date(iso)) / 864e5); return d <= 0 ? "aujourd'hui" : d === 1 ? 'hier' : `il y a ${d} j`; };
 
 /* ---------- portfolio: clients and their projects (#portefeuille/client|projet/<slug>) ---------- */
-let pf = null, pfFin = null, pfFilter = 'actif', pfQuery = '';
+let pf = null, pfFilter = 'actif', pfQuery = '';
 const fold = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-const pfRoute = () => { const m = location.hash.match(/^#portefeuille(?:\/(finances)|\/(client|projet)\/([\w.-]+))?$/); return m && { kind: m[1] || m[2], slug: m[3] }; };
+const pfRoute = () => { const m = location.hash.match(/^#portefeuille(?:\/(client|projet)\/([\w.-]+))?$/); return m && { kind: m[1], slug: m[2] }; };
 const pfHref = (kind, slug) => `#portefeuille/${kind}/${encodeURIComponent(slug)}`;
 async function loadPortfolio() {
-  // a failing call (server not restarted, note unreadable) must not blank the whole view
-  const fail = what => () => ({ error: `${what} indisponible : relance le serveur (npm start)` });
-  const [r, f] = await Promise.all([api('/api/portfolio').catch(fail('Vue clients & projets')), api('/api/finance').catch(fail('Suivi financier'))]);
+  // a failing call (server not restarted, note unreadable) must not blank the view
+  const r = await api('/api/portfolio').catch(() => ({ error: 'Vue clients & projets indisponible : relance le serveur (npm start)' }));
   if (r.error) { $('#pf-detail').innerHTML = `<div class="inner"><div class="pf-empty">${esc(r.error)}</div></div>`; return toast(r.error, true); }
-  if (f.error) toast(f.error, true);
-  pf = r; pfFin = f.error ? { notes: [], clients: [], error: f.error } : f; renderPortfolio();
+  pf = r; renderPortfolio();
 }
 function onPortfolioHash() {
   const r = pfRoute(), el = $('#portfolio');
@@ -1549,20 +1567,20 @@ function renderPortfolio() {
   }).filter(Boolean).sort((a, b) => (a.dim - b.dim) || recent(b.ps) - recent(a.ps));
   const orphans = pf.projects.filter(p => !C[p.client] && stageOk(p) && hit(p.title, p.description));
 
-  // no focus yet: open on the global money view rather than an empty pane
-  if (!route.kind && window.innerWidth > 800) { window.history.replaceState('', '', '#portefeuille/finances'); route.kind = 'finances'; }
+  // no focus yet: open on the first client rather than an empty pane
+  if (!route.kind && (groups[0] || orphans[0]) && window.innerWidth > 800) {
+    const first = groups[0] ? pfHref('client', groups[0].c.slug) : pfHref('projet', orphans[0].slug);
+    window.history.replaceState('', '', first); route.kind = first.split('/')[1]; route.slug = decodeURIComponent(first.split('/')[2]);
+  }
   const on = (k, s) => route.kind === k && route.slug === s ? ' on' : '';
   const pjLink = (p, cls = 'pj-l') => `<a class="${cls}${on('projet', p.slug)}" href="${pfHref('projet', p.slug)}"><i class="dot ${esc(p.stage)}"></i><span>${esc(p.title)}</span></a>`;
-  $('#pf-side').innerHTML = `<div class="grp">Vue globale</div><a class="${route.kind === 'finances' ? 'on' : ''}" href="#portefeuille/finances"><span>Suivi financier</span></a>`
-    + (groups.length ? '<div class="grp">Clients</div>' : '')
+  $('#pf-side').innerHTML = (groups.length ? '<div class="grp">Clients</div>' : '')
     + groups.map(g => `<a class="${on('client', g.c.slug)}${g.dim ? ' dim' : ''}" href="${pfHref('client', g.c.slug)}"><span>${esc(g.c.title)}</span><small>${g.c.projects.length || ''}</small></a>` + g.ps.map(p => pjLink(p)).join('')).join('')
     + (orphans.length ? '<div class="grp">Sans client</div>' + orphans.map(p => pjLink(p, '')).join('') : '')
     + (!groups.length && !orphans.length ? '<div class="pf-empty">Rien ne correspond.</div>' : '');
 
   $('#pf-main').classList.toggle('focus', !!route.kind);
   const el = $('#pf-detail');
-  if (route.kind === 'finances' && pfFin.error) { el.innerHTML = `<div class="inner"><div class="pf-empty">${esc(pfFin.error)}</div></div>`; return; }
-  if (route.kind === 'finances') { el.innerHTML = `<div class="inner">${pfFinance()}</div>`; el.scrollTop = 0; pfFinanceWire(el); return; }
   const item = route.kind === 'client' ? C[route.slug] : route.kind === 'projet' ? P[route.slug] : null;
   if (!item) { el.innerHTML = `<div class="inner"><div class="pf-empty">${route.kind ? 'Fiche introuvable.' : 'Choisis un client ou un projet.'}</div></div>`; return; }
   el.innerHTML = `<div class="inner">${route.kind === 'client' ? pfClient(item, P) : pfProject(item, C)}</div>`;
@@ -1583,26 +1601,18 @@ const pfSections = x => {
 const EUR = n => n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 });
 const isoToday = () => new Date().toLocaleDateString('sv-SE');
 const STATUT = { encaisse: 'Encaissé', a_encaisser: 'À encaisser', devis: 'Devis non signé' };
+let fin = null;
 function pfFinRows() {
-  if (!pfFin || !pf) return [];
-  const P = Object.fromEntries(pf.projects.map(p => [p.slug, p]));
+  if (!fin) return [];
+  const P = Object.fromEntries(fin.projects.map(p => [p.slug, p]));
   const today = isoToday();
-  return pfFin.notes.flatMap(n => {
+  return fin.notes.flatMap(n => {
     const client = n.client || n.clients[0] || P[n.projet || n.projects[0]]?.client || '';
     return n.echeances.map((e, idx) => ({ ...e, idx, note: n, client, late: e.statut === 'a_encaisser' && !!e.date && e.date < today }));
   });
 }
 const pfSum = (rows, st) => rows.filter(r => r.statut === st).reduce((a, r) => a + r.montant, 0);
-const pfClientTitle = slug => pfFin.clients.find(c => c.slug === slug)?.title || slug || 'Sans client';
-
-function pfMoneyLine(rows) {
-  if (!rows.length) return '';
-  return `<div class="pf-sec"><h3>Suivi financier</h3><div class="fin-mini">
-    <div><small>Encaissé</small><b>${EUR(pfSum(rows, 'encaisse'))}</b></div>
-    <div><small>À encaisser</small><b>${EUR(pfSum(rows, 'a_encaisser'))}</b></div>
-    <div><small>Devis en cours</small><b>${EUR(pfSum(rows, 'devis'))}</b></div>
-    <a href="#portefeuille/finances">Voir l'échéancier →</a></div></div>`;
-}
+const pfClientTitle = slug => fin.clients.find(c => c.slug === slug)?.title || slug || 'Sans client';
 
 function pfFinance() {
   const rows = pfFinRows(), today = isoToday();
@@ -1623,8 +1633,7 @@ function pfFinance() {
     : r.statut === 'devis' ? `<button class="btn sm" data-fin-set="a_encaisser" data-slug="${esc(r.note.slug)}" data-idx="${r.idx}">Signé</button>` : '';
 
   return `
-    <div><div class="pf-kicker"><a class="pf-back" href="#portefeuille">← Liste</a><span>Vue globale</span></div>
-      <h2>Suivi financier</h2><p class="lead">Échéances lues dans le frontmatter des notes <code>brain/finance</code>. Montants HT, TVA non applicable.</p></div>
+    <p class="lead">Échéances lues dans le frontmatter des notes <code>brain/finance</code>. Montants HT, TVA non applicable.</p>
     <div class="fin-tiles">
       <div class="fin-tile hero"><small>Déjà encaissé</small><b>${EUR(cashed)}</b><span>${rows.filter(r => r.statut === 'encaisse').length} paiement(s) reçu(s)</span></div>
       <div class="fin-tile"><small>Reste à encaisser (signé)</small><b>${EUR(due)}</b><span>${lateSum ? `<em class="late">! ${EUR(lateSum)} en retard</em>` : next ? `prochain : ${EUR(next.montant)} le ${d(next.date)}` : 'rien de prévu'}</span></div>
@@ -1650,7 +1659,7 @@ function pfFinance() {
         <td class="amt">${EUR(c.encaisse)}</td><td class="amt">${EUR(c.a_encaisser)}</td><td class="amt">${EUR(c.devis)}</td><td class="amt"><b>${EUR(c.encaisse + c.a_encaisser + c.devis)}</b></td></tr>`).join('')}</tbody>
     </table></div></div>
     <details class="pf-sec fin-add"><summary>+ Ajouter une échéance</summary><form id="fin-form">
-      <label>Note finance<select name="slug" required>${pfFin.notes.map(n => `<option value="${esc(n.slug)}">${esc(pfClientTitle(n.client || n.clients[0]))} — ${esc(n.title)}</option>`).join('')}</select></label>
+      <label>Note finance<select name="slug" required>${fin.notes.map(n => `<option value="${esc(n.slug)}">${esc(pfClientTitle(n.client || n.clients[0]))} — ${esc(n.title)}</option>`).join('')}</select></label>
       <label>Libellé<input name="libelle" required placeholder="Solde 70 %"></label>
       <label>Montant (€)<input name="montant" required inputmode="decimal" placeholder="1 260"></label>
       <label>Date<input name="date" type="date"></label>
@@ -1733,7 +1742,7 @@ function pfFinanceWire(el) {
     const r = await api(`/api/finance/${encodeURIComponent(slug)}/echeances/${idx}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     if (r.error) return toast(r.error, true);
     toast('Échéance mise à jour dans le second brain');
-    loadPortfolio();
+    loadFinance();
   };
   el.querySelectorAll('[data-fin-set]').forEach(b => b.onclick = () => {
     const body = { statut: b.dataset.finSet };
@@ -1746,9 +1755,47 @@ function pfFinanceWire(el) {
     const f = Object.fromEntries(new FormData(e.target));
     const r = await api(`/api/finance/${encodeURIComponent(f.slug)}/echeances`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(f) });
     if (r.error) return toast(r.error, true);
-    toast('Échéance ajoutée'); loadPortfolio();
+    toast('Échéance ajoutée'); loadFinance();
   };
 }
+
+// #finances: a space of its own, opened from the dashboard widget
+async function loadFinance() {
+  const r = await api('/api/finance').catch(() => ({ error: 'Suivi financier indisponible : relance le serveur (npm start)' }));
+  fin = r.error ? null : r;
+  renderFinWidget(r.error);
+  if (!$('#finview').hidden) renderFinview(r.error);
+}
+function renderFinview(error) {
+  const el = $('#fin-detail');
+  if (error || !fin) { el.innerHTML = `<div class="inner"><div class="pf-empty">${esc(error || 'Chargement…')}</div></div>`; return; }
+  const top = el.scrollTop;
+  el.innerHTML = `<div class="inner">${pfFinance()}</div>`;
+  el.scrollTop = top;
+  pfFinanceWire(el);
+}
+function renderFinWidget(error) {
+  const el = $('#finw');
+  if (error || !fin) { el.innerHTML = `<span class="lbl">${esc(error || 'Chargement…')}</span>`; return; }
+  const rows = pfFinRows(), late = rows.filter(r => r.late).reduce((a, r) => a + r.montant, 0);
+  $('#finw-meta').textContent = late ? `${EUR(late)} en retard` : '';
+  el.innerHTML = `<div class="finw"><div><small>Encaissé</small><b>${EUR(pfSum(rows, 'encaisse'))}</b></div><div><small>À encaisser</small><b>${EUR(pfSum(rows, 'a_encaisser'))}</b></div><div><small>Devis</small><b>${EUR(pfSum(rows, 'devis'))}</b></div></div>`;
+}
+function onFinHash() {
+  const on = location.hash === '#finances', el = $('#finview');
+  if (!on) { el.hidden = true; return; }
+  el.hidden = false;
+  renderFinview();
+  loadFinance();
+}
+const closeFinview = () => { window.history.pushState('', '', location.pathname + location.search); onFinHash(); };
+$('#fin-open').onclick = $('#fin-go').onclick = () => { location.hash = 'finances'; };
+$('#fin-close').onclick = closeFinview;
+addEventListener('hashchange', onFinHash);
+addEventListener('keydown', e => {
+  if (e.key !== 'Escape' || $('#finview').hidden || document.activeElement?.matches('input, select')) return;
+  closeFinview();
+}, true);
 
 function pfClient(c, P) {
   const ps = c.projects.map(s => P[s]).filter(Boolean);
@@ -1759,7 +1806,6 @@ function pfClient(c, P) {
     <div class="pf-sec"><h3>Projets</h3>${ps.length ? `<div class="pf-grid">${ps.map(p => `
       <div class="pf-card"><div class="h"><i class="dot ${esc(p.stage)}"></i><b data-go="${pfHref('projet', p.slug)}">${esc(p.title)}</b><small>${p.updated ? 'revu ' + relDate(p.updated) : ''}</small></div>
         <p>${esc(p.next || 'Pas de prochaine étape')}</p></div>`).join('')}</div>` : '<div class="pf-rows"><div class="none">Aucun projet rattaché. Ouvre un projet et choisis ce client.</div></div>'}</div>
-    ${pfMoneyLine(pfFinRows().filter(x => x.client === c.slug))}
     ${pfSections(c)}
     <div class="pf-sec"><h3>Fiche</h3><div class="pf-note">${md(c.body || '')}</div></div>`;
 }
@@ -1777,7 +1823,6 @@ function pfProject(p, C) {
       <select id="pf-client"><option value="">Sans client</option>${pf.clients.map(x => `<option value="${esc(x.slug)}"${x.slug === p.client ? ' selected' : ''}>${esc(x.title)}</option>`).join('')}<option value="__new">+ Nouvelle fiche client…</option></select>
       <span id="pf-newclient" hidden><input id="pf-nc-nom" placeholder="Nom du contact"> <input id="pf-nc-ent" placeholder="Entreprise"> <button class="btn acc sm" id="pf-nc-go">Créer et rattacher</button></span>
     </div></div>
-    ${pfMoneyLine(pfFinRows().filter(x => x.note.projet === p.slug || x.note.projects.includes(p.slug)))}
     ${pfSections(p)}
     <div class="pf-sec"><h3>Fiche</h3><div class="pf-note">${md(p.body || '')}</div></div>`;
 }
@@ -2200,6 +2245,8 @@ function chatAsk(text) {
   setInterval(loadProjects, 60e3);
   standupOnOpen();
   onPortfolioHash();
+  onFinHash();
+  loadFinance();
 })();
 </script>
 </body>
