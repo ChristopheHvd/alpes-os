@@ -535,6 +535,30 @@ a.mail, .mail {
 .pf-client select, .pf-client input { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; color: var(--ink); font: 400 13px var(--font); max-width: 100%; }
 .pf-empty { color: var(--ink-3); padding: 40px 0; }
 .pf-back { display: none; }
+.pf-seg button svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; vertical-align: -2px; margin-right: 5px; }
+.pf-main.grid { grid-template-columns: 1fr; }
+.pf-main.grid .pf-side { display: none; }
+.pf-main.grid .pf-back { display: inline; }
+.pf-detail .inner.wide { max-width: 1280px; }
+.g-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.gcard { background: var(--surface); border: 1px solid var(--line-soft); border-radius: 10px; padding: 14px 16px; display: grid; gap: 10px; align-content: start; cursor: pointer; min-width: 0; transition: border-color .15s, box-shadow .15s; }
+.gcard:hover { border-color: var(--line); box-shadow: var(--shadow); }
+.gcard.dim { opacity: .65; }
+.gcard header { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.gcard header a { font: 600 15.5px/1.3 var(--font); color: var(--ink); text-decoration: none; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gcard header a:hover { color: var(--accent); }
+.gcard header small { margin-left: auto; color: var(--ink-3); font-size: 11.5px; white-space: nowrap; }
+.gcard .desc { margin: 0; color: var(--ink-2); font-size: 13px; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.g-pjs { display: grid; gap: 2px; }
+.g-pj { display: flex; gap: 8px; align-items: flex-start; padding: 6px 8px; margin: 0 -8px; border-radius: 6px; text-decoration: none; min-width: 0; }
+.g-pj:hover { background: var(--sunken); }
+.g-pj .dot { margin-top: 6px; }
+.g-pj span { display: grid; min-width: 0; }
+.g-pj b { font: 500 13px/1.35 var(--font); color: var(--ink); }
+.g-pj small { color: var(--ink-3); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gcard footer { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11.5px; color: var(--ink-3); border-top: 1px solid var(--line-soft); padding-top: 8px; }
+.gcard footer:empty { display: none; }
+.gcard footer .ev-next { color: var(--accent); flex-basis: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .res-ic { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; background: var(--accent-soft); flex-shrink: 0; }
 .res-ic svg { width: 14px; height: 14px; stroke: var(--accent); fill: none; stroke-width: 1.8; }
 a.pf-card.res-cours { text-decoration: none; border-color: color-mix(in srgb, var(--accent) 35%, var(--line-soft)); }
@@ -616,7 +640,8 @@ a.pf-card.res-cours p { color: var(--accent); }
   .pf-top { padding: 12px 16px; }
   .pf-main { grid-template-columns: 1fr; }
   .pf-main.focus .pf-side { display: none; }
-  .pf-main:not(.focus) .pf-detail { display: none; }
+  .pf-main:not(.focus):not(.grid) .pf-detail { display: none; }
+  .g-grid { grid-template-columns: 1fr; }
   .pf-detail { padding: 18px 16px 48px; }
   .pf-back { display: inline; }
   .pf-rows .when { flex-basis: 80px; }
@@ -842,6 +867,7 @@ a.pf-card.res-cours p { color: var(--accent); }
     <h1>Clients &amp; projets</h1>
     <span class="sp"></span>
     <input id="pf-q" type="search" placeholder="Chercher un client, un projet, un contact">
+    <div class="pf-seg" id="pf-layout" role="group" aria-label="Affichage"><button data-l="liste" title="Liste et fiche"><svg><use href="#i-list"/></svg>Liste</button><button data-l="grille" title="Cartes"><svg><use href="#i-grid"/></svg>Grille</button></div>
     <div class="pf-seg" id="pf-seg"><button data-f="actif" class="on">Actifs</button><button data-f="tous">Tous</button></div>
   </div>
   <div class="pf-main" id="pf-main">
@@ -1532,6 +1558,7 @@ const relDate = iso => { const d = Math.round((Date.now() - new Date(iso)) / 864
 
 /* ---------- portfolio: clients and their projects (#portefeuille/client|projet/<slug>) ---------- */
 let pf = null, pfFilter = 'actif', pfQuery = '';
+let pfLayout = (() => { try { return localStorage.getItem('pf-layout') === 'grille' ? 'grille' : 'liste'; } catch { return 'liste'; } })();
 const fold = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const pfRoute = () => { const m = location.hash.match(/^#portefeuille(?:\/(client|projet)\/([\w.-]+))?$/); return m && { kind: m[1], slug: m[2] }; };
 const pfHref = (kind, slug) => `#portefeuille/${kind}/${encodeURIComponent(slug)}`;
@@ -1556,6 +1583,17 @@ addEventListener('keydown', e => {
   closePortfolio();
 }, true);  // capture: runs before the stage menu's own Escape handler clears it
 $('#pf-q').oninput = e => { pfQuery = e.target.value; renderPortfolio(); };
+const syncLayoutSeg = () => $('#pf-layout').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.l === pfLayout));
+syncLayoutSeg();
+$('#pf-layout').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  pfLayout = b.dataset.l;
+  try { localStorage.setItem('pf-layout', pfLayout); } catch {}
+  syncLayoutSeg();
+  // switching layout goes back to the overview: the grid is the list of everything
+  if (pfRoute()?.kind) { location.hash = 'portefeuille'; return; }
+  renderPortfolio();
+};
 $('#pf-seg').onclick = e => {
   const b = e.target.closest('button'); if (!b) return;
   pfFilter = b.dataset.f;
@@ -1582,8 +1620,9 @@ function renderPortfolio() {
   }).filter(Boolean).sort((a, b) => (a.dim - b.dim) || recent(b.ps) - recent(a.ps));
   const orphans = pf.projects.filter(p => !C[p.client] && stageOk(p) && hit(p.title, p.description));
 
-  // no focus yet: open on the first client rather than an empty pane
-  if (!route.kind && (groups[0] || orphans[0]) && window.innerWidth > 800) {
+  const grid = pfLayout === 'grille';
+  // list without focus: open on the first client rather than an empty pane; the grid is its own overview
+  if (!grid && !route.kind && (groups[0] || orphans[0]) && window.innerWidth > 800) {
     const first = groups[0] ? pfHref('client', groups[0].c.slug) : pfHref('projet', orphans[0].slug);
     window.history.replaceState('', '', first); route.kind = first.split('/')[1]; route.slug = decodeURIComponent(first.split('/')[2]);
   }
@@ -1595,7 +1634,13 @@ function renderPortfolio() {
     + (!groups.length && !orphans.length ? '<div class="pf-empty">Rien ne correspond.</div>' : '');
 
   $('#pf-main').classList.toggle('focus', !!route.kind);
+  $('#pf-main').classList.toggle('grid', grid);
   const el = $('#pf-detail');
+  if (grid && !route.kind) {
+    el.innerHTML = `<div class="inner wide">${pfGrid(groups, orphans)}</div>`;
+    el.querySelectorAll('[data-go]').forEach(n => n.onclick = e => { if (!e.target.closest('a')) location.hash = n.dataset.go; });
+    return;
+  }
   const item = route.kind === 'client' ? C[route.slug] : route.kind === 'projet' ? P[route.slug] : null;
   if (!item) { el.innerHTML = `<div class="inner"><div class="pf-empty">${route.kind ? 'Fiche introuvable.' : 'Choisis un client ou un projet.'}</div></div>`; return; }
   el.innerHTML = `<div class="inner">${route.kind === 'client' ? pfClient(item, P) : pfProject(item, C)}</div>`;
@@ -1832,10 +1877,32 @@ function pfResources(c) {
   </div>`;
 }
 
+function pfGrid(groups, orphans) {
+  if (!groups.length && !orphans.length) return '<div class="pf-empty">Rien ne correspond.</div>';
+  const next = p => `<a class="g-pj" href="${pfHref('projet', p.slug)}"><i class="dot ${esc(p.stage)}"></i><span><b>${esc(p.title)}</b><small>${esc(p.next || 'Pas de prochaine étape')}</small></span></a>`;
+  const count = (n, one, many) => n ? `<span>${n} ${n > 1 ? many : one}</span>` : '';
+  const clientCard = ({ c, ps, dim }) => {
+    const res = c.resources ?? [], cours = res.filter(r => r.type === 'cours').length, ev = c.events[0];
+    return `<article class="gcard${dim ? ' dim' : ''}" data-go="${pfHref('client', c.slug)}">
+      <header><a href="${pfHref('client', c.slug)}">${esc(c.title)}</a><small>${c.projects.length ? `${c.projects.length} projet${c.projects.length > 1 ? 's' : ''}` : 'client'}</small></header>
+      ${c.description ? `<p class="desc">${esc(c.description)}</p>` : ''}
+      ${ps.length ? `<div class="g-pjs">${ps.map(next).join('')}</div>` : ''}
+      <footer>${count(cours, 'cours', 'cours')}${count(res.length - cours, 'fichier', 'fichiers')}${count(c.tasks.length, 'tâche', 'tâches')}${ev ? `<span class="ev-next">${esc(pfDate(ev.start))} · ${esc(ev.title)}</span>` : ''}</footer>
+    </article>`;
+  };
+  const orphanCard = p => `<article class="gcard" data-go="${pfHref('projet', p.slug)}">
+      <header><a href="${pfHref('projet', p.slug)}">${esc(p.title)}</a><small>sans client</small></header>
+      <div class="g-pjs">${next(p)}</div>
+      <footer>${count(p.tasks.length, 'tâche', 'tâches')}${p.updated ? `<span>revu ${relDate(p.updated)}</span>` : ''}</footer>
+    </article>`;
+  return (groups.length ? `<div class="pf-sec"><h3>Clients</h3><div class="g-grid">${groups.map(clientCard).join('')}</div></div>` : '')
+    + (orphans.length ? `<div class="pf-sec"><h3>Sans client</h3><div class="g-grid">${orphans.map(orphanCard).join('')}</div></div>` : '');
+}
+
 function pfClient(c, P) {
   const ps = c.projects.map(s => P[s]).filter(Boolean);
   return `
-    <div><div class="pf-kicker"><a class="pf-back" href="#portefeuille">← Liste</a><span>Espace client</span></div>
+    <div><div class="pf-kicker"><a class="pf-back" href="#portefeuille">← Tous les clients</a><span>Espace client</span></div>
       <h2>${esc(c.title)}</h2>${c.description ? `<p class="lead">${esc(c.description)}</p>` : ''}</div>
     <div class="pf-sec"><h3>Projets en cours</h3>${ps.length ? `<div class="pf-grid">${ps.map(p => `
       <div class="pf-card"><div class="h"><i class="dot ${esc(p.stage)}"></i><b data-go="${pfHref('projet', p.slug)}">${esc(p.title)}</b><small>${p.updated ? 'revu ' + relDate(p.updated) : ''}</small></div>
@@ -1849,7 +1916,7 @@ function pfClient(c, P) {
 function pfProject(p, C) {
   const c = C[p.client];
   return `
-    <div><div class="pf-kicker"><a class="pf-back" href="#portefeuille">← Liste</a><span>Projet</span><span>·</span>${c ? `<a href="${pfHref('client', c.slug)}">${esc(c.title)}</a>` : '<span>sans client</span>'}</div>
+    <div><div class="pf-kicker"><a class="pf-back" href="#portefeuille">← Tous les clients</a><span>Projet</span><span>·</span>${c ? `<a href="${pfHref('client', c.slug)}">${esc(c.title)}</a>` : '<span>sans client</span>'}</div>
       <h2>${esc(p.title)} <button class="stagebtn ${esc(p.stage)}" data-stage="${esc(p.slug)}" aria-haspopup="true">${esc(p.stage)}<svg><use href="#i-chev"/></svg></button></h2>
       ${p.description ? `<p class="lead">${esc(p.description)}</p>` : ''}</div>
     <div class="pf-sec"><h3>Prochaine étape${p.updated ? ` · revu ${relDate(p.updated)}` : ''}</h3>
