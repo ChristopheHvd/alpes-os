@@ -467,6 +467,9 @@ a.mail, .mail {
 /* ---- portfolio: clients and their projects, full screen ---- */
 #w-projects h2 { cursor: pointer; }
 #w-projects h2:hover { color: var(--accent); }
+.pf-go { width: 24px; height: 24px; padding: 0; display: grid; place-items: center; flex-shrink: 0; border: 0; border-radius: 50%; background: var(--accent-soft); color: var(--accent); cursor: pointer; }
+.pf-go svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.2; }
+.pf-go:hover { background: var(--accent); color: var(--accent-ink); }
 .portfolio { position: fixed; inset: 0; z-index: 22; background: var(--bg); display: grid; grid-template-rows: auto 1fr; }
 .portfolio[hidden] { display: none; }
 .pf-top { display: flex; align-items: center; gap: 12px; padding: 14px 24px; border-bottom: 1px solid var(--line-soft); background: var(--surface); flex-wrap: wrap; }
@@ -622,6 +625,8 @@ a.mail, .mail {
     <symbol id="i-hex" viewBox="0 0 24 24"><path d="M12 2l8 4.6v9.2L12 20.5 4 15.8V6.6z"/><path d="M12 7l4 2.3v4.6L12 16l-4-2.1V9.3z"/></symbol>
     <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></symbol>
     <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/></symbol>
+    <symbol id="i-flow" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
     <symbol id="i-list" viewBox="0 0 24 24"><path d="M4 6h2M9 6h11M4 12h2M9 12h11M4 18h2M9 18h11"/></symbol>
   </defs>
 </svg>
@@ -687,6 +692,7 @@ a.mail, .mail {
       <div class="w-head">
         <h2 id="pf-open" title="Ouvrir la vue clients & projets"><svg><use href="#i-flow"/></svg>Projets en cours</h2>
         <span class="meta" id="pj-meta"></span>
+        <button class="pf-go" id="pf-go" title="Ouvrir la vue clients & projets" aria-label="Ouvrir la vue clients et projets"><svg><use href="#i-arrow"/></svg></button>
         <button class="wtoggle" aria-label="Réduire ou déplier" data-w="projects" title="Réduire"><svg><use href="#i-chev"/></svg></button>
       </div>
       <div class="projects w-body" id="projects"></div>
@@ -1440,7 +1446,7 @@ function onPortfolioHash() {
   if (el.hidden) { el.hidden = false; loadPortfolio(); } else if (pf) renderPortfolio();
 }
 function closePortfolio() { window.history.pushState('', '', location.pathname + location.search); onPortfolioHash(); }
-$('#pf-open').onclick = () => { location.hash = 'portefeuille'; };
+$('#pf-open').onclick = $('#pf-go').onclick = () => { location.hash = 'portefeuille'; };
 $('#pf-close').onclick = closePortfolio;
 addEventListener('hashchange', onPortfolioHash);
 addEventListener('keydown', e => {
