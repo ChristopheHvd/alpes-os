@@ -1,0 +1,8 @@
+{
+  "marc-tabouret-simatis": {
+    "add": [
+      { "label": "Dossier partagé Simatis", "url": "https://drive.google.com/drive/folders/...", "type": "lien", "detail": "Google Drive" }
+    ],
+    "hide": ["kits/Second-Brain-Simatis.zip"]
+  }
+}
