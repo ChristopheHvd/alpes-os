@@ -63,6 +63,9 @@ app.use('/output', express.static(path.join(ROOT, 'output'), {
 // ce dépôt-ci est public. Le dashboard les monte de là et les sert sous
 // /content/cours/, comme si de rien n'était pour le moteur de présentation.
 const coursDir = path.join(cfg.secondBrain, 'cours');
+// Kits and reference files handed to clients, read-only — the client space links to them
+app.use('/content/kits', express.static(path.join(cfg.secondBrain, 'kits'), { dotfiles: 'ignore', index: false }));
+app.use('/content/references', express.static(path.join(cfg.secondBrain, 'brain', 'references'), { dotfiles: 'ignore', index: false }));
 app.use('/content/cours', express.static(coursDir, {
   setHeaders: (res, f) => { if (f.endsWith('.md')) res.type('text/plain; charset=utf-8'); },
 }));
@@ -175,7 +178,7 @@ app.get('/api/portfolio', async (req, res) => {
       events = pfEvents.events;
     }
   } catch (e) { /* calendar optional */ }
-  try { res.json(portfolio(cfg.secondBrain, { todo: readTodo(todoFile), events })); }
+  try { res.json(portfolio(cfg.secondBrain, { todo: readTodo(todoFile), events, alpesRoot: ROOT })); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 
