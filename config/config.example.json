@@ -1,6 +1,7 @@
 {
   "port": 4545,
   "secondBrain": "/chemin/vers/second-brain",
+  "drive": "/Users/<vous>/Library/CloudStorage/GoogleDrive-<compte>/My Drive/ALPES IA",
   "brainFolders": [
     "brain",
     "skills",
