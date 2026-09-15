@@ -4,7 +4,6 @@
 import express from 'express';
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getGraph, readNote } from './lib/brain.js';
@@ -40,11 +39,11 @@ function loadConfig(name) {
 const cfg = loadConfig('config');
 const branding = loadConfig('branding');
 // Alpes OS never edits the second brain: its curator does (second-brain/AGENTS.md).
-// Every write below becomes an event in the external queue, shown at once through
+// Every write below becomes an event in the curator's queue, shown at once through
 // a local overlay until the curator has archived it. Env overrides let a test
 // instance use its own queue.
 // the curator skill only knows this queue: an instance on another queue must never launch it
-const CURATOR_QUEUE = path.join(os.homedir(), '.local', 'share', 'second-brain');
+const CURATOR_QUEUE = path.join(cfg.secondBrain, 'brain', 'inbox');
 const sbQueue = path.resolve(process.env.ALPES_OS_SB_QUEUE || cfg.secondBrainQueue || CURATOR_QUEUE);
 bundle.configure({
   root: cfg.secondBrain,
@@ -431,7 +430,7 @@ app.post('/api/briefing', async (req, res) => {
 // Second brain sync — what is waiting for the curator, and a way to run it
 const CURATOR = {
   id: 'curator', name: 'Second cerveau', description: 'Intègre les changements en attente', skill: '/second-brain-curator',
-  model: cfg.claude.defaultModel, output: 'output/curator',
+  model: cfg.claude.defaultModel, output: 'output/curator', addDirs: [cfg.drive],
   actions: [{ id: 'integrer', label: 'Intégrer les changements', placeholder: '' }],
 };
 let curatorRun = null;
@@ -444,7 +443,7 @@ function integrate(reason) {
   if (!st.inbox && !st.processing) return { error: 'rien à intégrer' };
   curatorRun = runner.start({
     app: CURATOR, action: CURATOR.actions[0],
-    brief: `Traite la file externe du Second Brain (${reason}). Suis ton protocole exclusif : verrou atomique, arbre propre sur main, événements dans l'ordre, lint, commit et push, archivage, libération du verrou. Si un événement est en conflit, laisse-le dans processing et explique le point à trancher.`,
+    brief: `Traite la file du Second Brain, brain/inbox (${reason}). Suis ton protocole exclusif : verrou atomique, arbre propre sur main, dépôts dans l'ordre (documents rangés dans Drive), lint, commit et push, archivage, libération du verrou. Si un événement est en conflit, laisse-le dans processing et explique le point à trancher.`,
   });
   waitRun(curatorRun).then(() => bundle.settle());
   return { run: curatorRun };
