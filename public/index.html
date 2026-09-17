@@ -285,17 +285,17 @@ a.mail, .mail {
 .credo .cr-foot > .cr-status { flex: 1; }
 @keyframes credoin { from { opacity: 0; } }
 /* ---- focus: the task at hand, full screen, with the credo scrolling underneath ---- */
-.focus { position: fixed; inset: 0; z-index: 35; display: grid; grid-template-rows: auto 1fr auto; background: color-mix(in srgb, var(--bg) 72%, transparent); backdrop-filter: blur(22px) saturate(.9); -webkit-backdrop-filter: blur(22px) saturate(.9); animation: credoin .5s ease both; }
-.focus[hidden] { display: none; }
-.focus .fo-top { display: flex; justify-content: flex-end; padding: 22px 26px; }
-.focus .fo-stage { display: grid; align-content: center; gap: 22px; padding: 0 clamp(20px, 8vw, 140px); text-align: center; }
-.focus .fo-proj { font: 500 12px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
-.focus h1 { margin: 0; font: 600 clamp(34px, 5.4vw, 76px)/1.15 var(--display); color: var(--ink); text-wrap: balance; }
-.focus .fo-credo { padding: 0 clamp(20px, 8vw, 140px) 40px; text-align: center; transition: opacity .45s ease; }
-.focus .fo-credo.out { opacity: 0; }
-.focus .fo-credo small { display: block; font: 500 11px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 12px; }
-.focus .fo-credo p { margin: 0 auto; max-width: 70ch; font: 400 clamp(15px, 1.5vw, 20px)/1.55 var(--font); color: var(--ink-2); text-wrap: balance; }
-@media (prefers-reduced-motion: reduce) { .focus, .focus .fo-credo { animation: none; transition: none; } }
+.focusmode { position: fixed; inset: 0; z-index: 35; display: grid; grid-template-rows: auto 1fr auto; background: color-mix(in srgb, var(--bg) 72%, transparent); backdrop-filter: blur(22px) saturate(.9); -webkit-backdrop-filter: blur(22px) saturate(.9); animation: credoin .5s ease both; }
+.focusmode[hidden] { display: none; }
+.focusmode .fo-top { display: flex; justify-content: flex-end; padding: 22px 26px; }
+.focusmode .fo-stage { display: grid; align-content: center; gap: 22px; padding: 0 clamp(20px, 8vw, 140px); text-align: center; }
+.focusmode .fo-proj { font: 500 12px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+.focusmode h1 { margin: 0; font: 600 clamp(34px, 5.4vw, 76px)/1.15 var(--display); color: var(--ink); text-wrap: balance; }
+.focusmode .fo-credo { padding: 0 clamp(20px, 8vw, 140px) 40px; text-align: center; transition: opacity .45s ease; }
+.focusmode .fo-credo.out { opacity: 0; }
+.focusmode .fo-credo small { display: block; font: 500 11px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 12px; }
+.focusmode .fo-credo p { margin: 0 auto; max-width: 70ch; font: 400 clamp(15px, 1.5vw, 20px)/1.55 var(--font); color: var(--ink-2); text-wrap: balance; }
+@media (prefers-reduced-motion: reduce) { .focusmode, .focusmode .fo-credo { animation: none; transition: none; } }
 @media (prefers-reduced-motion: reduce) { .credo, .credo figure { animation: none; transition: none; } }
 @media (max-width: 640px) { .credo .cr-foot { flex-wrap: wrap; } .credo .cr-nav { order: -1; width: 100%; justify-content: center; } }
 .su .recap { font-size: 14.5px; line-height: 1.65; color: var(--ink-2); }
@@ -919,7 +919,7 @@ a.pf-card.res-cours p { color: var(--accent); }
   </div>
 </div>
 
-<div class="focus" id="focus" hidden>
+<div class="focusmode" id="focus" hidden>
   <div class="fo-top"><button class="icobtn" id="fo-close" title="Fermer (Échap)">×</button></div>
   <div class="fo-stage"><div class="fo-proj" id="fo-proj"></div><h1 id="fo-task"></h1></div>
   <div class="fo-credo" id="fo-credo"><small id="fo-sec"></small><p id="fo-text"></p></div>
