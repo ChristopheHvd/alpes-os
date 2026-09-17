@@ -456,7 +456,7 @@ function integrate(reason) {
   waitRun(curatorRun).then(() => bundle.settle());
   return { run: curatorRun };
 }
-// the curator stops on a dirty tree: don't spend a run finding that out every 30 minutes
+// the curator stops on a dirty tree: don't spend a run finding that out every 2 hours
 function brainClean() {
   try { return spawnSync('git', ['-C', cfg.secondBrain, 'status', '--porcelain'], { encoding: 'utf8', timeout: 5000 }).stdout.trim() === ''; }
   catch { return false; }
@@ -474,7 +474,7 @@ setInterval(() => {
     const st = bundle.status();
     if (st.inbox && !st.locked && brainClean()) integrate('passage automatique');
   } catch (e) { console.error('curator', e.message); }
-}, 30 * 60e3).unref();
+}, 2 * 60 * 60e3).unref();
 
 app.get('/api/artifacts', (req, res) => res.json(runner.artifacts(req.query.app ? String(req.query.app) : null)));
 // everything one app has ever done: its runs, and the files no run claims
