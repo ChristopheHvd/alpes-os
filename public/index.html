@@ -1503,11 +1503,19 @@ const md = src => {
   flushAll(); if (inTable) out += '</table>'; if (inCode) out += '</pre>';
   return out;
 };
+// the project or client sheet a node opens onto: itself when it lives in
+// brain/projects or brain/clients, otherwise the first linked note that does
+function pvFiche(n, links) {
+  const of = m => m.d === 'projects' ? { label: 'Voir la fiche projet', href: pfHref('projet', m.id.split('/').pop().replace(/\.md$/, '')) }
+    : m.d === 'clients' ? { label: 'Voir la fiche client', href: pfHref('client', m.id.split('/').pop().replace(/\.md$/, '')) } : null;
+  return of(n) ?? links.map(of).find(Boolean) ?? null;
+}
 async function select(n, fromNav) {
   if (!fromNav && selected && n && n !== selected) history.push(selected);
   if (!n) history.length = 0;
   selected = n; if (!n) { panel.classList.remove('on'); return; }
   const c = domOf(n.d).c, links = [...n.nb].sort((a, b) => b.deg - a.deg);
+const pf1 = pvFiche(n, links);
   panel.innerHTML = `<div class="hd"><button class="icobtn" id="pv-back" title="Précédent" ${history.length ? '' : 'disabled'}>‹</button><span class="dm" style="color:${c}">${domOf(n.d).label}${n.type ? ' · ' + esc(n.type) : ''}</span><button class="icobtn" id="pv-close" title="Fermer">×</button></div>
     <b class="t">${esc(n.t)}</b><div class="path">second-brain/${esc(n.id)}</div>
     <div class="tags">${n.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}${n.st ? `<span class="st ${n.st === 'verified' ? 'v' : 'd'}" style="align-self:center">${n.st === 'verified' ? '● verified' : '○ ' + esc(n.st)}</span>` : ''}</div>
@@ -1515,8 +1523,9 @@ async function select(n, fromNav) {
     <span class="lbl">${links.length} connexion${links.length > 1 ? 's' : ''}</span>
     <div class="links">${links.map(m => `<div data-id="${esc(m.id)}"><i style="background:${domOf(m.d).c}"></i>${esc(m.t)}</div>`).join('')}</div>
     <div class="body" id="pv-body"><span class="lbl">Chargement…</span></div>
-    <div class="row"><button class="btn acc" id="pv-copy">Copier le chemin</button><button class="btn" id="pv-center">Centrer</button></div>`;
+    <div class="row">${pf1 ? `<button class="btn acc" id="pv-fiche">${esc(pf1.label)}</button>` : ''}<button class="btn${pf1 ? '' : ' acc'}" id="pv-copy">Copier le chemin</button><button class="btn" id="pv-center">Centrer</button></div>`;
   panel.classList.add('on');
+  if (pf1) panel.querySelector('#pv-fiche').onclick = () => { location.hash = pf1.href; };
   panel.querySelectorAll('.links div').forEach(el => el.onclick = () => { const m = byId[el.dataset.id]; select(m); center(m); });
   panel.querySelector('#pv-copy').onclick = e => { navigator.clipboard?.writeText(`${cfg.secondBrain}/${n.id}`); e.target.textContent = 'Copié ✓'; setTimeout(() => e.target.textContent = 'Copier le chemin', 1200); };
   panel.querySelector('#pv-center').onclick = () => center(n);
