@@ -21,6 +21,7 @@ import { searchBrain } from './lib/search.js';
 import { makeChat } from './lib/chat.js';
 import { makeStandup, slotNow } from './lib/standup.js';
 import { makeChatLog } from './lib/chatlog.js';
+import { readCredo, shuffleForDay } from './lib/credo.js';
 import { bundle } from './lib/sbqueue.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -321,6 +322,13 @@ function waitRun(run) {
 }
 
 app.get('/api/standup/state', (req, res) => res.json(standup.state()));
+
+// Credo shown full screen while the stand-up thinks: a daily shuffle of config/credo.md
+app.get('/api/credo', (req, res) => {
+  const slot = req.query.slot === 'soir' ? 'soir' : 'matin';
+  const items = readCredo(path.join(ROOT, 'config', 'credo.md'));
+  res.json({ daily: 5, items: shuffleForDay(items, `${new Date().toISOString().slice(0, 10)}-${slot}`) });
+});
 app.get('/api/standup/journal', (req, res) => res.json({ sessions: standup.sessions().slice(-10) }));
 
 app.post('/api/standup/questions', async (req, res) => {
