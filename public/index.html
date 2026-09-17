@@ -1503,6 +1503,21 @@ const md = src => {
   flushAll(); if (inTable) out += '</table>'; if (inCode) out += '</pre>';
   return out;
 };
+// a markdown link's target, resolved against the note that contains it
+const brainLinkId = (fromId, link) => new URL(link, 'file:///' + fromId).pathname.slice(1);
+// opens whatever a second-brain link points to: a graph note (closes the portfolio
+// first, if it was open, so the panel behind it is visible), or a plain file
+// (PDF, docx…) served read-only in a new tab. Used from the graph panel and from
+// the portfolio, so a devis or a cahier des charges link always goes somewhere.
+function openBrainLink(fromId, link) {
+  const id = brainLinkId(fromId, link);
+  if (!id.endsWith('.md')) { window.open('/api/sb-file?path=' + encodeURIComponent(id), '_blank', 'noopener'); return; }
+  const m = byId[id];
+  if (!m) return toast('Fiche absente du graphe, rafraîchis dans 30 s', true);
+  if (!$('#portfolio').hidden) closePortfolio();
+  select(m); center(m);
+}
+
 // the project or client sheet a node opens onto: itself when it lives in
 // brain/projects or brain/clients, otherwise the first linked note that does
 function pvFiche(n, links) {
@@ -1534,7 +1549,7 @@ const pf1 = pvFiche(n, links);
   const note = await api('/api/note?id=' + encodeURIComponent(n.id));
   if (selected !== n) return;
   const body = panel.querySelector('#pv-body'); body.innerHTML = note.body ? md(note.body) : '<span class="lbl">Vide</span>';
-  body.querySelectorAll('a[data-link]').forEach(a => a.onclick = () => { const target = new URL(a.dataset.link, 'file:///' + n.id).pathname.slice(1); const m = byId[target]; if (m) { select(m); center(m); } });
+  body.querySelectorAll('a[data-link]').forEach(a => a.onclick = () => openBrainLink(n.id, a.dataset.link));
 }
 function center(n) { const t0 = performance.now(), fx = cam.x, fy = cam.y, fk = cam.k, tk = Math.max(cam.k, 1.8); const off = panel.classList.contains('on') ? (panel.offsetWidth / 2 + 24) / tk : 0; /* keep the node clear of the panel */ (function anim() { const p = Math.min(1, (performance.now() - t0) / 450), e = 1 - Math.pow(1 - p, 3); cam.k = fk + (tk - fk) * e; cam.x = fx + (-n.x - off - fx) * e; cam.y = fy + (-n.y - fy) * e; if (p < 1) requestAnimationFrame(anim); })(); }
 const q = $('#q');
@@ -2060,9 +2075,13 @@ function pfProject(p, C) {
 function pfWire(el, item, kind) {
   el.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { location.hash = b.dataset.go; });
   // links between notes stay inside the view; anything else is left alone
-  el.querySelectorAll('a[data-link]').forEach(a => a.onclick = () => {
-    const m = a.dataset.link.match(/(projects|clients)\/([\w.-]+)\.md$/);
-    if (m && m[2] !== 'index') location.hash = pfHref(m[1] === 'projects' ? 'projet' : 'client', m[2]);
+  el.querySelectorAll('a[data-link]').forEach(a => {
+    a.onclick = () => {
+      const target = brainLinkId(item.id, a.dataset.link);
+      const m = target.match(/^brain\/(projects|clients)\/([\w.-]+)\.md$/);
+      if (m && m[2] !== 'index') location.hash = pfHref(m[1] === 'projects' ? 'projet' : 'client', m[2]);
+      else openBrainLink(item.id, a.dataset.link);
+    };
   });
   el.querySelectorAll('details[data-note]').forEach(d => d.ontoggle = async () => {
     const box = d.querySelector('.note');
