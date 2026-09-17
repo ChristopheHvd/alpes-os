@@ -267,6 +267,37 @@ a.mail, .mail {
 .su .wait p { margin: 0; font: 400 14px/1.6 var(--font); color: var(--ink-2); max-width: 46ch; }
 .su .spin { width: 26px; height: 26px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+/* ---- credo: full-screen statements while the stand-up thinks ---- */
+.credo { position: fixed; inset: 0; z-index: 35; display: grid; grid-template-rows: auto 1fr auto; background: color-mix(in srgb, var(--bg) 72%, transparent); backdrop-filter: blur(22px) saturate(.9); -webkit-backdrop-filter: blur(22px) saturate(.9); animation: credoin .5s ease both; }
+.credo[hidden] { display: none; }
+.credo .cr-top { display: flex; justify-content: flex-end; padding: 22px 26px; }
+.credo .cr-stage { display: grid; place-items: center; padding: 0 clamp(20px, 8vw, 140px); }
+.credo figure { margin: 0; width: 100%; text-align: center; transition: opacity .45s ease, transform .45s ease; }
+.credo figure.out { opacity: 0; transform: translateY(8px); }
+.credo .cr-sec { font: 500 12px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin-bottom: 28px; }
+.credo blockquote { margin: 0; font: 600 clamp(28px, 4.2vw, 54px)/1.22 var(--display); color: var(--ink); text-wrap: balance; }
+.credo blockquote.long { font-size: clamp(20px, 2.4vw, 32px); line-height: 1.4; }
+.credo .cr-foot { display: flex; align-items: center; gap: 14px; padding: 22px 26px 28px; }
+.credo .cr-status { display: flex; align-items: center; gap: 10px; font: 400 13.5px/1.4 var(--font); color: var(--ink-2); min-width: 0; }
+.credo .cr-status .spin { width: 16px; height: 16px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .9s linear infinite; flex-shrink: 0; }
+.credo .cr-nav { margin: 0 auto; display: flex; align-items: center; gap: 12px; font: 500 12px/1 var(--font); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.credo .cr-side { flex: 1; display: flex; justify-content: flex-end; }
+.credo .cr-foot > .cr-status { flex: 1; }
+@keyframes credoin { from { opacity: 0; } }
+/* ---- focus: the task at hand, full screen, with the credo scrolling underneath ---- */
+.focus { position: fixed; inset: 0; z-index: 35; display: grid; grid-template-rows: auto 1fr auto; background: color-mix(in srgb, var(--bg) 72%, transparent); backdrop-filter: blur(22px) saturate(.9); -webkit-backdrop-filter: blur(22px) saturate(.9); animation: credoin .5s ease both; }
+.focus[hidden] { display: none; }
+.focus .fo-top { display: flex; justify-content: flex-end; padding: 22px 26px; }
+.focus .fo-stage { display: grid; align-content: center; gap: 22px; padding: 0 clamp(20px, 8vw, 140px); text-align: center; }
+.focus .fo-proj { font: 500 12px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+.focus h1 { margin: 0; font: 600 clamp(34px, 5.4vw, 76px)/1.15 var(--display); color: var(--ink); text-wrap: balance; }
+.focus .fo-credo { padding: 0 clamp(20px, 8vw, 140px) 40px; text-align: center; transition: opacity .45s ease; }
+.focus .fo-credo.out { opacity: 0; }
+.focus .fo-credo small { display: block; font: 500 11px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 12px; }
+.focus .fo-credo p { margin: 0 auto; max-width: 70ch; font: 400 clamp(15px, 1.5vw, 20px)/1.55 var(--font); color: var(--ink-2); text-wrap: balance; }
+@media (prefers-reduced-motion: reduce) { .focus, .focus .fo-credo { animation: none; transition: none; } }
+@media (prefers-reduced-motion: reduce) { .credo, .credo figure { animation: none; transition: none; } }
+@media (max-width: 640px) { .credo .cr-foot { flex-wrap: wrap; } .credo .cr-nav { order: -1; width: 100%; justify-content: center; } }
 .su .recap { font-size: 14.5px; line-height: 1.65; color: var(--ink-2); }
 .su .recap h1, .su .recap h2, .su .recap h3 { font: 600 16px/1.3 var(--font); color: var(--ink); margin: 16px 0 6px; }
 .su .recap ul { padding-left: 20px; margin: 0 0 10px; }
@@ -337,7 +368,7 @@ a.mail, .mail {
 .prog .bar i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .4s ease; }
 .prog span { font: 500 12px/1 var(--font); color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .todo { display: grid; gap: 1px; overflow-y: auto; min-height: 0; margin: 0 -8px; }
-.todo .it { display: grid; grid-template-columns: 18px 1fr auto auto; gap: 11px; align-items: start; padding: 8px; border-radius: 6px; }
+.todo .it { display: grid; grid-template-columns: 18px 1fr auto auto auto; gap: 11px; align-items: start; padding: 8px; border-radius: 6px; }
 .todo .it:hover { background: var(--sunken); }
 .todo input { position: absolute; opacity: 0; width: 0; height: 0; }
 .todo label.box { width: 17px; height: 17px; border: 1.5px solid var(--line); border-radius: 5px; cursor: pointer; display: grid; place-items: center; margin-top: 1px; background: var(--surface); }
@@ -353,6 +384,10 @@ a.mail, .mail {
 .todo .pr.h { background: var(--crit); } .todo .pr.m { background: var(--warn); }
 .todo .del { opacity: 0; font: 400 15px/1 var(--font); color: var(--ink-3); cursor: pointer; border: 0; background: transparent; padding: 0 2px; }
 .todo .it:hover .del { opacity: 1; }
+.todo .fo { opacity: 0; font: 500 11px/1 var(--font); color: var(--ink-3); cursor: pointer; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); padding: 3px 6px; }
+.todo .it:hover .fo, .todo .fo:focus-visible { opacity: 1; }
+.todo .fo:hover { color: var(--accent); border-color: var(--accent); }
+@media (hover: none) { .todo .fo { opacity: 1; } }
 .todo .del:hover { color: var(--crit); }
 [data-widget="today"] > .w-body { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
 [data-widget="today"] > .w-body > :not(.todo) { flex-shrink: 0; }
@@ -365,7 +400,7 @@ a.mail, .mail {
 .todo .later-head::before { content: "›"; display: inline-block; transition: transform .15s; }
 .todo .later-head.open::before { transform: rotate(90deg); }
 .todo .later-head.drop-before, .todo .later-head.drop-after { color: var(--accent); border-top-color: var(--accent); }
-.todo .it.later { grid-template-columns: 1fr auto auto; }
+.todo .it.later { grid-template-columns: 1fr auto auto auto; }
 .todo .it.later .tx { color: var(--ink-2); font-weight: 400; }
 .prog span.full { color: var(--warn); }
 .add { display: flex; gap: 10px; align-items: center; border: 1px dashed var(--line); border-radius: 6px; padding: 9px 11px; }
@@ -870,6 +905,22 @@ a.pf-card.res-cours p { color: var(--accent); }
   </div>
 </div>
 
+<div class="credo" id="credo" hidden>
+  <div class="cr-top"><button class="icobtn" id="cr-close" title="Fermer (Échap)">×</button></div>
+  <div class="cr-stage"><figure id="cr-fig"><div class="cr-sec" id="cr-sec"></div><blockquote id="cr-text"></blockquote></figure></div>
+  <div class="cr-foot">
+    <div class="cr-status" id="cr-status"></div>
+    <div class="cr-nav"><button class="icobtn" id="cr-prev" title="Précédente (←)">‹</button><span id="cr-count"></span><button class="icobtn" id="cr-next" title="Suivante (→)">›</button></div>
+    <div class="cr-side" id="cr-side"></div>
+  </div>
+</div>
+
+<div class="focus" id="focus" hidden>
+  <div class="fo-top"><button class="icobtn" id="fo-close" title="Fermer (Échap)">×</button></div>
+  <div class="fo-stage"><div class="fo-proj" id="fo-proj"></div><h1 id="fo-task"></h1></div>
+  <div class="fo-credo" id="fo-credo"><small id="fo-sec"></small><p id="fo-text"></p></div>
+</div>
+
 <div class="appview" id="appview" hidden>
   <div class="av">
     <div class="top"><span class="ic"><svg id="av-icon"><use href="#i-grid"/></svg></span><div style="flex:1"><b id="av-name"></b><small id="av-desc"></small></div><button class="icobtn" id="av-close">×</button></div>
@@ -949,10 +1000,11 @@ async function saveTodo() {
   if (todo.bumped) toast(`Limite de ${todo.max} tâches : ${todo.bumped} passée${todo.bumped > 1 ? 's' : ''} dans « Plus tard »`);
   renderTodo();
 }
+const todoTitle = t => t.s ? `${esc(t.s)} — ${esc(t.t)}` : esc(t.t);
 function renderTodo() {
   const el = $('#todo');
-  const row = (t, i, carried) => `<div class="it${carried ? ' carried' : ''}" draggable="true" data-list="${carried ? 'carried' : 'items'}" data-i="${i}"><input type="checkbox" id="td${carried ? 'c' : ''}${i}" data-i="${i}" data-c="${carried ? 1 : 0}" ${t.done ? 'checked' : ''}><label class="box" for="td${carried ? 'c' : ''}${i}"><svg><use href="#i-check"/></svg></label><div class="tx">${esc(t.t)}<small>${carried ? 'reporté du ' + t.from + (t.s ? ' · ' : '') : ''}${esc(t.s)}</small></div>${carried ? '<span></span>' : `<button class="del" data-i="${i}" title="Supprimer">×</button>`}<i class="pr ${t.p}"></i></div>`;
-  const later = (t, i) => `<div class="it later" draggable="true" data-list="later" data-i="${i}"><div class="tx">${esc(t.t)}<small>${esc(t.s)}</small></div><button class="del" data-i="${i}" data-later="1" title="Supprimer">×</button><i class="pr ${t.p}"></i></div>`;
+  const row = (t, i, carried) => `<div class="it${carried ? ' carried' : ''}" draggable="true" data-list="${carried ? 'carried' : 'items'}" data-i="${i}"><input type="checkbox" id="td${carried ? 'c' : ''}${i}" data-i="${i}" data-c="${carried ? 1 : 0}" ${t.done ? 'checked' : ''}><label class="box" for="td${carried ? 'c' : ''}${i}"><svg><use href="#i-check"/></svg></label><div class="tx">${todoTitle(t)}${carried ? `<small>reporté du ${t.from}</small>` : ''}</div><button class="fo" data-list="${carried ? 'carried' : 'items'}" data-i="${i}" title="Focus sur cette tâche">Focus</button>${carried ? '<span></span>' : `<button class="del" data-i="${i}" title="Supprimer">×</button>`}<i class="pr ${t.p}"></i></div>`;
+  const later = (t, i) => `<div class="it later" draggable="true" data-list="later" data-i="${i}"><div class="tx">${todoTitle(t)}</div><button class="fo" data-list="later" data-i="${i}" title="Focus sur cette tâche">Focus</button><button class="del" data-i="${i}" data-later="1" title="Supprimer">×</button><i class="pr ${t.p}"></i></div>`;
   el.innerHTML = todo.items.map((t, i) => row(t, i, false)).join('') + todo.carried.map((t, i) => row(t, i, true)).join('')
     + (todo.later.length ? `<button class="later-head${laterOpen ? ' open' : ''}" data-list="later" data-i="0">Plus tard · ${todo.later.length}</button>` + (laterOpen ? todo.later.map(later).join('') : '') : '');
   const d = todo.items.filter(t => t.done).length;
@@ -1018,6 +1070,7 @@ $('#todo').addEventListener('change', async e => {
 });
 $('#todo').addEventListener('click', e => {
   if (e.target.classList.contains('later-head')) { laterOpen = !laterOpen; renderTodo(); return; }
+  if (e.target.classList.contains('fo')) { focusOpen(todo[e.target.dataset.list][+e.target.dataset.i]); return; }
   if (e.target.classList.contains('del')) { todo[e.target.dataset.later ? 'later' : 'items'].splice(+e.target.dataset.i, 1); saveTodo(); }
 });
 $('#newtodo').addEventListener('keydown', e => {
@@ -1477,7 +1530,7 @@ q.addEventListener('keydown', e => {
   chatAsk(text);                     // the bottom bar always starts a new thread
 });
 $('#q-hist').onclick = () => { chatShow(true); chatEl.querySelector('.histpane') ? chatBack() : chatHistory(); };
-addEventListener('keydown', e => { if (e.key === 'Escape' && !su.hidden) { suClose(); return; } if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); q.focus(); } if (e.key === 'Escape') { if (!viewer.hidden) { viewer.hidden = true; return; } if (!appview.hidden) { appview.hidden = true; return; } if (chatOpen) { chatShow(false); return; } q.value = ''; query = ''; q.blur(); select(null); $('#modal').hidden = true; } });
+addEventListener('keydown', e => { if (!$('#focus').hidden) { if (e.key === 'Escape') focusClose(); return; } if (!$('#credo').hidden) { if (e.key === 'Escape') credoClose(); else if (e.key === 'ArrowRight') credoStep(1); else if (e.key === 'ArrowLeft') credoStep(-1); return; } if (e.key === 'Escape' && !su.hidden) { suClose(); return; } if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); q.focus(); } if (e.key === 'Escape') { if (!viewer.hidden) { viewer.hidden = true; return; } if (!appview.hidden) { appview.hidden = true; return; } if (chatOpen) { chatShow(false); return; } q.value = ''; query = ''; q.blur(); select(null); $('#modal').hidden = true; } });
 
 /* ---------- resizable side columns ---------- */
 (() => {
@@ -2090,9 +2143,10 @@ $('#brief-run').onclick = async () => {
     if (r.error) throw new Error(r.error);
     toast('Composition lancée, la todo se met à jour dans une minute');
     loadRuns();
+    credoOpen(new Date().getHours() < 14 ? 'matin' : 'soir', 'Je compose ta journée…');
     briefWatch = setInterval(async () => {
       const rs = await api('/api/runs?app=standup');
-      if (rs[0] && rs[0].status !== 'running') { clearInterval(briefWatch); loadTodo(); loadProjects(); loadRuns(); toast(rs[0].status === 'done' ? 'Journée composée' : 'La composition a échoué', rs[0].status !== 'done'); }
+      if (rs[0] && rs[0].status !== 'running') { clearInterval(briefWatch); loadTodo(); loadProjects(); loadRuns(); toast(rs[0].status === 'done' ? 'Journée composée' : 'La composition a échoué', rs[0].status !== 'done'); credoReady(rs[0].status === 'done' ? 'Ta journée est composée.' : 'La composition a échoué.'); }
     }, 5000);
   } catch (e) { toast('Échec : ' + e.message, true); }
   btn.disabled = false; btn.textContent = 'Composer ma journée';
@@ -2108,6 +2162,80 @@ let briefWatch = null;
     saved[key] = on; try { localStorage.setItem('collapsed', JSON.stringify(saved)); } catch (e) {}
   });
 })();
+
+/* ---------- credo: the day's statements, full screen, while the stand-up thinks ---------- */
+// Opens on a waiting phase and stays after it: only the cross, Escape or "Continuer" close it.
+// The first `daily` items are today's picks and play on their own; the arrows go further.
+const credo = { items: [], daily: 5, i: 0, timer: null };
+function credoShow() {
+  const it = credo.items[credo.i];
+  const fig = $('#cr-fig'), extra = credo.i >= credo.daily;
+  fig.classList.add('out');
+  setTimeout(() => {
+    $('#cr-sec').textContent = it.section;
+    const t = $('#cr-text'); t.textContent = it.text; t.classList.toggle('long', it.text.length > 180);
+    fig.classList.remove('out');
+  }, reduce ? 0 : 300);
+  $('#cr-count').textContent = extra ? `+${credo.i - credo.daily + 1}` : `${credo.i + 1} / ${Math.min(credo.daily, credo.items.length)}`;
+  $('#cr-prev').disabled = credo.i === 0;
+  $('#cr-next').disabled = credo.i === credo.items.length - 1;
+}
+function credoStep(d, auto) {
+  if (!auto) { clearInterval(credo.timer); credo.timer = null; }
+  const n = credo.i + d;
+  if (n < 0 || n >= credo.items.length) return;
+  credo.i = n; credoShow();
+}
+function credoStatus(text, done) {
+  $('#cr-status').innerHTML = done ? esc(text) : `<span class="spin"></span>${esc(text)}`;
+  $('#cr-side').innerHTML = done ? '<button class="btn acc" id="cr-go">Continuer</button>' : '';
+  if (done) $('#cr-go').onclick = credoClose;
+}
+async function credoOpen(slot, waiting) {
+  if (!$('#credo').hidden) return credoStatus(waiting);
+  try {
+    const r = await api(`/api/credo?slot=${slot}`);
+    if (!r.items?.length) return;
+    Object.assign(credo, { items: r.items, daily: r.daily, i: 0 });
+  } catch (e) { return; }
+  $('#credo').hidden = false;
+  credoStatus(waiting);
+  credoShow();
+  clearInterval(credo.timer);
+  credo.timer = setInterval(() => { if (credo.i < Math.min(credo.daily, credo.items.length) - 1) credoStep(1, true); else { clearInterval(credo.timer); credo.timer = null; } }, 10000);
+}
+function credoReady(text) { if (!$('#credo').hidden) credoStatus(text, true); }
+function credoClose() { clearInterval(credo.timer); credo.timer = null; $('#credo').hidden = true; }
+$('#cr-close').onclick = credoClose;
+$('#cr-prev').onclick = () => credoStep(-1);
+$('#cr-next').onclick = () => credoStep(1);
+
+/* ---------- focus: one task, big, with random credo statements underneath ---------- */
+const focus = { items: [], i: 0, timer: null };
+function focusCredo() {
+  const box = $('#fo-credo'), it = focus.items[focus.i % focus.items.length];
+  box.classList.add('out');
+  setTimeout(() => { $('#fo-sec').textContent = it.section; $('#fo-text').textContent = it.text; box.classList.remove('out'); }, reduce ? 0 : 450);
+  focus.i++;
+}
+async function focusOpen(t) {
+  $('#fo-proj').textContent = t?.s ?? '';
+  $('#fo-task').textContent = t ? t.t : 'Aucune tâche ouverte';
+  $('#fo-credo').hidden = true;
+  $('#focus').hidden = false;
+  try {
+    const r = await api('/api/credo');
+    focus.items = (r.items ?? []).map(x => [Math.random(), x]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
+  } catch (e) { focus.items = []; }
+  if (!focus.items.length || $('#focus').hidden) return;
+  focus.i = 0;
+  $('#fo-credo').hidden = false;
+  focusCredo();
+  clearInterval(focus.timer);
+  focus.timer = setInterval(focusCredo, 12000);
+}
+function focusClose() { clearInterval(focus.timer); focus.timer = null; $('#focus').hidden = true; }
+$('#fo-close').onclick = focusClose;
 
 /* ---------- stand-up: questions grounded in yesterday, answers dictated ---------- */
 const su = $('#standup');
@@ -2213,23 +2341,27 @@ async function startStandup(slot) {
 
   suState = { phase: 'loading', slot, date: today, answers: {}, i: 0, questions: [] };
   suRender();
+  credoOpen(slot, 'Je prépare tes questions…');
   try {
     const r = await api('/api/standup/questions', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ slot }) });
     if (r.error || !r.questions?.length) throw new Error(r.error || 'aucune question produite');
     suState = { ...suState, phase: 'ask', date: r.date || today, greeting: r.greeting, questions: r.questions };
-  } catch (e) { suState = { ...suState, phase: 'error', error: e.message }; }
+    credoReady('Tes questions sont prêtes.');
+  } catch (e) { suState = { ...suState, phase: 'error', error: e.message }; credoReady('La préparation a échoué.'); }
   suRender();
 }
 async function suCompose() {
   suState.phase = 'composing'; suRender();
+  credoOpen(suState.slot, 'Je compose ta journée…');
   try {
     const r = await api('/api/standup/compose', { method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ slot: suState.slot, questions: suState.questions, answers: suState.answers }) });
     if (r.error) throw new Error(r.error);
     suClearProgress(suState.slot);
     suState = { ...suState, phase: 'done', outcome: r.outcome };
+    credoReady('Ta journée est composée.');
     loadTodo(); loadProjects(); loadRuns();
-  } catch (e) { suState = { ...suState, phase: 'error', error: e.message }; }
+  } catch (e) { suState = { ...suState, phase: 'error', error: e.message }; credoReady('La composition a échoué.'); }
   suRender();
 }
 $('#su-run').onclick = () => startStandup(new Date().getHours() < 14 ? 'matin' : 'soir');
