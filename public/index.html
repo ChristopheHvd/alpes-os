@@ -368,7 +368,7 @@ a.mail, .mail {
 .prog .bar i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .4s ease; }
 .prog span { font: 500 12px/1 var(--font); color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .todo { display: grid; gap: 1px; overflow-y: auto; min-height: 0; margin: 0 -8px; }
-.todo .it { display: grid; grid-template-columns: 18px 1fr auto auto auto auto; gap: 11px; align-items: start; padding: 8px; border-radius: 6px; }
+.todo .it { display: grid; grid-template-columns: 18px 1fr auto auto; gap: 11px; align-items: start; padding: 8px; border-radius: 6px; }
 .todo .it:hover { background: var(--sunken); }
 .todo input { position: absolute; opacity: 0; width: 0; height: 0; }
 .todo label.box { width: 17px; height: 17px; border: 1.5px solid var(--line); border-radius: 5px; cursor: pointer; display: grid; place-items: center; margin-top: 1px; background: var(--surface); }
@@ -384,10 +384,10 @@ a.mail, .mail {
 .todo .pr.h { background: var(--crit); } .todo .pr.m { background: var(--warn); }
 .todo .del { opacity: 0; font: 400 15px/1 var(--font); color: var(--ink-3); cursor: pointer; border: 0; background: transparent; padding: 0 2px; }
 .todo .it:hover .del { opacity: 1; }
-.todo .fo, .todo .ai { opacity: 0; font: 500 11px/1 var(--font); color: var(--ink-3); cursor: pointer; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); padding: 3px 6px; }
-.todo .it:hover :is(.fo, .ai), .todo :is(.fo, .ai):focus-visible { opacity: 1; }
+.todo .fo, .todo .ai { opacity: .55; width: 24px; height: 22px; display: grid; place-items: center; color: var(--ink-3); cursor: pointer; border: 1px solid transparent; border-radius: 5px; background: transparent; padding: 0; }
+.todo :is(.fo, .ai) svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; pointer-events: none; }
+.todo .it:hover :is(.fo, .ai), .todo :is(.fo, .ai):focus-visible { opacity: 1; border-color: var(--line); }
 .todo :is(.fo, .ai):hover { color: var(--accent); border-color: var(--accent); }
-@media (hover: none) { .todo :is(.fo, .ai) { opacity: 1; } }
 .todo .del:hover { color: var(--crit); }
 [data-widget="today"] > .w-body { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
 [data-widget="today"] > .w-body > :not(.todo) { flex-shrink: 0; }
@@ -400,7 +400,9 @@ a.mail, .mail {
 .todo .later-head::before { content: "›"; display: inline-block; transition: transform .15s; }
 .todo .later-head.open::before { transform: rotate(90deg); }
 .todo .later-head.drop-before, .todo .later-head.drop-after { color: var(--accent); border-top-color: var(--accent); }
-.todo .it.later { grid-template-columns: 1fr auto auto auto auto; }
+.todo .it.later { grid-template-columns: 1fr auto auto; }
+.todo .acts { grid-column: 2; grid-row: 2; display: flex; gap: 4px; margin-top: -4px; }
+.todo .it.later .acts { grid-column: 1; }
 .todo .it.later .tx { color: var(--ink-2); font-weight: 400; }
 .prog span.full { color: var(--warn); }
 .add { display: flex; gap: 10px; align-items: center; border: 1px dashed var(--line); border-radius: 6px; padding: 9px 11px; }
@@ -773,6 +775,8 @@ a.pf-card.res-cours p { color: var(--accent); }
   <defs>
     <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></symbol>
+    <symbol id="i-focus" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/></symbol>
     <symbol id="i-euro" viewBox="0 0 24 24"><path d="M18 6a7 7 0 1 0 0 12M4 10h10M4 14h10"/></symbol>
     <symbol id="i-course" viewBox="0 0 24 24"><path d="M3 6h7a3 3 0 0 1 3 3v11a2 2 0 0 0-2-2H3z"/><path d="M21 6h-7a3 3 0 0 0-3 3v11a2 2 0 0 1 2-2h8z"/></symbol>
     <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></symbol>
@@ -1006,8 +1010,8 @@ Cherche le contexte dans le second brain (projet, client, décisions, échéance
 const todoTitle = t => t.s ? `${esc(t.s)} — ${esc(t.t)}` : esc(t.t);
 function renderTodo() {
   const el = $('#todo');
-  const row = (t, i, carried) => `<div class="it${carried ? ' carried' : ''}" draggable="true" data-list="${carried ? 'carried' : 'items'}" data-i="${i}"><input type="checkbox" id="td${carried ? 'c' : ''}${i}" data-i="${i}" data-c="${carried ? 1 : 0}" ${t.done ? 'checked' : ''}><label class="box" for="td${carried ? 'c' : ''}${i}"><svg><use href="#i-check"/></svg></label><div class="tx">${todoTitle(t)}${carried ? `<small>reporté du ${t.from}</small>` : ''}</div><button class="ai" data-list="${carried ? 'carried' : 'items'}" data-i="${i}" title="Confier cette tâche à l'assistant">Claude</button><button class="fo" data-list="${carried ? 'carried' : 'items'}" data-i="${i}" title="Focus sur cette tâche">Focus</button>${carried ? '<span></span>' : `<button class="del" data-i="${i}" title="Supprimer">×</button>`}<i class="pr ${t.p}"></i></div>`;
-  const later = (t, i) => `<div class="it later" draggable="true" data-list="later" data-i="${i}"><div class="tx">${todoTitle(t)}</div><button class="ai" data-list="later" data-i="${i}" title="Confier cette tâche à l'assistant">Claude</button><button class="fo" data-list="later" data-i="${i}" title="Focus sur cette tâche">Focus</button><button class="del" data-i="${i}" data-later="1" title="Supprimer">×</button><i class="pr ${t.p}"></i></div>`;
+  const row = (t, i, carried) => `<div class="it${carried ? ' carried' : ''}" draggable="true" data-list="${carried ? 'carried' : 'items'}" data-i="${i}"><input type="checkbox" id="td${carried ? 'c' : ''}${i}" data-i="${i}" data-c="${carried ? 1 : 0}" ${t.done ? 'checked' : ''}><label class="box" for="td${carried ? 'c' : ''}${i}"><svg><use href="#i-check"/></svg></label><div class="tx">${todoTitle(t)}${carried ? `<small>reporté du ${t.from}</small>` : ''}</div>${carried ? '<span></span>' : `<button class="del" data-i="${i}" title="Supprimer">×</button>`}<i class="pr ${t.p}"></i><div class="acts"><button class="ai" data-list="${carried ? 'carried' : 'items'}" data-i="${i}" title="Confier cette tâche à l'assistant" aria-label="Confier à l'assistant"><svg><use href="#i-play"/></svg></button><button class="fo" data-list="${carried ? 'carried' : 'items'}" data-i="${i}" title="Focus sur cette tâche" aria-label="Focus"><svg><use href="#i-focus"/></svg></button></div></div>`;
+  const later = (t, i) => `<div class="it later" draggable="true" data-list="later" data-i="${i}"><div class="tx">${todoTitle(t)}</div><button class="del" data-i="${i}" data-later="1" title="Supprimer">×</button><i class="pr ${t.p}"></i><div class="acts"><button class="ai" data-list="later" data-i="${i}" title="Confier cette tâche à l'assistant" aria-label="Confier à l'assistant"><svg><use href="#i-play"/></svg></button><button class="fo" data-list="later" data-i="${i}" title="Focus sur cette tâche" aria-label="Focus"><svg><use href="#i-focus"/></svg></button></div></div>`;
   el.innerHTML = todo.items.map((t, i) => row(t, i, false)).join('') + todo.carried.map((t, i) => row(t, i, true)).join('')
     + (todo.later.length ? `<button class="later-head${laterOpen ? ' open' : ''}" data-list="later" data-i="0">Plus tard · ${todo.later.length}</button>` + (laterOpen ? todo.later.map(later).join('') : '') : '');
   const d = todo.items.filter(t => t.done).length;
