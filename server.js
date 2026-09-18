@@ -143,6 +143,16 @@ app.get('/api/sb-file', (req, res) => {
   if (!fs.existsSync(abs)) return res.status(404).json({ error: 'fichier introuvable' });
   res.sendFile(abs);
 });
+// a devis or facture a finance note points to (brain/finance frontmatter `sources:`,
+// resource relative to "My Drive" — cfg.drive is "My Drive/ALPES IA")
+const driveRoot = path.dirname(cfg.drive);
+app.get('/api/drive-file', (req, res) => {
+  const rel = String(req.query.path ?? '');
+  const abs = path.resolve(driveRoot, rel);
+  if (!abs.startsWith(path.resolve(driveRoot) + path.sep)) return res.status(403).json({ error: 'chemin refusé' });
+  if (!fs.existsSync(abs)) return res.status(404).json({ error: 'fichier introuvable dans Drive' });
+  res.sendFile(abs);
+});
 
 // Todo — markdown file in the second brain
 app.get('/api/todo', (req, res) => res.json(readTodo(todoFile)));

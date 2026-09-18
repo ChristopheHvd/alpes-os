@@ -578,6 +578,8 @@ a.mail, .mail {
 .pf-rows summary::-webkit-details-marker { display: none; }
 .pf-rows summary small { display: block; color: var(--ink-3); font-size: 12px; margin-top: 2px; }
 .pf-rows .none { color: var(--ink-3); }
+.pf-doc { display: inline-flex; align-items: baseline; gap: 4px; margin: 6px 8px 0 0; font: 500 12px/1 var(--font); color: var(--accent); text-decoration: none; }
+.pf-doc:hover { text-decoration: underline; }
 .pf-note, .pf-rows .note { font-size: 13.5px; color: var(--ink-2); line-height: 1.6; }
 .pf-note { background: var(--surface); border: 1px solid var(--line-soft); border-radius: 8px; padding: 6px 18px 10px; }
 .pf-note h1, .pf-note h2, .pf-note h3, .pf-rows .note h1, .pf-rows .note h2, .pf-rows .note h3 { font: 600 14.5px/1.3 var(--font); color: var(--ink); margin: 16px 0 6px; }
@@ -1751,10 +1753,14 @@ function renderPortfolio() {
 }
 
 const pfDate = iso => { const d = new Date(iso); return d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) + (iso.length > 10 ? ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''); };
+// a finance note's sources: real Drive paths get a direct "Ouvrir" button;
+// the "Google Drive" placeholder some older notes still carry gets none
+const finOpenable = s => s.resource && s.resource.includes('/');
+const finOpen = s => /^https?:\/\//.test(s.resource) ? s.resource : '/api/drive-file?path=' + encodeURIComponent(s.resource);
 const pfSections = x => {
   const where = { today: "aujourd'hui", carried: 'reporté', later: 'plus tard' };
   return `
-    <div class="pf-sec"><h3>Argent</h3><div class="pf-rows">${x.finance.length ? x.finance.map(f => `<details data-note="${esc(f.id)}"><summary>${esc(f.title)}<small>${esc(f.description)}</small></summary><div class="note"></div></details>`).join('') : '<div class="none">Aucun devis ni facture dans brain/finance.</div>'}</div></div>
+    <div class="pf-sec"><h3>Argent</h3><div class="pf-rows">${x.finance.length ? x.finance.map(f => `<details data-note="${esc(f.id)}"><summary>${esc(f.title)}<small>${esc(f.description)}</small></summary>${(f.sources ?? []).filter(finOpenable).map(s => `<a class="pf-doc" href="${esc(finOpen(s))}" target="_blank" rel="noopener" onclick="event.stopPropagation()">↗ ${esc(s.title || s.id)}</a>`).join('')}<div class="note"></div></details>`).join('') : '<div class="none">Aucun devis ni facture dans brain/finance.</div>'}</div></div>
     <div class="pf-sec"><h3>Agenda à venir</h3><div class="pf-rows">${x.events.length ? x.events.map(e => `<a href="${esc(e.url)}" target="_blank" rel="noopener" style="text-decoration:none"><span class="when">${esc(pfDate(e.start))}</span><span>${esc(e.title)}</span></a>`).join('') : '<div class="none">Rien dans les 3 semaines.</div>'}</div></div>
     <div class="pf-sec"><h3>Tâches ouvertes</h3><div class="pf-rows">${x.tasks.length ? x.tasks.map(t => `<div><span>${esc(t.t)}</span><span class="tag ${t.where}">${where[t.where]}</span></div>`).join('') : '<div class="none">Aucune tâche en cours.</div>'}</div></div>`;
 };
