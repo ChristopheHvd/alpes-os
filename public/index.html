@@ -2539,11 +2539,21 @@ async function chatHistory() {
   const log = pane.querySelector('.log');
   if (!list.length) { log.innerHTML = '<div class="none">Aucune conversation journalisée pour l\'instant.</div>'; return; }
   log.innerHTML = list.map(c => `<button data-conv="${esc(c.id)}"><span class="t">${esc(c.title)}</span><span class="m">${esc(c.date)} ${esc(c.time)} · ${c.turns} échange${c.turns > 1 ? 's' : ''}${c.actions ? ' · ' + c.actions + ' action' + (c.actions > 1 ? 's' : '') : ''}${c.id === chatId ? ' · en cours' : ''}</span></button>`).join('');
-  log.querySelectorAll('[data-conv]').forEach(b => b.onclick = async () => {
-    const conv = await api('/api/chat/log?id=' + encodeURIComponent(b.dataset.conv));
-    pane.innerHTML = `<div class="head" style="border:0;padding:0"><button id="chat-back">← Toutes les conversations</button></div><div class="past">${md(conv.body || '(vide)')}</div>`;
-    pane.querySelector('#chat-back').onclick = () => chatHistory();
-  });
+  log.querySelectorAll('[data-conv]').forEach(b => b.onclick = () => chatResume(b.dataset.conv));
+}
+
+// Opening a past conversation makes it the current one: its text goes back on
+// screen and the composer replies to it — the server resumes its Claude session.
+async function chatResume(id) {
+  if (id !== chatId) {
+    fetch('/api/chat?id=' + encodeURIComponent(chatId), { method: 'DELETE' });  // release the previous process
+    if (chatStream) { chatStream.close(); chatStream = null; }
+    chatEl.querySelectorAll('.turn').forEach(n => n.remove());
+    try { chatIdSet(id); } catch (e) { /* private mode: the id still switches for this page */ }
+    await chatReplay();
+  }
+  chatBack();
+  chatEl.querySelector('.composer textarea')?.focus();
 }
 
 // After a reload the server may still hold the conversation, but the browser has
