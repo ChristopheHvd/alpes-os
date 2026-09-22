@@ -578,6 +578,8 @@ a.mail, .mail {
 .pf-rows summary::-webkit-details-marker { display: none; }
 .pf-rows summary small { display: block; color: var(--ink-3); font-size: 12px; margin-top: 2px; }
 .pf-rows .none { color: var(--ink-3); }
+.pf-doc { display: inline-flex; align-items: baseline; gap: 4px; margin: 6px 8px 0 0; font: 500 12px/1 var(--font); color: var(--accent); text-decoration: none; }
+.pf-doc:hover { text-decoration: underline; }
 .pf-note, .pf-rows .note { font-size: 13.5px; color: var(--ink-2); line-height: 1.6; }
 .pf-note { background: var(--surface); border: 1px solid var(--line-soft); border-radius: 8px; padding: 6px 18px 10px; }
 .pf-note h1, .pf-note h2, .pf-note h3, .pf-rows .note h1, .pf-rows .note h2, .pf-rows .note h3 { font: 600 14.5px/1.3 var(--font); color: var(--ink); margin: 16px 0 6px; }
@@ -1503,11 +1505,34 @@ const md = src => {
   flushAll(); if (inTable) out += '</table>'; if (inCode) out += '</pre>';
   return out;
 };
+// a markdown link's target, resolved against the note that contains it
+const brainLinkId = (fromId, link) => new URL(link, 'file:///' + fromId).pathname.slice(1);
+// opens whatever a second-brain link points to: a graph note (closes the portfolio
+// first, if it was open, so the panel behind it is visible), or a plain file
+// (PDF, docx…) served read-only in a new tab. Used from the graph panel and from
+// the portfolio, so a devis or a cahier des charges link always goes somewhere.
+function openBrainLink(fromId, link) {
+  const id = brainLinkId(fromId, link);
+  if (!id.endsWith('.md')) { window.open('/api/sb-file?path=' + encodeURIComponent(id), '_blank', 'noopener'); return; }
+  const m = byId[id];
+  if (!m) return toast('Fiche absente du graphe, rafraîchis dans 30 s', true);
+  if (!$('#portfolio').hidden) closePortfolio();
+  select(m); center(m);
+}
+
+// the project or client sheet a node opens onto: itself when it lives in
+// brain/projects or brain/clients, otherwise the first linked note that does
+function pvFiche(n, links) {
+  const of = m => m.d === 'projects' ? { label: 'Voir la fiche projet', href: pfHref('projet', m.id.split('/').pop().replace(/\.md$/, '')) }
+    : m.d === 'clients' ? { label: 'Voir la fiche client', href: pfHref('client', m.id.split('/').pop().replace(/\.md$/, '')) } : null;
+  return of(n) ?? links.map(of).find(Boolean) ?? null;
+}
 async function select(n, fromNav) {
   if (!fromNav && selected && n && n !== selected) history.push(selected);
   if (!n) history.length = 0;
   selected = n; if (!n) { panel.classList.remove('on'); return; }
   const c = domOf(n.d).c, links = [...n.nb].sort((a, b) => b.deg - a.deg);
+const pf1 = pvFiche(n, links);
   panel.innerHTML = `<div class="hd"><button class="icobtn" id="pv-back" title="Précédent" ${history.length ? '' : 'disabled'}>‹</button><span class="dm" style="color:${c}">${domOf(n.d).label}${n.type ? ' · ' + esc(n.type) : ''}</span><button class="icobtn" id="pv-close" title="Fermer">×</button></div>
     <b class="t">${esc(n.t)}</b><div class="path">second-brain/${esc(n.id)}</div>
     <div class="tags">${n.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}${n.st ? `<span class="st ${n.st === 'verified' ? 'v' : 'd'}" style="align-self:center">${n.st === 'verified' ? '● verified' : '○ ' + esc(n.st)}</span>` : ''}</div>
@@ -1515,8 +1540,9 @@ async function select(n, fromNav) {
     <span class="lbl">${links.length} connexion${links.length > 1 ? 's' : ''}</span>
     <div class="links">${links.map(m => `<div data-id="${esc(m.id)}"><i style="background:${domOf(m.d).c}"></i>${esc(m.t)}</div>`).join('')}</div>
     <div class="body" id="pv-body"><span class="lbl">Chargement…</span></div>
-    <div class="row"><button class="btn acc" id="pv-copy">Copier le chemin</button><button class="btn" id="pv-center">Centrer</button></div>`;
+    <div class="row">${pf1 ? `<button class="btn acc" id="pv-fiche">${esc(pf1.label)}</button>` : ''}<button class="btn${pf1 ? '' : ' acc'}" id="pv-copy">Copier le chemin</button><button class="btn" id="pv-center">Centrer</button></div>`;
   panel.classList.add('on');
+  if (pf1) panel.querySelector('#pv-fiche').onclick = () => { location.hash = pf1.href; };
   panel.querySelectorAll('.links div').forEach(el => el.onclick = () => { const m = byId[el.dataset.id]; select(m); center(m); });
   panel.querySelector('#pv-copy').onclick = e => { navigator.clipboard?.writeText(`${cfg.secondBrain}/${n.id}`); e.target.textContent = 'Copié ✓'; setTimeout(() => e.target.textContent = 'Copier le chemin', 1200); };
   panel.querySelector('#pv-center').onclick = () => center(n);
@@ -1525,7 +1551,7 @@ async function select(n, fromNav) {
   const note = await api('/api/note?id=' + encodeURIComponent(n.id));
   if (selected !== n) return;
   const body = panel.querySelector('#pv-body'); body.innerHTML = note.body ? md(note.body) : '<span class="lbl">Vide</span>';
-  body.querySelectorAll('a[data-link]').forEach(a => a.onclick = () => { const target = new URL(a.dataset.link, 'file:///' + n.id).pathname.slice(1); const m = byId[target]; if (m) { select(m); center(m); } });
+  body.querySelectorAll('a[data-link]').forEach(a => a.onclick = () => openBrainLink(n.id, a.dataset.link));
 }
 function center(n) { const t0 = performance.now(), fx = cam.x, fy = cam.y, fk = cam.k, tk = Math.max(cam.k, 1.8); const off = panel.classList.contains('on') ? (panel.offsetWidth / 2 + 24) / tk : 0; /* keep the node clear of the panel */ (function anim() { const p = Math.min(1, (performance.now() - t0) / 450), e = 1 - Math.pow(1 - p, 3); cam.k = fk + (tk - fk) * e; cam.x = fx + (-n.x - off - fx) * e; cam.y = fy + (-n.y - fy) * e; if (p < 1) requestAnimationFrame(anim); })(); }
 const q = $('#q');
@@ -1727,10 +1753,14 @@ function renderPortfolio() {
 }
 
 const pfDate = iso => { const d = new Date(iso); return d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) + (iso.length > 10 ? ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''); };
+// a finance note's sources: real Drive paths get a direct "Ouvrir" button;
+// the "Google Drive" placeholder some older notes still carry gets none
+const finOpenable = s => s.resource && s.resource.includes('/');
+const finOpen = s => /^https?:\/\//.test(s.resource) ? s.resource : '/api/drive-file?path=' + encodeURIComponent(s.resource);
 const pfSections = x => {
   const where = { today: "aujourd'hui", carried: 'reporté', later: 'plus tard' };
   return `
-    <div class="pf-sec"><h3>Argent</h3><div class="pf-rows">${x.finance.length ? x.finance.map(f => `<details data-note="${esc(f.id)}"><summary>${esc(f.title)}<small>${esc(f.description)}</small></summary><div class="note"></div></details>`).join('') : '<div class="none">Aucun devis ni facture dans brain/finance.</div>'}</div></div>
+    <div class="pf-sec"><h3>Argent</h3><div class="pf-rows">${x.finance.length ? x.finance.map(f => `<details data-note="${esc(f.id)}"><summary>${esc(f.title)}<small>${esc(f.description)}</small></summary>${(f.sources ?? []).filter(finOpenable).map(s => `<a class="pf-doc" href="${esc(finOpen(s))}" target="_blank" rel="noopener" onclick="event.stopPropagation()">↗ ${esc(s.title || s.id)}</a>`).join('')}<div class="note"></div></details>`).join('') : '<div class="none">Aucun devis ni facture dans brain/finance.</div>'}</div></div>
     <div class="pf-sec"><h3>Agenda à venir</h3><div class="pf-rows">${x.events.length ? x.events.map(e => `<a href="${esc(e.url)}" target="_blank" rel="noopener" style="text-decoration:none"><span class="when">${esc(pfDate(e.start))}</span><span>${esc(e.title)}</span></a>`).join('') : '<div class="none">Rien dans les 3 semaines.</div>'}</div></div>
     <div class="pf-sec"><h3>Tâches ouvertes</h3><div class="pf-rows">${x.tasks.length ? x.tasks.map(t => `<div><span>${esc(t.t)}</span><span class="tag ${t.where}">${where[t.where]}</span></div>`).join('') : '<div class="none">Aucune tâche en cours.</div>'}</div></div>`;
 };
@@ -2051,9 +2081,13 @@ function pfProject(p, C) {
 function pfWire(el, item, kind) {
   el.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { location.hash = b.dataset.go; });
   // links between notes stay inside the view; anything else is left alone
-  el.querySelectorAll('a[data-link]').forEach(a => a.onclick = () => {
-    const m = a.dataset.link.match(/(projects|clients)\/([\w.-]+)\.md$/);
-    if (m && m[2] !== 'index') location.hash = pfHref(m[1] === 'projects' ? 'projet' : 'client', m[2]);
+  el.querySelectorAll('a[data-link]').forEach(a => {
+    a.onclick = () => {
+      const target = brainLinkId(item.id, a.dataset.link);
+      const m = target.match(/^brain\/(projects|clients)\/([\w.-]+)\.md$/);
+      if (m && m[2] !== 'index') location.hash = pfHref(m[1] === 'projects' ? 'projet' : 'client', m[2]);
+      else openBrainLink(item.id, a.dataset.link);
+    };
   });
   el.querySelectorAll('details[data-note]').forEach(d => d.ontoggle = async () => {
     const box = d.querySelector('.note');

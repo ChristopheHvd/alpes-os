@@ -134,6 +134,26 @@ app.get('/api/config', (req, res) => res.json({ testQueue: sbQueue !== CURATOR_Q
 // Memory — the visual second brain
 app.get('/api/graph', (req, res) => res.json(getGraph(cfg.secondBrain, cfg.brainFolders)));
 app.get('/api/note', (req, res) => { const n = readNote(cfg.secondBrain, String(req.query.id ?? '')); n ? res.json(n) : res.status(404).json({ error: 'not found' }); });
+// non-markdown files a note links to (a cahier des charges PDF, a reference doc):
+// served read-only, straight from the second brain, so those links open something
+app.get('/api/sb-file', (req, res) => {
+  const rel = String(req.query.path ?? '');
+  const abs = path.resolve(cfg.secondBrain, rel);
+  if (!abs.startsWith(path.resolve(cfg.secondBrain) + path.sep) || rel.endsWith('.md')) return res.status(403).json({ error: 'chemin refusé' });
+  if (!fs.existsSync(abs)) return res.status(404).json({ error: 'fichier introuvable' });
+  res.sendFile(abs);
+});
+// a devis or facture a finance note points to (brain/finance frontmatter `sources:`,
+// resource relative to "My Drive" — cfg.drive is "My Drive/ALPES IA". Distinct from
+// driveRoot above (scoped to cfg.drive itself, for the devis app's own writes).
+const myDriveRoot = path.dirname(cfg.drive);
+app.get('/api/drive-file', (req, res) => {
+  const rel = String(req.query.path ?? '');
+  const abs = path.resolve(myDriveRoot, rel);
+  if (!abs.startsWith(path.resolve(myDriveRoot) + path.sep)) return res.status(403).json({ error: 'chemin refusé' });
+  if (!fs.existsSync(abs)) return res.status(404).json({ error: 'fichier introuvable dans Drive' });
+  res.sendFile(abs);
+});
 
 // Todo — markdown file in the second brain
 app.get('/api/todo', (req, res) => res.json(readTodo(todoFile)));
