@@ -144,12 +144,13 @@ app.get('/api/sb-file', (req, res) => {
   res.sendFile(abs);
 });
 // a devis or facture a finance note points to (brain/finance frontmatter `sources:`,
-// resource relative to "My Drive" — cfg.drive is "My Drive/ALPES IA")
-const driveRoot = path.dirname(cfg.drive);
+// resource relative to "My Drive" — cfg.drive is "My Drive/ALPES IA". Distinct from
+// driveRoot above (scoped to cfg.drive itself, for the devis app's own writes).
+const myDriveRoot = path.dirname(cfg.drive);
 app.get('/api/drive-file', (req, res) => {
   const rel = String(req.query.path ?? '');
-  const abs = path.resolve(driveRoot, rel);
-  if (!abs.startsWith(path.resolve(driveRoot) + path.sep)) return res.status(403).json({ error: 'chemin refusé' });
+  const abs = path.resolve(myDriveRoot, rel);
+  if (!abs.startsWith(path.resolve(myDriveRoot) + path.sep)) return res.status(403).json({ error: 'chemin refusé' });
   if (!fs.existsSync(abs)) return res.status(404).json({ error: 'fichier introuvable dans Drive' });
   res.sendFile(abs);
 });
