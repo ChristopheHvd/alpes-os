@@ -39,6 +39,15 @@ function loadConfig(name) {
 }
 const cfg = loadConfig('config');
 const branding = loadConfig('branding');
+// The devis skill now files its final PDFs/HTML in the user's Drive (see
+// second-brain/skills/alpes-os/devis/SKILL.md) instead of output/devis/: give it the
+// Drive folder to write into, and flag it so the runner doesn't also mandate output/.
+// driveRoot matches exactly what --add-dir grants the child process (cfg.drive, the
+// "ALPES IA" folder) — not its parent, so a run can never be tracked as having a file
+// outside what it was actually allowed to write.
+const driveRoot = cfg.drive;
+const devisApp = cfg.apps.find(a => a.id === 'devis');
+if (devisApp) { devisApp.driveOutput = true; devisApp.addDirs = [cfg.drive]; }
 // Alpes OS never edits the second brain: its curator does (second-brain/AGENTS.md).
 // Every write below becomes an event in the curator's queue, shown at once through
 // a local overlay until the curator has archived it. Env overrides let a test
@@ -66,7 +75,7 @@ const PORT = Number(process.env.ALPES_OS_PORT) || cfg.port;
 const chatLog = makeChatLog(cfg.secondBrain);
 const chat = makeChat(ROOT, { port: PORT, bin: cfg.claude.bin, model: cfg.chat?.model ?? 'claude-opus-5', log: chatLog });
 setInterval(() => chat.sweep(), 5 * 60e3).unref();
-const runner = makeRunner(ROOT, { ...cfg.claude, apps: cfg.apps, secondBrain: cfg.secondBrain });
+const runner = makeRunner(ROOT, { ...cfg.claude, apps: cfg.apps, secondBrain: cfg.secondBrain, driveRoot });
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -483,11 +492,23 @@ app.get('/api/apps/:id', (req, res) => {
   if (!a) return res.status(404).json({ error: 'app inconnue' });
   res.json({ app: a, runs: runner.list(a.id), orphans: runner.orphans(a.id) });
 });
+// A produced-file path is either root-relative (inside output/) or, for Drive-routed
+// apps like devis, "drive:<path relative to driveRoot>" — resolve either form to a
+// safe absolute path, or null if it escapes its allowed root.
+function resolveArtifact(rel) {
+  if (rel.startsWith('drive:')) {
+    const abs = path.resolve(driveRoot, rel.slice('drive:'.length));
+    return abs === driveRoot || abs.startsWith(driveRoot + path.sep) ? abs : null;
+  }
+  const abs = path.resolve(ROOT, rel);
+  const outRoot = path.join(ROOT, 'output');
+  return abs === outRoot || abs.startsWith(outRoot + path.sep) ? abs : null;
+}
 // read one produced file back so the dashboard can show it without leaving the page
 app.get('/api/file', (req, res) => {
   const rel = String(req.query.path ?? '');
-  const abs = path.resolve(ROOT, rel);
-  if (!abs.startsWith(path.join(ROOT, 'output'))) return res.status(403).json({ error: 'hors du dossier output' });
+  const abs = resolveArtifact(rel);
+  if (!abs) return res.status(403).json({ error: 'chemin refusé' });
   if (!fs.existsSync(abs)) return res.status(404).json({ error: 'fichier introuvable' });
   const ext = path.extname(abs).slice(1).toLowerCase();
   const st = fs.statSync(abs);
@@ -496,8 +517,8 @@ app.get('/api/file', (req, res) => {
 });
 // reveal a produced file in Finder
 app.post('/api/reveal', (req, res) => {
-  const abs = path.resolve(ROOT, String(req.body.path ?? ''));
-  if (!abs.startsWith(path.join(ROOT, 'output')) || !fs.existsSync(abs)) return res.status(403).json({ error: 'chemin refusé' });
+  const abs = resolveArtifact(String(req.body.path ?? ''));
+  if (!abs || !fs.existsSync(abs)) return res.status(403).json({ error: 'chemin refusé' });
   spawn('open', ['-R', abs], { detached: true }).unref();
   res.json({ ok: true });
 });
