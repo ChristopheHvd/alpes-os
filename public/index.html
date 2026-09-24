@@ -630,11 +630,8 @@ a.pf-card.res-cours p { color: var(--accent); }
 /* ---- LinkedIn: editorial plan, full screen ---- */
 #w-linkedin h2 { cursor: pointer; }
 #w-linkedin h2:hover { color: var(--accent); }
-.liw { display: grid; gap: 8px; }
-.liw .pf-card { cursor: pointer; }
-.liw .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-.liw .todo-li { font-size: 12.5px; color: var(--ink-2); }
-.liw .todo-li b { color: var(--warn); font-weight: 600; }
+.liw-next { display: block; font: 500 13.5px/1.4 var(--font); color: var(--ink); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.liw-next:hover { color: var(--accent); }
 .li-chip { font: 500 11px/1 var(--font); padding: 4px 7px; border-radius: 10px; background: var(--sunken); color: var(--ink-2); white-space: nowrap; }
 .li-chip.prepare { background: var(--accent-soft); color: var(--accent); }
 .li-chip.publie { color: var(--good); }
@@ -904,7 +901,6 @@ a.pf-card.res-cours p { color: var(--accent); }
     <section class="w" id="w-linkedin" data-widget="linkedin">
       <div class="w-head">
         <h2 id="li-open" title="Ouvrir la page LinkedIn"><svg><use href="#i-post"/></svg>LinkedIn</h2>
-        <span class="meta" id="liw-meta"></span>
         <button class="pf-go" id="li-go" title="Ouvrir la page LinkedIn" aria-label="Ouvrir la page LinkedIn"><svg><use href="#i-arrow"/></svg></button>
         <button class="wtoggle" aria-label="Réduire ou déplier" data-w="linkedin" title="Réduire"><svg><use href="#i-chev"/></svg></button>
       </div>
@@ -2673,19 +2669,9 @@ function liStatusChips(p) {
 function renderLiWidget(error) {
   const el = $('#liw');
   if (error || !li) { el.innerHTML = `<span class="lbl">${esc(error || 'Chargement…')}</span>`; return; }
-  if (!li.posts.length) { el.innerHTML = '<span class="lbl">Aucun plan LinkedIn dans le second brain.</span>'; $('#liw-meta').textContent = ''; return; }
-  const done = li.posts.filter(p => p.statut === 'publie').length;
-  $('#liw-meta').textContent = `${done}/${li.posts.length} publiés`;
   const p = li.todayPost ?? li.next;
-  const card = p ? `<div class="pf-card" data-go="${liHref(p)}">
-      <div class="h"><b>${esc(p.id)} · ${esc(p.sujet)}</b><small>${p === li.todayPost ? "aujourd'hui" : esc(liDate(p.effective))}</small></div>
-      <div class="row">${liStatusChips(p)}</div>
-    </div>` : '<span class="lbl">Tout est publié.</span>';
-  const todo = li.toProvide.map(t => `<div class="todo-li"><b>À fournir</b> · ${esc(t.id)} ${esc(t.visuel.toLowerCase())} pour ${t.effective === li.today ? "aujourd'hui" : esc(liDate(t.effective))}</div>`).join('');
-  const auth = li.auth && li.auth.configured && (!li.auth.connected || li.auth.daysLeft <= 7)
-    ? `<div class="todo-li"><b>LinkedIn</b> · ${li.auth.connected ? `connexion à renouveler dans ${li.auth.daysLeft} j` : 'non connecté'}</div>` : '';
-  el.innerHTML = `<div class="liw">${card}${todo}${auth}</div>`;
-  el.querySelectorAll('[data-go]').forEach(n => n.onclick = () => { location.hash = n.dataset.go.slice(1); });
+  if (!p) { el.innerHTML = `<span class="lbl">${li.posts.length ? 'Tout est publié.' : 'Aucun plan LinkedIn.'}</span>`; return; }
+  el.innerHTML = `<a class="liw-next" href="${liHref(p)}" title="${esc(p.id)} · ${esc(p.sujet)}">${esc(p.sujet)}</a>`;
 }
 
 function liCurrent() {
