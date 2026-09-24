@@ -23,6 +23,8 @@ import { makeStandup, slotNow } from './lib/standup.js';
 import { makeChatLog } from './lib/chatlog.js';
 import { readCredo, shuffleForDay } from './lib/credo.js';
 import { bundle } from './lib/sbqueue.js';
+import { makeLinkedin, checkPost } from './lib/linkedin.js';
+import { loadLinkedin, updatePost, visualFor, localToday, dueForPreparation, toProduce, planFrame, parsePrepared, planFile } from './lib/linkedin-plan.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 // Local config stays out of git: it holds real paths, identity and bank details.
@@ -461,6 +463,168 @@ app.post('/api/briefing', async (req, res) => {
     const run = runner.start({ app: a, action: act, brief, model: req.body?.model ?? a.model });
     waitRun(run).then(async () => { adoptComposedTodo(ctx.date, slot); await createStandupEvents(ctx.date, slot, out); });
     res.json(run);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// LinkedIn — the editorial plan in brain/references, visuals in Drive
+const liCfg = { version: '202609', visualsDir: '03.COMMUNICATION/LinkedIn', prepareAt: '06:00', ...(cfg.linkedin ?? {}) };
+const liOpts = today => ({ drive: cfg.drive, visualsDir: liCfg.visualsDir, today: /^\d{4}-\d{2}-\d{2}$/.test(today ?? '') ? today : localToday() });
+const linkedin = makeLinkedin(path.join(ROOT, 'credentials'), { port: PORT, version: liCfg.version });
+app.get('/api/linkedin', (req, res) => {
+  try { res.json({ ...loadLinkedin(cfg.secondBrain, liOpts(req.query.today)), runs: liRunsView(), auth: linkedin.status() }); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.patch('/api/linkedin/:plan/:id', (req, res) => {
+  const b = req.body ?? {}, patch = {};
+  if (typeof b.texte === 'string') patch.texte = b.texte;
+  if (typeof b.commentaire === 'string') patch.commentaire = b.commentaire;
+  if (b.statut === 'abandonne' || b.statut === 'a_produire' || b.statut === 'prepare') patch.statut = b.statut;
+  // published by hand (fallback button), or an uncertain API answer checked on the profile
+  if (b.statut === 'publie') { patch.statut = 'publie'; patch.publie_le = localToday(); if (/^https:\/\/www\.linkedin\.com\//.test(b.url ?? '')) patch.url = b.url; }
+  try {
+    updatePost(cfg.secondBrain, req.params.plan, req.params.id, patch, `post ${req.params.id} modifié dans Alpes OS${patch.statut ? ` (statut ${patch.statut})` : ''}`);
+    res.json(loadLinkedin(cfg.secondBrain, liOpts()).posts.find(p => p.plan === req.params.plan && p.id === req.params.id));
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+// The morning preparation: an internal app, like the curator, so it never shows among
+// the micro apps. It writes the text to output/linkedin/ and the visual straight to
+// Drive; the server then hands the text to the curator through the queue.
+const LINKEDIN = {
+  id: 'linkedin', name: 'Post LinkedIn', description: 'Préparation du post du jour', skill: '/linkedin-post',
+  model: liCfg.model ?? 'claude-opus-5', output: 'output/linkedin', addDirs: [cfg.drive], driveOutput: true,
+  allowedTools: `${cfg.claude.allowedTools},WebSearch,WebFetch`,
+  actions: [{ id: 'prepare', label: 'Préparer le post' }],
+};
+const liRuns = new Map();       // "<plan>/<id>" → { id, startedAt, error }
+const liTries = new Map();      // "<date> <plan>/<id>" → automatic tries today
+const liRunning = key => { const r = liRuns.get(key); return !!r && runner.get(r.id)?.status === 'running'; };
+function liRunsView() {
+  const out = {};
+  for (const [key, r] of liRuns) { const run = runner.get(r.id); out[key] = { status: run?.status ?? 'unknown', startedAt: r.startedAt, error: r.error ?? null }; }
+  return out;
+}
+function prepareLinkedin(post, { produire = toProduce(post), consigne = '' } = {}) {
+  const key = `${post.plan}/${post.id}`;
+  if (liRunning(key)) throw new Error('préparation déjà en cours');
+  const textOut = path.join(ROOT, 'output', 'linkedin', `${post.plan}-${post.id}.md`);
+  const visualOut = post.visualKind === 'auto'
+    ? path.join(cfg.drive, liCfg.visualsDir, post.plan, `${post.id}.${/carrousel/i.test(post.visuel) ? 'pdf' : 'png'}`) : null;
+  fs.mkdirSync(path.dirname(textOut), { recursive: true });
+  let replaced = null;   // the visual set aside, put back if no new one comes out
+  if (produire.includes('visuel') && visualOut) {
+    fs.mkdirSync(path.dirname(visualOut), { recursive: true });
+    const old = visualFor(cfg.drive, liCfg.visualsDir, post.plan, post.id);
+    if (old) {
+      fs.mkdirSync(path.join(path.dirname(old.abs), '_remplaces'), { recursive: true });
+      replaced = { from: path.join(path.dirname(old.abs), '_remplaces', `${post.id}-${Date.now()}.${old.ext}`), to: old.abs };
+      fs.renameSync(replaced.to, replaced.from);
+    }
+  }
+  const txt = bundle.read(planFile(cfg.secondBrain, post.plan));
+  const ctx = {
+    produire, consigne: consigne || null,
+    sortie_texte: produire.includes('texte') ? textOut : null,
+    sortie_visuel: produire.includes('visuel') ? visualOut : null,
+    fiche: { plan: post.plan, id: post.id, entete: post.header, etape: post.etape, pilier: post.pilier, sujet: post.sujet, visuel: post.visuel, date_publication: post.effective, champs: post.fields, texte_actuel: post.texte || null, commentaire_actuel: post.commentaire || null },
+    cadre: planFrame(txt),
+    second_brain: cfg.secondBrain,
+  };
+  const startedAt = Date.now();
+  const run = runner.start({ app: LINKEDIN, action: LINKEDIN.actions[0], brief: `prepare\n\nCONTEXTE:\n${JSON.stringify(ctx, null, 1)}` });
+  liRuns.set(key, { id: run.id, startedAt: new Date(startedAt).toISOString() });
+  waitRun(run).then(r => {
+    const entry = liRuns.get(key);
+    try {
+      if (r.status !== 'done') throw new Error(`la préparation a échoué : ${r.output.slice(-300)}`);
+      if (produire.includes('texte')) {
+        if (!fs.existsSync(textOut) || fs.statSync(textOut).mtimeMs < startedAt) throw new Error("le texte n'a pas été produit");
+        const { texte, commentaire } = parsePrepared(fs.readFileSync(textOut, 'utf8'));
+        if (!texte) throw new Error('texte produit vide');
+        const cur = loadLinkedin(cfg.secondBrain, liOpts()).posts.find(p => p.plan === post.plan && p.id === post.id);
+        updatePost(cfg.secondBrain, post.plan, post.id, {
+          texte, commentaire, prepare_le: new Date().toISOString(),
+          ...(cur?.statut === 'a_produire' ? { statut: 'prepare' } : {}),
+        }, `post ${post.id} préparé par Claude${consigne ? ` (consigne : ${consigne})` : ''}`);
+      }
+      if (produire.includes('visuel') && visualOut && !fs.existsSync(visualOut)) throw new Error("le visuel n'a pas été produit");
+    } catch (e) { if (entry) entry.error = e.message; console.error('linkedin', e.message); }
+    if (replaced && !visualFor(cfg.drive, liCfg.visualsDir, post.plan, post.id)) fs.renameSync(replaced.from, replaced.to);
+  });
+  return run;
+}
+// every 10 minutes from prepareAt on, and once at start-up to catch up after a sleep.
+// A test instance only does it when asked (ALPES_OS_LI_AUTO=1): each pass is a real run.
+function liMorning() {
+  if (sbQueue !== CURATOR_QUEUE && process.env.ALPES_OS_LI_AUTO !== '1') return;
+  try {
+    const { todayPost, today } = loadLinkedin(cfg.secondBrain, liOpts());
+    if (!todayPost) return;
+    const key = `${todayPost.plan}/${todayPost.id}`, tries = `${today} ${key}`;
+    if (!dueForPreparation({ post: todayPost, prepareAt: liCfg.prepareAt, running: liRunning(key), attempts: liTries.get(tries) ?? 0 })) return;
+    liTries.set(tries, (liTries.get(tries) ?? 0) + 1);
+    prepareLinkedin(todayPost);
+  } catch (e) { console.error('linkedin', e.message); }
+}
+setInterval(liMorning, 10 * 60e3).unref();
+setTimeout(liMorning, 20e3).unref();
+app.post('/api/linkedin/:plan/:id/prepare', (req, res) => {
+  const post = loadLinkedin(cfg.secondBrain, liOpts()).posts.find(p => p.plan === req.params.plan && p.id === req.params.id);
+  if (!post) return res.status(404).json({ error: 'post introuvable' });
+  if (post.statut === 'publie') return res.status(409).json({ error: 'post déjà publié' });
+  const want = Array.isArray(req.body?.produire) ? req.body.produire.filter(x => ['texte', 'visuel'].includes(x)) : ['texte', 'visuel'];
+  const produire = want.filter(x => x === 'texte' || post.visualKind === 'auto');
+  if (!produire.length) return res.status(400).json({ error: 'rien que Claude puisse produire pour ce post' });
+  try { res.json({ run: prepareLinkedin(post, { produire, consigne: String(req.body?.consigne ?? '').slice(0, 500) }) }); }
+  catch (e) { res.status(409).json({ error: e.message }); }
+});
+// OAuth: one click, then LinkedIn sends the browser back here with a code
+app.get('/auth/linkedin', (req, res) => { const u = linkedin.authUrl(); u ? res.redirect(u) : res.status(400).send('credentials/linkedin_client.json manquant ou incomplet'); });
+app.get('/auth/linkedin/callback', async (req, res) => {
+  if (req.query.error) return res.status(400).send(`LinkedIn : ${String(req.query.error_description ?? req.query.error)}`);
+  try { await linkedin.exchange(String(req.query.code ?? ''), String(req.query.state ?? '')); res.redirect('/#linkedin'); }
+  catch (e) { res.status(500).send(e.message); }
+});
+// Publishing only ever follows an explicit click and its confirmation. One at a time,
+// never twice the same post, and an unclear answer from LinkedIn is parked as
+// a_verifier instead of being retried.
+let liPublishing = null;
+app.post('/api/linkedin/:plan/:id/publish', async (req, res) => {
+  if (req.body?.confirm !== true) return res.status(400).json({ error: 'confirmation requise' });
+  if (liPublishing) return res.status(409).json({ error: `publication de ${liPublishing} déjà en cours` });
+  const post = loadLinkedin(cfg.secondBrain, liOpts()).posts.find(p => p.plan === req.params.plan && p.id === req.params.id);
+  if (!post) return res.status(404).json({ error: 'post introuvable' });
+  if (post.url || ['publie', 'a_verifier'].includes(post.statut)) return res.status(409).json({ error: 'ce post est déjà parti (ou à vérifier sur LinkedIn)' });
+  const bad = checkPost(post.texte);
+  if (bad) return res.status(400).json({ error: bad });
+  if (!post.visual && req.body?.sansVisuel !== true) return res.status(400).json({ error: 'pas de visuel : confirme la publication sans visuel' });
+  liPublishing = post.id;
+  try {
+    const v = post.visual && visualFor(cfg.drive, liCfg.visualsDir, post.plan, post.id);
+    const out = await linkedin.publish({ text: post.texte, file: v?.abs ?? null, title: `${post.id} — ${post.sujet}` });
+    updatePost(cfg.secondBrain, post.plan, post.id, { statut: 'publie', publie_le: localToday(), url: out.url }, `post ${post.id} publié sur LinkedIn (${out.url})`);
+    res.json(out);
+  } catch (e) {
+    if (e.ambiguous) updatePost(cfg.secondBrain, post.plan, post.id, { statut: 'a_verifier' }, `publication de ${post.id} incertaine : ${e.message}`);
+    res.status(e.ambiguous ? 502 : 400).json({ error: e.message, ambiguous: !!e.ambiguous });
+  } finally { liPublishing = null; }
+});
+// a visual dropped on the page goes to Drive as <Jxx>.<ext>; the one it replaces is kept aside
+app.post('/api/linkedin/:plan/:id/visual', express.raw({ type: () => true, limit: '600mb' }), (req, res) => {
+  const { plan, id } = req.params;
+  const ext = String(req.get('x-filename') ?? '').split('.').pop().toLowerCase();
+  if (!/^\d{4}-\d{2}$/.test(plan) || !/^J\d+$/.test(id)) return res.status(400).json({ error: 'post invalide' });
+  if (!['png', 'jpg', 'jpeg', 'pdf', 'mp4', 'mov'].includes(ext)) return res.status(400).json({ error: 'format accepté : png, jpg, pdf, mp4, mov' });
+  if (!req.body?.length) return res.status(400).json({ error: 'fichier vide' });
+  try {
+    const dir = path.join(cfg.drive, liCfg.visualsDir, plan);
+    fs.mkdirSync(dir, { recursive: true });
+    const old = visualFor(cfg.drive, liCfg.visualsDir, plan, id);
+    if (old) {
+      fs.mkdirSync(path.join(dir, '_remplaces'), { recursive: true });
+      fs.renameSync(old.abs, path.join(dir, '_remplaces', `${id}-${Date.now()}.${old.ext}`));
+    }
+    fs.writeFileSync(path.join(dir, `${id}.${ext}`), req.body);
+    res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

@@ -13,6 +13,7 @@ Une page, une adresse, qui montre le travail sans jamais devenir l'endroit où i
 | Boîte de réception | Les fils Gmail d'un label, triés en trois catégories : une personne, un automate, une liste de diffusion |
 | Aujourd'hui | La todo du jour, lue et écrite dans le second brain, plus les événements à venir |
 | Projets en cours | Les projets au long cours, avec leur prochaine étape éditable |
+| LinkedIn | Le plan éditorial du mois : post du jour préparé chaque matin par Claude, retouche, publication directe sur le profil |
 | Micro apps | Des boutons qui lancent une skill Claude Code en mode headless et rendent leurs livrables |
 
 ## Installation
@@ -34,9 +35,35 @@ Créer un client OAuth de type « Desktop app » dans Google Cloud Console, acti
 les API Gmail et Calendar, puis déposer le fichier dans `credentials/client_secret.json`.
 Le premier lancement propose un lien d'autorisation. Les jetons restent en local.
 
+### LinkedIn
+
+Le plan vit dans le second brain (`brain/references/plan-linkedin-AAAA-MM.md`, liste
+`posts:` dans le frontmatter), les visuels dans le Drive (`<drive>/03.COMMUNICATION/LinkedIn/AAAA-MM/Jxx.*`).
+Chaque matin dès `linkedin.prepareAt`, la skill `linkedin-post` prépare le post du jour
+(texte, premier commentaire et, quand Claude sait le faire, le visuel). Un post raté fait
+glisser tout le planning.
+
+Publication par l'API officielle, sur le profil : créer une app sur
+linkedin.com/developers (rattachée à une Page LinkedIn), ajouter les produits
+« Sign In with LinkedIn using OpenID Connect » et « Share on LinkedIn », déclarer
+l'URL de retour `http://localhost:<port>/auth/linkedin/callback`, puis déposer
+`credentials/linkedin_client.json` :
+
+```json
+{ "client_id": "…", "client_secret": "…" }
+```
+
+(`redirect_uri` en plus si l'URL de retour passe par un rebond HTTPS.) `http://localhost`
+est accepté par LinkedIn. Le premier commentaire ne passe pas par l'API (il faudrait le
+produit Community Management, réservé aux partenaires) : il est copié dans le
+presse-papiers après la publication. Le jeton dure
+60 jours : la page LinkedIn affiche le compte à rebours et un bouton pour le renouveler.
+`linkedin.version` suit les versions de l'API LinkedIn (AAAAMM) : à avancer avant que la
+version en cours ne soit retirée, environ un an après sa sortie.
+
 ### Les skills
 
-Le dashboard lance trois skills en headless : `devis`, `formation`, `briefing`.
+Le dashboard lance ses skills en headless : `devis`, `formation`, `standup`, `linkedin-post`.
 Elles ne sont pas dans ce dépôt, parce qu'elles citent des clients, des montants et
 des chemins locaux. Elles vivent dans un dépôt privé et sont exposées à Claude Code
 par symlink :
