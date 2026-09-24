@@ -2555,6 +2555,39 @@ async function chatReplay() {
   chatAdd('', `<div class="past">${md(conv.body)}</div>`);
 }
 
+/* The agent can take minutes, then sit on a validation card for hours: when it
+   stops and waits on the user while they look elsewhere, say so — a chime, a dot
+   in the tab title, and a system notification if the browser allows it. */
+const CHAT_TITLE = document.title;
+let chatAudio = null;
+function chatChime() {
+  try {
+    chatAudio ??= new AudioContext();
+    const t = chatAudio.currentTime;
+    [660, 880].forEach((f, i) => {
+      const o = chatAudio.createOscillator(), g = chatAudio.createGain();
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t + i * 0.16);
+      g.gain.exponentialRampToValueAtTime(0.2, t + i * 0.16 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.16 + 0.3);
+      o.connect(g).connect(chatAudio.destination);
+      o.start(t + i * 0.16); o.stop(t + i * 0.16 + 0.32);
+    });
+  } catch (e) { /* no audio: the title and the notification still say it */ }
+}
+function chatPing(text) {
+  if (!document.hidden && chatOpen) return;
+  chatChime();
+  if (document.hidden) document.title = '● ' + CHAT_TITLE;
+  try {
+    if (document.hidden && Notification.permission === 'granted') {
+      const n = new Notification('Alpes OS', { body: text, tag: 'alpes-os-chat' });
+      n.onclick = () => { window.focus(); chatShow(true); n.close(); };
+    }
+  } catch (e) { /* notifications unavailable */ }
+}
+addEventListener('visibilitychange', () => { if (!document.hidden) document.title = CHAT_TITLE; });
+
 function chatConnect() {
   if (chatStream) return;
   chatStream = new EventSource('/api/chat/stream?id=' + encodeURIComponent(chatId));
@@ -2585,6 +2618,8 @@ function chatConnect() {
       el.querySelector('[data-yes]').onclick = () => { decide(true); el.querySelector('.row').innerHTML = '<span class="act">validé</span>'; };
       el.querySelector('[data-no]').onclick = () => { decide(false); el.querySelector('.row').innerHTML = '<span class="act">annulé</span>'; };
       botEl = null;
+      chatPing('À valider : ' + m.summary);
+      chatShow(true);
       return;
     }
     if (m.type === 'confirm-gone') {
@@ -2597,16 +2632,20 @@ function chatConnect() {
       chatEl.querySelector('.thinking')?.remove();
       if (m.error) chatAdd('', `<div class="err">${esc(m.error)}</div>`);
       botEl = null;
+      chatPing(m.error ? "L'assistant a rencontré une erreur." : "L'assistant a répondu, il attend ta réponse.");
       // the agent may have changed things behind the scenes
       loadTodo(); loadProjects(); loadAgenda();
       return;
     }
     if (m.type === 'closed') { chatStream?.close(); chatStream = null; }
   };
-  chatStream.onerror = () => { chatStream?.close(); chatStream = null; };
+  // A dropped stream (laptop asleep, server restart) would otherwise swallow the
+  // next card and the ping with it. The server replays pending cards on subscribe.
+  chatStream.onerror = () => { chatStream?.close(); chatStream = null; if (chatBusy) setTimeout(chatConnect, 3000); };
 }
 
 function chatSend(text) {
+  try { if (Notification.permission === 'default') Notification.requestPermission(); } catch (e) { /* unsupported */ }
   chatShow(true);
   chatBack();
   chatConnect();
