@@ -510,10 +510,15 @@ function prepareLinkedin(post, { produire = toProduce(post), consigne = '' } = {
   const visualOut = post.visualKind === 'auto'
     ? path.join(cfg.drive, liCfg.visualsDir, post.plan, `${post.id}.${/carrousel/i.test(post.visuel) ? 'pdf' : 'png'}`) : null;
   fs.mkdirSync(path.dirname(textOut), { recursive: true });
+  let replaced = null;   // the visual set aside, put back if no new one comes out
   if (produire.includes('visuel') && visualOut) {
     fs.mkdirSync(path.dirname(visualOut), { recursive: true });
     const old = visualFor(cfg.drive, liCfg.visualsDir, post.plan, post.id);
-    if (old) { fs.mkdirSync(path.join(path.dirname(old.abs), '_remplaces'), { recursive: true }); fs.renameSync(old.abs, path.join(path.dirname(old.abs), '_remplaces', `${post.id}-${Date.now()}.${old.ext}`)); }
+    if (old) {
+      fs.mkdirSync(path.join(path.dirname(old.abs), '_remplaces'), { recursive: true });
+      replaced = { from: path.join(path.dirname(old.abs), '_remplaces', `${post.id}-${Date.now()}.${old.ext}`), to: old.abs };
+      fs.renameSync(replaced.to, replaced.from);
+    }
   }
   const txt = bundle.read(planFile(cfg.secondBrain, post.plan));
   const ctx = {
@@ -543,6 +548,7 @@ function prepareLinkedin(post, { produire = toProduce(post), consigne = '' } = {
       }
       if (produire.includes('visuel') && visualOut && !fs.existsSync(visualOut)) throw new Error("le visuel n'a pas été produit");
     } catch (e) { if (entry) entry.error = e.message; console.error('linkedin', e.message); }
+    if (replaced && !visualFor(cfg.drive, liCfg.visualsDir, post.plan, post.id)) fs.renameSync(replaced.from, replaced.to);
   });
   return run;
 }
