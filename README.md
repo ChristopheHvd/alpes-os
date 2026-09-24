@@ -53,7 +53,10 @@ l'URL de retour `http://localhost:<port>/auth/linkedin/callback`, puis déposer
 { "client_id": "…", "client_secret": "…" }
 ```
 
-(`redirect_uri` en plus si l'URL de retour passe par un rebond HTTPS.) Le jeton dure
+(`redirect_uri` en plus si l'URL de retour passe par un rebond HTTPS.) `http://localhost`
+est accepté par LinkedIn. Le premier commentaire ne passe pas par l'API (il faudrait le
+produit Community Management, réservé aux partenaires) : il est copié dans le
+presse-papiers après la publication. Le jeton dure
 60 jours : la page LinkedIn affiche le compte à rebours et un bouton pour le renouveler.
 `linkedin.version` suit les versions de l'API LinkedIn (AAAAMM) : à avancer avant que la
 version en cours ne soit retirée, environ un an après sa sortie.

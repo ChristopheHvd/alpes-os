@@ -2808,6 +2808,8 @@ function renderLiActions(p) {
   }
   if (liActive(p)) btns.push('<button class="btn" data-act="drop">Abandonner</button>');
   if (p.statut === 'abandonne') btns.push('<button class="btn" data-act="revive">Remettre au planning</button>');
+  if (p.statut === 'publie' && p.commentaire) btns.push('<button class="btn" data-act="copy-comment">Copier le premier commentaire</button>');
+  if (p.statut === 'publie' && p.url) btns.push(`<a class="btn" href="${esc(p.url)}" target="_blank" rel="noopener">Voir le post</a>`);
   box.innerHTML = btns.join('');
   box.querySelectorAll('[data-act]').forEach(b => b.onclick = () => liAct(p, b.dataset.act, b));
 }
@@ -2835,6 +2837,7 @@ async function liAct(p, act, btn) {
     loadLinkedin();
   }
   if (act === 'publish') return liConfirmPublish(p);
+  if (act === 'copy-comment') return navigator.clipboard.writeText(p.commentaire).then(() => toast('Premier commentaire copié'));
   if (act === 'mark') {
     const url = prompt('Lien du post sur LinkedIn (facultatif) :', '');
     if (url === null) return;
@@ -2866,7 +2869,7 @@ function liConfirmPublish(p) {
   box.innerHTML = `<h3>Publier ${esc(p.id)} sur ton profil LinkedIn ?</h3>
     <div class="li-meta">Visibilité : tout le monde (PUBLIC) · ${p.texte.length} caractères</div>
     <div class="li-prompt">${esc(p.texte)}</div>
-    ${p.commentaire ? `<div class="li-meta">Premier commentaire, posté juste après :</div><div class="li-prompt">${esc(p.commentaire)}</div>` : ''}
+    ${p.commentaire ? `<div class="li-meta">Premier commentaire : copié dans ton presse-papiers après la publication, à coller sous le post (l'API LinkedIn ne permet pas de le poster).</div><div class="li-prompt">${esc(p.commentaire)}</div>` : ''}
     <div class="li-meta">${v ? `Visuel : ${esc(v.name)}` : `<span class="warn">Aucun visuel${p.visualKind !== 'autre' ? ' alors que la fiche en prévoit un' : ''}.</span>`}</div>
     ${blockers.map(b => `<div class="li-run bad">${esc(b)}</div>`).join('')}
     <div class="li-actions">
@@ -2880,7 +2883,10 @@ function liConfirmPublish(p) {
     const r = await fetch(`/api/linkedin/${p.plan}/${p.id}/publish`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ confirm: true, sansVisuel: !v }) }).then(x => x.json()).catch(err => ({ error: err.message, ambiguous: true }));
     $('#li-confirm').hidden = true;
     if (r.error) toast(r.error, true);
-    else toast(r.commentError ? `${p.id} publié, mais le premier commentaire a échoué : ajoute-le à la main` : `${p.id} publié sur LinkedIn`, !!r.commentError);
+    else if (p.commentaire) {
+      const copied = await navigator.clipboard.writeText(p.commentaire).then(() => true, () => false);
+      toast(copied ? `${p.id} publié. Premier commentaire copié : colle-le sous le post` : `${p.id} publié. Copie le premier commentaire depuis la fiche`);
+    } else toast(`${p.id} publié sur LinkedIn`);
     if (r.url) window.open(r.url, '_blank', 'noopener');
     loadLinkedin();
   };

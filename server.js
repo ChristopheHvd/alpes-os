@@ -594,7 +594,7 @@ app.post('/api/linkedin/:plan/:id/publish', async (req, res) => {
   liPublishing = post.id;
   try {
     const v = post.visual && visualFor(cfg.drive, liCfg.visualsDir, post.plan, post.id);
-    const out = await linkedin.publish({ text: post.texte, file: v?.abs ?? null, title: `${post.id} — ${post.sujet}`, comment: post.commentaire });
+    const out = await linkedin.publish({ text: post.texte, file: v?.abs ?? null, title: `${post.id} — ${post.sujet}` });
     updatePost(cfg.secondBrain, post.plan, post.id, { statut: 'publie', publie_le: localToday(), url: out.url }, `post ${post.id} publié sur LinkedIn (${out.url})`);
     res.json(out);
   } catch (e) {
