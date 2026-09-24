@@ -23,6 +23,7 @@ import { makeStandup, slotNow } from './lib/standup.js';
 import { makeChatLog } from './lib/chatlog.js';
 import { readCredo, shuffleForDay } from './lib/credo.js';
 import { bundle } from './lib/sbqueue.js';
+import { loadLinkedin, updatePost, visualFor, localToday } from './lib/linkedin-plan.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 // Local config stays out of git: it holds real paths, identity and bank details.
@@ -461,6 +462,43 @@ app.post('/api/briefing', async (req, res) => {
     const run = runner.start({ app: a, action: act, brief, model: req.body?.model ?? a.model });
     waitRun(run).then(async () => { adoptComposedTodo(ctx.date, slot); await createStandupEvents(ctx.date, slot, out); });
     res.json(run);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// LinkedIn — the editorial plan in brain/references, visuals in Drive
+const liCfg = { version: '202609', visualsDir: '03.COMMUNICATION/LinkedIn', prepareAt: '06:00', ...(cfg.linkedin ?? {}) };
+const liOpts = today => ({ drive: cfg.drive, visualsDir: liCfg.visualsDir, today: /^\d{4}-\d{2}-\d{2}$/.test(today ?? '') ? today : localToday() });
+app.get('/api/linkedin', (req, res) => {
+  try { res.json(loadLinkedin(cfg.secondBrain, liOpts(req.query.today))); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.patch('/api/linkedin/:plan/:id', (req, res) => {
+  const b = req.body ?? {}, patch = {};
+  if (typeof b.texte === 'string') patch.texte = b.texte;
+  if (typeof b.commentaire === 'string') patch.commentaire = b.commentaire;
+  if (b.statut === 'abandonne' || b.statut === 'a_produire' || b.statut === 'prepare') patch.statut = b.statut;
+  try {
+    updatePost(cfg.secondBrain, req.params.plan, req.params.id, patch, `post ${req.params.id} modifié dans Alpes OS${patch.statut ? ` (statut ${patch.statut})` : ''}`);
+    res.json(loadLinkedin(cfg.secondBrain, liOpts()).posts.find(p => p.plan === req.params.plan && p.id === req.params.id));
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+// a visual dropped on the page goes to Drive as <Jxx>.<ext>; the one it replaces is kept aside
+app.post('/api/linkedin/:plan/:id/visual', express.raw({ type: () => true, limit: '600mb' }), (req, res) => {
+  const { plan, id } = req.params;
+  const ext = String(req.get('x-filename') ?? '').split('.').pop().toLowerCase();
+  if (!/^\d{4}-\d{2}$/.test(plan) || !/^J\d+$/.test(id)) return res.status(400).json({ error: 'post invalide' });
+  if (!['png', 'jpg', 'jpeg', 'pdf', 'mp4', 'mov'].includes(ext)) return res.status(400).json({ error: 'format accepté : png, jpg, pdf, mp4, mov' });
+  if (!req.body?.length) return res.status(400).json({ error: 'fichier vide' });
+  try {
+    const dir = path.join(cfg.drive, liCfg.visualsDir, plan);
+    fs.mkdirSync(dir, { recursive: true });
+    const old = visualFor(cfg.drive, liCfg.visualsDir, plan, id);
+    if (old) {
+      fs.mkdirSync(path.join(dir, '_remplaces'), { recursive: true });
+      fs.renameSync(old.abs, path.join(dir, '_remplaces', `${id}-${Date.now()}.${old.ext}`));
+    }
+    fs.writeFileSync(path.join(dir, `${id}.${ext}`), req.body);
+    res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
