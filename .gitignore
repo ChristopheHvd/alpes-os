@@ -14,3 +14,6 @@ config/credo.md
 # Claude Code local settings. The three skills this dashboard runs live in the
 # private second brain and are exposed through ~/.claude/skills/ by symlink.
 .claude/
+
+# Repos the delegated chantiers work in (lib/chantiers.js), one per project.
+chantiers/
