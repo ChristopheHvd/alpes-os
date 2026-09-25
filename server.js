@@ -773,7 +773,9 @@ app.post('/api/reveal', (req, res) => {
   res.json({ ok: true });
 });
 
-app.listen(PORT, () => {
+// Loopback only: the API starts Claude runs and serves local files, with no
+// authentication — nothing on the network may reach it.
+app.listen(PORT, '127.0.0.1', () => {
   const st = gmail.status();
   console.log(`Alpes IA OS  →  http://localhost:${PORT}`);
   console.log(`second brain: ${cfg.secondBrain}`);
