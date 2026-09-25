@@ -10,6 +10,7 @@ import { getGraph, readNote } from './lib/brain.js';
 import { readTodo, writeTodo, completeCarried, addItem, tidyTodo } from './lib/todo.js';
 import { makeGmail } from './lib/gmail.js';
 import { makeRunner } from './lib/runs.js';
+import { makeChantiers } from './lib/chantiers.js';
 import { listProjects, updateProject, createProject } from './lib/projects.js';
 import { listClients, createClient } from './lib/clients.js';
 import { portfolio } from './lib/portfolio.js';
@@ -78,6 +79,7 @@ const chatLog = makeChatLog(cfg.secondBrain);
 const chat = makeChat(ROOT, { port: PORT, bin: cfg.claude.bin, model: cfg.chat?.model ?? 'claude-opus-5', log: chatLog });
 setInterval(() => chat.sweep(), 5 * 60e3).unref();
 const runner = makeRunner(ROOT, { ...cfg.claude, apps: cfg.apps, secondBrain: cfg.secondBrain, driveRoot });
+const chantiers = makeChantiers(ROOT, { bin: cfg.claude.bin, secondBrain: cfg.secondBrain, ...cfg.chantiers });
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -85,6 +87,10 @@ app.use(express.static(path.join(ROOT, 'public')));
 app.use('/output', express.static(path.join(ROOT, 'output'), {
   setHeaders: (res, f) => { if (f.endsWith('.md') || f.endsWith('.txt')) res.type('text/plain; charset=utf-8'); },
 }));
+// What the chantiers produce, mockups first, opened straight in a tab. Their
+// worktrees sit under .worktrees/, so dotfiles are served — except git's own.
+app.use('/chantiers', (req, res, next) => (/(^|\/)\.git(\/|$)/.test(req.path) ? res.status(403).end() : next()),
+  express.static(chantiers.dir, { dotfiles: 'allow' }));
 // Les supports de formation vivent dans le second brain (dépôt privé) : ils
 // portent des formulations, une progression et des profils clients réels, et
 // ce dépôt-ci est public. Le dashboard les monte de là et les sert sous
@@ -193,6 +199,14 @@ app.post('/api/runs', (req, res) => {
   if (!a || !act || !req.body.brief?.trim()) return res.status(400).json({ error: 'app, action et brief requis' });
   res.json(runner.start({ app: a, action: act, brief: req.body.brief.trim(), model: req.body.model, from: req.body.from }));
 });
+// Chantiers — work delegated to background Claude Code runs (lib/chantiers.js)
+const guard = fn => (req, res) => { try { res.json(fn(req)); } catch (e) { res.status(400).json({ error: e.message }); } };
+app.get('/api/chantiers', (req, res) => res.json(chantiers.list()));
+app.get('/api/chantiers/:id', (req, res) => { const c = chantiers.get(req.params.id); c ? res.json({ ...c, log: chantiers.log(c.id) }) : res.status(404).json({ error: 'chantier introuvable' }); });
+app.post('/api/chantiers', guard(req => chantiers.start({ titre: req.body?.titre, objectif: req.body?.objectif, projet: req.body?.projet, chatId: req.body?.chatId })));
+app.post('/api/chantiers/:id/resume', guard(req => chantiers.resume(req.params.id, req.body?.consigne)));
+app.post('/api/chantiers/:id/stop', guard(req => chantiers.stop(req.params.id)));
+app.post('/api/chantiers/:id/close', guard(req => chantiers.close(req.params.id)));
 // Projects — long-running work, read from brain/projects/ in the second brain
 app.get('/api/projects', (req, res) => res.json(listProjects(cfg.secondBrain)));
 app.patch('/api/projects/:slug', (req, res) => {
@@ -680,6 +694,10 @@ app.get('/api/apps/:id', (req, res) => {
 // apps like devis, "drive:<path relative to driveRoot>" — resolve either form to a
 // safe absolute path, or null if it escapes its allowed root.
 function resolveArtifact(rel) {
+  if (rel.startsWith('chantier:')) {
+    const abs = path.resolve(chantiers.dir, rel.slice('chantier:'.length));
+    return abs.startsWith(chantiers.dir + path.sep) && !abs.split(path.sep).includes('.git') ? abs : null;
+  }
   if (rel.startsWith('drive:')) {
     const abs = path.resolve(driveRoot, rel.slice('drive:'.length));
     return abs === driveRoot || abs.startsWith(driveRoot + path.sep) ? abs : null;
