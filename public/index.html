@@ -110,6 +110,19 @@ body.resizing { cursor: col-resize; user-select: none; }
 #w-projects { flex: 1 1 34%; overflow: hidden; }
 [data-widget="apps"] { flex: 1 1 40%; overflow: hidden; }
 #w-finance { flex: 0 0 auto; }
+#w-chantiers { flex: 0 1 auto; max-height: 34%; overflow: hidden; }
+#chantiers { overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+.ch .st { margin-left: auto; flex-shrink: 0; font: 500 11px/1 var(--font); padding: 3px 7px; border-radius: 4px; color: var(--ink-2); background: var(--sunken); }
+.ch .st.pret { color: var(--good); }
+.ch .st.bloque, .ch .st.echec { color: var(--crit); }
+.ch .st.en_cours { color: var(--warn); }
+.ch p { margin: 0 0 6px 33px; font: 400 12.5px/1.45 var(--font); color: var(--ink-2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.ch p.q { color: var(--ink); }
+.ch .livs { display: flex; flex-wrap: wrap; gap: 4px 10px; margin: 0 0 6px 33px; }
+.ch .livs a { font: 400 12px/1.4 var(--mono); color: var(--accent); cursor: pointer; text-decoration: none; }
+.ch .livs a:hover { text-decoration: underline; }
+.ch .again { display: flex; gap: 5px; margin: 6px 0 0 33px; }
+.ch .again input { flex: 1; min-width: 0; font: 400 12.5px var(--font); padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
 #apps { overflow-y: auto; min-height: 0; flex: 1; display: flex; flex-direction: column; gap: 10px; }
 .col.right > .w:last-child { flex: 1 1 26%; overflow: hidden; }
 .w-head { display: flex; align-items: center; gap: 10px; }
@@ -896,6 +909,15 @@ a.pf-card.res-cours p { color: var(--accent); }
         <button class="wtoggle" aria-label="Réduire ou déplier" data-w="projects" title="Réduire"><svg><use href="#i-chev"/></svg></button>
       </div>
       <div class="projects w-body" id="projects"></div>
+    </section>
+
+    <section class="w" id="w-chantiers" data-widget="chantiers">
+      <div class="w-head">
+        <h2><svg><use href="#i-flow"/></svg>Chantiers</h2>
+        <span class="meta" id="ch-meta"></span>
+        <button class="wtoggle" aria-label="Réduire ou déplier" data-w="chantiers" title="Réduire"><svg><use href="#i-chev"/></svg></button>
+      </div>
+      <div class="w-body" id="chantiers"><span class="lbl">Chargement…</span></div>
     </section>
 
     <section class="w" id="w-linkedin" data-widget="linkedin">
@@ -2539,11 +2561,21 @@ async function chatHistory() {
   const log = pane.querySelector('.log');
   if (!list.length) { log.innerHTML = '<div class="none">Aucune conversation journalisée pour l\'instant.</div>'; return; }
   log.innerHTML = list.map(c => `<button data-conv="${esc(c.id)}"><span class="t">${esc(c.title)}</span><span class="m">${esc(c.date)} ${esc(c.time)} · ${c.turns} échange${c.turns > 1 ? 's' : ''}${c.actions ? ' · ' + c.actions + ' action' + (c.actions > 1 ? 's' : '') : ''}${c.id === chatId ? ' · en cours' : ''}</span></button>`).join('');
-  log.querySelectorAll('[data-conv]').forEach(b => b.onclick = async () => {
-    const conv = await api('/api/chat/log?id=' + encodeURIComponent(b.dataset.conv));
-    pane.innerHTML = `<div class="head" style="border:0;padding:0"><button id="chat-back">← Toutes les conversations</button></div><div class="past">${md(conv.body || '(vide)')}</div>`;
-    pane.querySelector('#chat-back').onclick = () => chatHistory();
-  });
+  log.querySelectorAll('[data-conv]').forEach(b => b.onclick = () => chatResume(b.dataset.conv));
+}
+
+// Opening a past conversation makes it the current one: its text goes back on
+// screen and the composer replies to it — the server resumes its Claude session.
+async function chatResume(id) {
+  if (id !== chatId) {
+    fetch('/api/chat?id=' + encodeURIComponent(chatId), { method: 'DELETE' });  // release the previous process
+    if (chatStream) { chatStream.close(); chatStream = null; }
+    chatEl.querySelectorAll('.turn').forEach(n => n.remove());
+    try { chatIdSet(id); } catch (e) { /* private mode: the id still switches for this page */ }
+    await chatReplay();
+  }
+  chatBack();
+  chatEl.querySelector('.composer textarea')?.focus();
 }
 
 // After a reload the server may still hold the conversation, but the browser has
@@ -2554,6 +2586,39 @@ async function chatReplay() {
   if (!conv?.body || chatEl.querySelector('.turn')) return;
   chatAdd('', `<div class="past">${md(conv.body)}</div>`);
 }
+
+/* The agent can take minutes, then sit on a validation card for hours: when it
+   stops and waits on the user while they look elsewhere, say so — a chime, a dot
+   in the tab title, and a system notification if the browser allows it. */
+const CHAT_TITLE = document.title;
+let chatAudio = null;
+function chatChime() {
+  try {
+    chatAudio ??= new AudioContext();
+    const t = chatAudio.currentTime;
+    [660, 880].forEach((f, i) => {
+      const o = chatAudio.createOscillator(), g = chatAudio.createGain();
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t + i * 0.16);
+      g.gain.exponentialRampToValueAtTime(0.2, t + i * 0.16 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.16 + 0.3);
+      o.connect(g).connect(chatAudio.destination);
+      o.start(t + i * 0.16); o.stop(t + i * 0.16 + 0.32);
+    });
+  } catch (e) { /* no audio: the title and the notification still say it */ }
+}
+function chatPing(text, systemNotif = true) {
+  if (!document.hidden && chatOpen) return;
+  chatChime();
+  if (document.hidden) document.title = '● ' + CHAT_TITLE;
+  try {
+    if (systemNotif && document.hidden && Notification.permission === 'granted') {
+      const n = new Notification('Alpes OS', { body: text, tag: 'alpes-os-chat' });
+      n.onclick = () => { window.focus(); chatShow(true); n.close(); };
+    }
+  } catch (e) { /* notifications unavailable */ }
+}
+addEventListener('visibilitychange', () => { if (!document.hidden) document.title = CHAT_TITLE; });
 
 function chatConnect() {
   if (chatStream) return;
@@ -2585,6 +2650,14 @@ function chatConnect() {
       el.querySelector('[data-yes]').onclick = () => { decide(true); el.querySelector('.row').innerHTML = '<span class="act">validé</span>'; };
       el.querySelector('[data-no]').onclick = () => { decide(false); el.querySelector('.row').innerHTML = '<span class="act">annulé</span>'; };
       botEl = null;
+      chatPing('À valider : ' + m.summary);
+      chatShow(true);
+      return;
+    }
+    if (m.type === 'injected') {
+      chatAdd('', `<div class="act"><i></i>${esc(m.text.split('\n')[0])}</div>`);
+      chatAdd('', '<div class="thinking" aria-label="l\'assistant réfléchit"><i></i><i></i><i></i></div>');
+      botEl = null; chatBusy = true;
       return;
     }
     if (m.type === 'confirm-gone') {
@@ -2597,16 +2670,20 @@ function chatConnect() {
       chatEl.querySelector('.thinking')?.remove();
       if (m.error) chatAdd('', `<div class="err">${esc(m.error)}</div>`);
       botEl = null;
+      chatPing(m.error ? "L'assistant a rencontré une erreur." : "L'assistant a répondu, il attend ta réponse.");
       // the agent may have changed things behind the scenes
-      loadTodo(); loadProjects(); loadAgenda();
+      loadTodo(); loadProjects(); loadAgenda(); loadChantiers();
       return;
     }
     if (m.type === 'closed') { chatStream?.close(); chatStream = null; }
   };
-  chatStream.onerror = () => { chatStream?.close(); chatStream = null; };
+  // A dropped stream (laptop asleep, server restart) would otherwise swallow the
+  // next card and the ping with it. The server replays pending cards on subscribe.
+  chatStream.onerror = () => { chatStream?.close(); chatStream = null; if (chatBusy) setTimeout(chatConnect, 3000); };
 }
 
 function chatSend(text) {
+  try { if (Notification.permission === 'default') Notification.requestPermission(); } catch (e) { /* unsupported */ }
   chatShow(true);
   chatBack();
   chatConnect();
@@ -2625,6 +2702,85 @@ function chatAsk(text) {
   chatEl.querySelectorAll('.turn').forEach(n => n.remove());
   try { chatIdSet(String(Date.now())); } catch (e) { /* private mode: stays on the old id */ }
   chatSend(text);
+}
+
+/* ---------- chantiers: work the assistant delegated to background runs ---------- */
+const CH_ST = { en_attente: 'en attente', en_cours: 'en cours', pret: 'prêt', bloque: 'bloqué', echec: 'échec', interrompu: 'interrompu', clos: 'clos' };
+let chItems = [], chPoll = null, chClosing = null;
+async function loadChantiers() {
+  try { chItems = await api('/api/chantiers'); } catch (e) { return; }
+  clearTimeout(chPoll);
+  const running = chItems.filter(c => c.enCours).length;
+  if (running) chPoll = setTimeout(loadChantiers, 5000);   // activity lines change without a status event
+  // a redraw would wipe an instruction being typed; it catches up after
+  if ($('#chantiers .again')) return;
+  const shown = chItems.filter(c => c.statut !== 'clos').slice(0, 12);
+  $('#ch-meta').textContent = running ? `${running} en cours` : '';
+  $('#chantiers').innerHTML = shown.length ? shown.map(c => {
+    const last = c.etapes[c.etapes.length - 1];
+    const text = c.question || (c.enCours ? c.activite : c.resume || c.raison) || '';
+    const html = f => /\.html?$/i.test(f);
+    return `<div class="mapp ch" data-id="${esc(c.id)}">
+      <div class="row1">
+        <span class="ic sm"><svg><use href="#i-flow"/></svg></span>
+        <b class="head-link" ${c.chatId ? `data-conv="${esc(c.chatId)}" title="Ouvrir la conversation"` : ''}>${esc(c.titre)}${c.enCours ? '<i class="live"></i>' : ''}</b>
+        <span class="st ${c.statut}">${CH_ST[c.statut] ?? c.statut}</span>
+      </div>
+      <p${c.question ? ' class="q"' : ''}>${esc(c.projet)} · ${rel(last.fin || last.debut || c.creeLe)}${text ? ' · ' + esc(text) : ''}</p>
+      ${c.livrables.length ? `<div class="livs">${c.livrables.map(f => html(f)
+        ? `<a href="/chantiers/${f.split('/').map(encodeURIComponent).join('/')}" target="_blank" rel="noopener">${esc(f.split('/').pop())}</a>`
+        : `<a data-file="${esc(f)}">${esc(f.split('/').pop())}</a>`).join('')}</div>` : ''}
+      <div class="act">${c.enCours || c.statut === 'en_attente'
+        ? '<button class="btn sm" data-do="stop">Arrêter</button>'
+        : `<button class="btn sm acc" data-do="again">${c.statut === 'bloque' ? 'Répondre' : 'Relancer'}</button>${c.statut === 'pret' ? `<button class="btn sm" data-do="close">${chClosing === c.id ? 'Confirmer la clôture' : 'Clôturer'}</button>` : ''}`}</div>
+    </div>`;
+  }).join('') : '<span class="lbl">Aucun chantier. Demande à l\'assistant d\'en déléguer un.</span>';
+  $('#chantiers').querySelectorAll('.ch').forEach(el => {
+    const id = el.dataset.id;
+    el.querySelector('[data-conv]')?.addEventListener('click', async e => { chatShow(true); await chatResume(e.currentTarget.dataset.conv); chatConnect(); });
+    el.querySelectorAll('[data-file]').forEach(a => a.onclick = () => openFile('chantier:' + a.dataset.file));
+    el.querySelectorAll('[data-do]').forEach(b => b.onclick = () => chAct(id, b.dataset.do, el));
+  });
+}
+async function chAct(id, what, el) {
+  const post = (p, body) => api(`/api/chantiers/${encodeURIComponent(id)}/${p}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body ?? {}) });
+  if (what === 'again') {
+    if (el.querySelector('.again')) return;
+    const row = document.createElement('div');
+    row.className = 'again';
+    row.innerHTML = '<input placeholder="Consigne, ou réponse à sa question"><button class="btn sm acc">Lancer</button>';
+    el.appendChild(row);
+    const input = row.querySelector('input');
+    input.focus();
+    const go = async () => {
+      const r = await post('resume', { consigne: input.value.trim() });
+      if (r.error) toast(r.error, true); else toast('Chantier relancé');
+      row.remove();
+      loadChantiers();
+    };
+    row.querySelector('button').onclick = go;
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') go(); if (e.key === 'Escape') { row.remove(); loadChantiers(); } });
+    return;
+  }
+  // closing merges into the project's main: a second click confirms it
+  if (what === 'close' && chClosing !== id) { chClosing = id; loadChantiers(); return; }
+  chClosing = null;
+  const r = await post(what);
+  if (r.error) toast(r.error, true);
+  else if (what === 'close') toast('Chantier clos, son travail est dans le repo du projet');
+  loadChantiers();
+}
+// Page-wide news from the server. A chantier coming back also raised a macOS
+// notification, so the page only chimes and marks its tab.
+function listenEvents() {
+  const es = new EventSource('/api/events');
+  es.onmessage = e => {
+    const m = JSON.parse(e.data);
+    if (m.type !== 'chantier') return;
+    loadChantiers();
+    if (['pret', 'bloque', 'echec'].includes(m.event)) chatPing(`Chantier ${CH_ST[m.event]} : ${m.titre}`, false);
+  };
+  es.onerror = () => { es.close(); setTimeout(listenEvents, 5000); };
 }
 
 /* ---------- boot ---------- */
@@ -2918,7 +3074,8 @@ addEventListener('keydown', e => {
   chatReplay();   // a reload should not wipe what was already said
   $('#gm-label').textContent = cfg.gmail.label;
   draw();
-  await Promise.all([loadGraph(), loadTodo(), loadGmail(), loadRuns(), loadProjects(), loadAgenda(), loadDecks()]);
+  await Promise.all([loadGraph(), loadTodo(), loadGmail(), loadRuns(), loadProjects(), loadAgenda(), loadDecks(), loadChantiers()]);
+  listenEvents();
   setInterval(loadGraph, 30e3);      // second brain edits show up within 30 s
   setInterval(() => loadGmail(), 5 * 60e3);
   setInterval(loadAgenda, 10 * 60e3);

@@ -15,6 +15,7 @@ Une page, une adresse, qui montre le travail sans jamais devenir l'endroit où i
 | Projets en cours | Les projets au long cours, avec leur prochaine étape éditable |
 | LinkedIn | Le plan éditorial du mois : post du jour préparé chaque matin par Claude, retouche, publication directe sur le profil |
 | Micro apps | Des boutons qui lancent une skill Claude Code en mode headless et rendent leurs livrables |
+| Chantiers | Le travail que l'assistant délègue à un Claude Code en tâche de fond : état, question posée, livrables, relance et clôture |
 
 ## Installation
 
@@ -61,6 +62,17 @@ presse-papiers après la publication. Le jeton dure
 `linkedin.version` suit les versions de l'API LinkedIn (AAAAMM) : à avancer avant que la
 version en cours ne soit retirée, environ un an après sa sortie.
 
+### Chantiers
+
+L'assistant n'écrit aucun fichier : ce qu'il faut produire, il le délègue à un chantier.
+Chaque projet a son repo git sous `chantiers/<projet>/` (non versionné ici), chaque chantier
+son worktree et sa branche, et un `claude -p` qui y travaille en mode `auto`, sans MCP, sans
+push ni déploiement, sans écrire dans le second brain. Sa session est fixe : une relance,
+même des jours après, reprend la même conversation, et `JOURNAL.md` garde le fil. Quand il
+revient (prêt, bloqué sur une question, en échec), une notification macOS part, la page
+sonne et la conversation d'origine reçoit son résumé. Réglages dans `chantiers` de
+`config/config.json` (modèle, parallélisme, durée maximale d'un run).
+
 ### Les skills
 
 Le dashboard lance ses skills en headless : `devis`, `formation`, `standup`, `linkedin-post`.
@@ -92,6 +104,8 @@ lib/calendar.js      événements à venir
 lib/todo.js          lecture et écriture de la todo markdown
 lib/projects.js      projets au long cours
 lib/runs.js          exécutions headless et leur historique
+lib/chantiers.js     chantiers délégués : repo, worktree, session, état
+lib/notify.js        notification macOS
 public/index.html    toute l'interface, sans framework
 templates/           gabarit A4 des documents générés
 ```
