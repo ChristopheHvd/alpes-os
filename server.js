@@ -11,6 +11,8 @@ import { readTodo, writeTodo, completeCarried, addItem, tidyTodo } from './lib/t
 import { makeGmail } from './lib/gmail.js';
 import { makeRunner } from './lib/runs.js';
 import { makeChantiers } from './lib/chantiers.js';
+import { notify } from './lib/notify.js';
+import { EventEmitter } from 'node:events';
 import { listProjects, updateProject, createProject } from './lib/projects.js';
 import { listClients, createClient } from './lib/clients.js';
 import { portfolio } from './lib/portfolio.js';
@@ -79,7 +81,29 @@ const chatLog = makeChatLog(cfg.secondBrain);
 const chat = makeChat(ROOT, { port: PORT, bin: cfg.claude.bin, model: cfg.chat?.model ?? 'claude-opus-5', log: chatLog });
 setInterval(() => chat.sweep(), 5 * 60e3).unref();
 const runner = makeRunner(ROOT, { ...cfg.claude, apps: cfg.apps, secondBrain: cfg.secondBrain, driveRoot });
-const chantiers = makeChantiers(ROOT, { bin: cfg.claude.bin, secondBrain: cfg.secondBrain, ...cfg.chantiers });
+// Page-wide events (GET /api/events), for news that isn't tied to one conversation.
+const events = new EventEmitter();
+events.setMaxListeners(50);
+const BACK = { pret: 'prêt', bloque: 'bloqué, il a une question', echec: 'en échec', interrompu: 'interrompu' };
+const chantiers = makeChantiers(ROOT, { bin: cfg.claude.bin, secondBrain: cfg.secondBrain, ...cfg.chantiers }, { onChange: onChantier });
+
+// A chantier that comes back — ready, blocked on a question, failed, cut short —
+// is announced three ways: a macOS notification, the page's event stream, and a
+// message in the conversation that delegated it, so the agent picks it up.
+function onChantier(c, event) {
+  events.emit('event', { type: 'chantier', id: c.id, titre: c.titre, statut: c.statut, event });
+  if (!BACK[event] || c.raison === 'arrêté à la demande') return;
+  notify(`Chantier ${BACK[event]}`, c.question ? `${c.titre} — ${c.question}` : c.titre);
+  if (!c.chatId) return;
+  const abs = f => path.resolve(c.dossier, path.relative(c.worktree, f));
+  chat.inject(c.chatId, [
+    `[Chantier « ${c.titre} » ${BACK[event]}] (id ${c.id})`,
+    c.resume && `Résumé : ${c.resume}`,
+    c.question && `Question : ${c.question}`,
+    c.raison && `Raison : ${c.raison}`,
+    c.livrables.length && `Livrables :\n${c.livrables.map(f => '- ' + abs(f)).join('\n')}`,
+  ].filter(Boolean).join('\n'));
+}
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -200,6 +224,14 @@ app.post('/api/runs', (req, res) => {
   res.json(runner.start({ app: a, action: act, brief: req.body.brief.trim(), model: req.body.model, from: req.body.from }));
 });
 // Chantiers — work delegated to background Claude Code runs (lib/chantiers.js)
+app.get('/api/events', (req, res) => {
+  res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
+  res.write(': ok\n\n');
+  const on = msg => res.write(`data: ${JSON.stringify(msg)}\n\n`);
+  events.on('event', on);
+  const beat = setInterval(() => res.write(': ping\n\n'), 20e3);
+  req.on('close', () => { clearInterval(beat); events.off('event', on); });
+});
 const guard = fn => (req, res) => { try { res.json(fn(req)); } catch (e) { res.status(400).json({ error: e.message }); } };
 app.get('/api/chantiers', (req, res) => res.json(chantiers.list()));
 app.get('/api/chantiers/:id', (req, res) => { const c = chantiers.get(req.params.id); c ? res.json({ ...c, log: chantiers.log(c.id) }) : res.status(404).json({ error: 'chantier introuvable' }); });
