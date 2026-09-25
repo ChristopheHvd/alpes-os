@@ -94,6 +94,10 @@ function onChantier(c, event) {
   events.emit('event', { type: 'chantier', id: c.id, titre: c.titre, statut: c.statut, event });
   if (!BACK[event] || c.raison === 'arrêté à la demande') return;
   notify(`Chantier ${BACK[event]}`, c.question ? `${c.titre} — ${c.question}` : c.titre);
+  // the project sheet (if the chantier's project has one) points to what's waiting on the user
+  if (event === 'pret' || event === 'bloque') {
+    try { updateProject(cfg.secondBrain, c.projet, { next: c.question ? `Répondre au chantier « ${c.titre} » : ${c.question}` : `Relire le chantier « ${c.titre} »` }); } catch (e) { /* no sheet, nothing to point */ }
+  }
   if (!c.chatId) return;
   const abs = f => path.resolve(c.dossier, path.relative(c.worktree, f));
   chat.inject(c.chatId, [
@@ -224,6 +228,14 @@ app.post('/api/runs', (req, res) => {
   res.json(runner.start({ app: a, action: act, brief: req.body.brief.trim(), model: req.body.model, from: req.body.from }));
 });
 // Chantiers — work delegated to background Claude Code runs (lib/chantiers.js)
+// A chantier that planned its next step (REPRENDRE: <date>) is resumed when the
+// date comes. A test instance only does it when asked: each pass is a real run.
+setInterval(() => {
+  if (sbQueue !== CURATOR_QUEUE && process.env.ALPES_OS_CH_AUTO !== '1') return;
+  for (const c of chantiers.due()) {
+    try { chantiers.resume(c.id, c.prochaineReprise.consigne); } catch (e) { console.error('chantier', c.id, e.message); }
+  }
+}, 10 * 60e3).unref();
 app.get('/api/events', (req, res) => {
   res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
   res.write(': ok\n\n');
@@ -336,6 +348,10 @@ async function standupContext(slot) {
     consignes_boite: mailState.get().notes,
     todo_du_jour: todo.items,
     taches_reportees: todo.carried,
+    chantiers: chantiers.list().filter(c => c.statut !== 'clos').slice(0, 10).map(c => ({
+      titre: c.titre, projet: c.projet, statut: c.statut, question: c.question, resume: c.resume,
+      depuis_jours: daysSince(c.etapes[c.etapes.length - 1].fin ?? c.creeLe), reprise_prevue: c.prochaineReprise?.at ?? null,
+    })),
     plus_tard: todo.later,
     max_taches_actives: todo.max,
     projets: projects,
