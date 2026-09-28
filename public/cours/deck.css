@@ -170,7 +170,9 @@ button { font-family: inherit; color: inherit; }
   font-size: clamp(12px, 1.15vw, 15px); color: var(--ink-3); text-align: center;
 }
 /* schémas volontairement grand format : la limite habituelle de 46vh ne s'applique pas */
-.slide .md figure.shot img[src*="fenetre-contexte"] { max-height: 78vh; }
+.slide .md figure.shot img[src*="fenetre-contexte"],
+.slide .md figure.shot img[src*="fiche-conception"],
+.slide .md figure.shot img[src*="ai-act-pyramide"] { max-height: 78vh; }
 /* plusieurs captures d'écran sur une même ligne markdown : rangée centrée qui s'enroule */
 .slide .md p:has(img) { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 20px; }
 .slide .md p img {
