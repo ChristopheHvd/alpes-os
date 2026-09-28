@@ -232,7 +232,14 @@ function render() {
   const parts = [editing
     ? `<p class="kicker"><select class="typesel">${Object.keys(KICKER).map(k => `<option value="${k}"${k === slide.type ? ' selected' : ''}>${esc(KICKER[k])}</option>`).join('')}</select></p>`
     : `<p class="kicker">${esc(kicker)}</p>`];
-  if (slide.titre || editing) parts.push(`<h2 data-edit="titre">${inline(esc(disp(slide.titre)))}</h2>`);
+  if (slide.type === 'titre' && mod.gif) {
+    parts.push(`<div class="titre-row">
+      <h2 data-edit="titre">${inline(esc(disp(slide.titre)))}</h2>
+      <img class="mod-gif" src="${esc(mod.gif)}" alt="" loading="lazy">
+    </div>`);
+  } else if (slide.titre || editing) {
+    parts.push(`<h2 data-edit="titre">${inline(esc(disp(slide.titre)))}</h2>`);
+  }
   if (slide.body) parts.push(`<div class="md">${md(disp(slide.body), editing)}</div>`);
   if (slide.type === 'titre' && (mod.objectif || editing)) {
     parts.push(`<div class="obj"><b>Objectif</b> <span data-edit="objectif">${esc(disp(mod.objectif))}</span>${mod.duree || editing ? ` · <span data-edit="duree">${mod.duree}</span> min` : ''}</div>`);
