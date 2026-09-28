@@ -376,6 +376,20 @@ function openSheet(mode) {
         </div>`).join('')}</div>`;
     sheetBox.querySelectorAll('.grid button[data-s]').forEach(b => b.onclick = () => { goto(mi, +b.dataset.s); closeSheet(); });
     sheetBox.querySelectorAll('.grid button.del').forEach(b => b.onclick = e => { e.stopPropagation(); deleteSlide(+b.dataset.del); });
+    if (editing) {
+      sheetBox.querySelectorAll('.grid .cell').forEach((cell, i) => {
+        cell.draggable = true;
+        cell.ondragstart = e => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', i); cell.classList.add('dragging'); };
+        cell.ondragend = () => cell.classList.remove('dragging');
+        cell.ondragover = e => { e.preventDefault(); cell.classList.add('over'); };
+        cell.ondragleave = () => cell.classList.remove('over');
+        cell.ondrop = e => {
+          e.preventDefault();
+          cell.classList.remove('over');
+          reorderSlide(+e.dataTransfer.getData('text/plain'), i);
+        };
+      });
+    }
   }
   sheet.classList.add('on');
 }
@@ -397,6 +411,21 @@ function deleteSlide(i) {
   flat = modules.flatMap((m, mm) => m.slides.map((slide, s) => ({ m: mm, s, mod: m, slide })));
   touch(mi);
   render(); // remet la slide et le rail à jour, et rouvre la grille puisque sheet reste .on
+}
+
+// Réordonner une slide depuis la vue d'ensemble (glisser-déposer, mode édition
+// seulement). Pas de notion de position à gérer côté fichier : serializeModule
+// écrit déjà mod.slides dans son ordre courant.
+function reorderSlide(from, to) {
+  if (!editing || from === to) return;
+  const mod = modules[mi];
+  const current = mod.slides[si];
+  const [moved] = mod.slides.splice(from, 1);
+  mod.slides.splice(to, 0, moved);
+  si = mod.slides.indexOf(current);
+  flat = modules.flatMap((m, mm) => m.slides.map((slide, s) => ({ m: mm, s, mod: m, slide })));
+  touch(mi);
+  render();
 }
 
 /* ---------------------------------------------------------- handout */

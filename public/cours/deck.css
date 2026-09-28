@@ -302,6 +302,9 @@ body:has(.notes.on) .foot { right: var(--notes-w); }
   transition: border-color .12s, color .12s, background .12s;
 }
 .grid .cell .del:hover { border-color: var(--crit); color: var(--crit); }
+.editing .grid .cell[draggable="true"] { cursor: grab; }
+.grid .cell.dragging { opacity: .4; }
+.grid .cell.over button { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .grid .n { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
 .grid .tt { font-size: 13px; font-weight: 500; line-height: 1.35; color: var(--ink); }
 .grid .ty {
