@@ -37,12 +37,12 @@ const BASE = `/content/cours/${DECK}`;
 
 const $ = id => document.getElementById(id);
 const stage = $('stage'), sheet = $('sheet'), sheetBox = $('sheet-box'), notesEl = $('notes');
-const rail = $('rail'), legend = $('legend'), tip = $('tip');
+const rail = $('rail'), legend = $('legend'), tip = $('tip'), laserdot = $('laserdot');
 
 let modules = [];        // [{ id, titre, duree, objectif, slides: [...] }]
 let flat = [];           // [{ m, s, mod, slide }] toutes les slides à la file
 let mi = 0, si = 0;      // module / slide courants
-let deck = {}, vars = {}, editing = false;
+let deck = {}, vars = {}, editing = false, laser = false;
 
 /* ---------------------------------------------------------- markdown */
 
@@ -288,6 +288,7 @@ function buildLegend() {
       <dt><kbd>F</kbd></dt><dd>Plein écran</dd>
       <dt><kbd>P</kbd></dt><dd>Version imprimable</dd>
       <dt><kbd>E</kbd></dt><dd>Mode édition</dd>
+      <dt><kbd>L</kbd></dt><dd>Pointeur laser</dd>
       <dt><kbd>?</kbd></dt><dd>Épingler cette légende</dd>
     </dl>
     <p class="pin">Épinglé, le panneau reste affiché ; sinon il s'efface quand la souris s'arrête.</p>`;
@@ -499,6 +500,7 @@ addEventListener('keydown', e => {
   if (l === 't') { toggleTimer(); return e.preventDefault(); }
   if (l === 'p') { print(); return e.preventDefault(); }
   if (l === 'e') { setEdit(!editing); return e.preventDefault(); }
+  if (l === 'l') { setLaser(!laser); return e.preventDefault(); }
   if (l === 'f') {
     document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
     return e.preventDefault();
@@ -521,6 +523,7 @@ let saveTimer = null;
 const EDITABLE = { p: 1, list: 1, h: 1, quote: 1 };
 
 function setEdit(on) {
+  if (on && laser) setLaser(false);
   editing = on;
   document.body.classList.toggle('editing', on);
   $('b-edit').classList.toggle('on', on);
@@ -529,6 +532,20 @@ function setEdit(on) {
   render();
   if (on) wake();
 }
+
+// Pointeur laser : remplace le curseur système par un point rouge qui suit la
+// souris, pour pointer à l'écran en présentation. Coupé automatiquement en
+// entrant en édition, qui a besoin d'un vrai curseur pour sélectionner du texte.
+function setLaser(on) {
+  laser = on;
+  document.body.classList.toggle('laser', on);
+  $('b-laser').classList.toggle('on', on);
+}
+addEventListener('mousemove', e => {
+  laserdot.style.left = e.clientX + 'px';
+  laserdot.style.top = e.clientY + 'px';
+});
+$('b-laser').onclick = () => setLaser(!laser);
 
 function say(msg, bad = false) {
   saveEl.textContent = msg;

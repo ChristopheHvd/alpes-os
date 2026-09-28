@@ -380,6 +380,17 @@ kbd {
   max-width: 52vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
+/* ---------- pointeur laser ---------- */
+body.laser, body.laser * { cursor: none !important; }
+.laserdot {
+  position: fixed; top: 0; left: 0; z-index: 70; display: none;
+  width: 18px; height: 18px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, #ff3b30 0%, #ff3b30 40%, rgba(255,59,48,0) 75%);
+  box-shadow: 0 0 16px 6px rgba(255,59,48,.55);
+  transform: translate(-50%, -50%); transition: transform .05s linear;
+}
+body.laser .laserdot { display: block; }
+
 .loading { color: var(--ink-3); font-size: 14px; }
 .err {
   max-width: 620px; border: 1px solid var(--crit); border-left-width: 4px;
