@@ -295,8 +295,8 @@ body:has(.notes.on) .foot { right: var(--notes-w); }
 .grid button:hover { border-color: var(--accent); transform: translateY(-2px); }
 .grid button.on { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .grid .cell .del {
-  position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; z-index: 1;
-  display: flex; align-items: center; justify-content: center;
+  position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; min-height: 0; z-index: 1;
+  display: flex; align-items: center; justify-content: center; padding: 0; gap: 0;
   border: 1px solid var(--line); border-radius: 50%; background: var(--bg);
   color: var(--ink-3); font-size: 13px; line-height: 1; cursor: pointer;
   transition: border-color .12s, color .12s, background .12s;
