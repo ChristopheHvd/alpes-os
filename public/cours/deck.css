@@ -169,6 +169,12 @@ button { font-family: inherit; color: inherit; }
 .slide .md figure.shot figcaption {
   font-size: clamp(12px, 1.15vw, 15px); color: var(--ink-3); text-align: center;
 }
+/* plusieurs captures d'écran sur une même ligne markdown : rangée centrée qui s'enroule */
+.slide .md p:has(img) { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 20px; }
+.slide .md p img {
+  border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow);
+  max-height: 42vh; width: auto;
+}
 
 /* ---------- slide types ---------- */
 /* titre : plein cadre, la couverture du module */
