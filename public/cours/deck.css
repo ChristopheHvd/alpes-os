@@ -286,13 +286,22 @@ body:has(.notes.on) .foot { right: var(--notes-w); }
 
 /* ---------- vue d'ensemble ---------- */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+.grid .cell { position: relative; }
 .grid button {
   border: 1px solid var(--line); background: var(--surface); border-radius: var(--r);
-  padding: 13px 14px; cursor: pointer; text-align: left; min-height: 96px;
+  padding: 13px 14px; cursor: pointer; text-align: left; min-height: 96px; width: 100%;
   display: flex; flex-direction: column; gap: 7px; transition: border-color .12s, transform .12s;
 }
 .grid button:hover { border-color: var(--accent); transform: translateY(-2px); }
 .grid button.on { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.grid .cell .del {
+  position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; z-index: 1;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line); border-radius: 50%; background: var(--bg);
+  color: var(--ink-3); font-size: 13px; line-height: 1; cursor: pointer;
+  transition: border-color .12s, color .12s, background .12s;
+}
+.grid .cell .del:hover { border-color: var(--crit); color: var(--crit); }
 .grid .n { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
 .grid .tt { font-size: 13px; font-weight: 500; line-height: 1.35; color: var(--ink); }
 .grid .ty {

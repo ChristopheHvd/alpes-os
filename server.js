@@ -143,6 +143,12 @@ app.use('/content/cours', express.static(coursDir, {
 // c'est le garde-fou contre la traversée de chemin. `lastModified` est celui
 // reçu du serveur au chargement — s'il ne colle plus, quelqu'un d'autre a écrit
 // entre temps (une session Claude dans un terminal) et on refuse plutôt qu'on écrase.
+//
+// Contrairement aux autres écritures du dashboard, celle-ci ne passe pas par
+// la file du curateur (bundle) : un cours en édition se travaille en direct
+// avec un agent qui lit les fichiers du disque, et attendre un passage du
+// curateur romprait ça. Écriture directe, donc — fichier temporaire puis
+// renommage, pour ne jamais laisser un fichier à moitié écrit.
 app.put('/api/cours/:deck/:file', (req, res) => {
   try {
     const { deck, file } = req.params;
@@ -153,15 +159,17 @@ app.put('/api/cours/:deck/:file', (req, res) => {
 
     const target = path.join(dir, file);
     const seen = Date.parse(req.body?.lastModified ?? '');
-    const now = bundle.mtime(target);
+    const now = fs.statSync(target).mtimeMs;
     // Last-Modified est à la seconde près, mtime à la milliseconde
     if (Number.isFinite(seen) && Math.floor(now / 1000) !== Math.floor(seen / 1000)) {
       return res.status(409).json({ error: 'le fichier a changé sur le disque' });
     }
     const src = String(req.body?.src ?? '');
     if (!src.trim()) return res.status(400).json({ error: 'contenu vide' });
-    bundle.replace(target, src, { why: `module ${file} du support ${deck} modifié dans l'éditeur de cours`, subject: `Cours ${deck}/${file}` });
-    res.json({ ok: true, lastModified: new Date(bundle.mtime(target)).toUTCString() });
+    const tmp = `${target}.tmp`;
+    fs.writeFileSync(tmp, src);
+    fs.renameSync(tmp, target);
+    res.json({ ok: true, lastModified: new Date(fs.statSync(target).mtimeMs).toUTCString() });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

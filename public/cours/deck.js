@@ -365,17 +365,38 @@ function openSheet(mode) {
     sheetBox.innerHTML = `<h3>${esc(disp(mod.titre))}</h3>
       <p class="sub">${mod.slides.length} slides${mod.duree ? ` · ${mod.duree} min` : ''}</p>
       <div class="grid">${mod.slides.map((s, i) => `
-        <button data-s="${i}" data-t="${s.type}" class="${i === si ? 'on' : ''}">
-          <span class="n">${String(i + 1).padStart(2, '0')}</span>
-          <span class="tt">${esc(disp(s.titre) || '—')}</span>
-          <span class="ty">${esc(KICKER[s.type] || s.type)}</span>
-        </button>`).join('')}</div>`;
-    sheetBox.querySelectorAll('.grid button').forEach(b => b.onclick = () => { goto(mi, +b.dataset.s); closeSheet(); });
+        <div class="cell">
+          <button data-s="${i}" data-t="${s.type}" class="${i === si ? 'on' : ''}">
+            <span class="n">${String(i + 1).padStart(2, '0')}</span>
+            <span class="tt">${esc(disp(s.titre) || '—')}</span>
+            <span class="ty">${esc(KICKER[s.type] || s.type)}</span>
+          </button>
+          ${editing ? `<button class="del" data-del="${i}" title="Supprimer cette slide">×</button>` : ''}
+        </div>`).join('')}</div>`;
+    sheetBox.querySelectorAll('.grid button[data-s]').forEach(b => b.onclick = () => { goto(mi, +b.dataset.s); closeSheet(); });
+    sheetBox.querySelectorAll('.grid button.del').forEach(b => b.onclick = e => { e.stopPropagation(); deleteSlide(+b.dataset.del); });
   }
   sheet.classList.add('on');
 }
 function closeSheet() { sheet.classList.remove('on'); sheetMode = null; }
 function toggleSheet(mode) { sheetMode === mode ? closeSheet() : openSheet(mode); }
+
+// Supprimer une slide du module courant depuis la vue d'ensemble : seulement
+// en mode édition (openSheet ne pose le bouton que dans ce cas). Un module
+// garde toujours au moins une slide.
+function deleteSlide(i) {
+  if (!editing) return;
+  const mod = modules[mi];
+  if (mod.slides.length <= 1) { say('impossible de supprimer la dernière slide du module', true); return; }
+  const titre = disp(mod.slides[i].titre) || KICKER[mod.slides[i].type] || `slide ${i + 1}`;
+  if (!confirm(`Supprimer « ${titre} » ?`)) return;
+  mod.slides.splice(i, 1);
+  if (i <= si) si--;
+  si = Math.max(0, Math.min(si, mod.slides.length - 1));
+  flat = modules.flatMap((m, mm) => m.slides.map((slide, s) => ({ m: mm, s, mod: m, slide })));
+  touch(mi);
+  render(); // remet la slide et le rail à jour, et rouvre la grille puisque sheet reste .on
+}
 
 /* ---------------------------------------------------------- handout */
 
