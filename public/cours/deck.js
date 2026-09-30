@@ -362,6 +362,8 @@ function renderNotes() {
 
 /* ---------------------------------------------------------- navigation */
 
+const reflat = () => { flat = modules.flatMap((mod, m) => mod.slides.map((slide, s) => ({ m, s, mod, slide }))); };
+
 function goto(m, s) {
   if (m < 0 || m >= modules.length) return;
   const mod = modules[m];
@@ -421,11 +423,14 @@ function openSheet(mode) {
             <span class="ty">${esc(KICKER[s.type] || s.type)}</span>
           </button>
           ${editing ? `<button class="del" data-del="${i}" title="Supprimer cette slide">×</button>` : ''}
-        </div>`).join('')}</div>`;
+        </div>`).join('')}
+        ${editing ? '<div class="cell add"><button class="new">＋ Nouvelle slide</button></div>' : ''}</div>`;
     sheetBox.querySelectorAll('.grid button[data-s]').forEach(b => b.onclick = () => { goto(mi, +b.dataset.s); closeSheet(); });
     sheetBox.querySelectorAll('.grid button.del').forEach(b => b.onclick = e => { e.stopPropagation(); deleteSlide(+b.dataset.del); });
+    const add = sheetBox.querySelector('.grid button.new');
+    if (add) add.onclick = () => openSheet('new');
     if (editing) {
-      sheetBox.querySelectorAll('.grid .cell').forEach((cell, i) => {
+      sheetBox.querySelectorAll('.grid .cell:not(.add)').forEach((cell, i) => {
         cell.draggable = true;
         cell.ondragstart = e => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', i); cell.classList.add('dragging'); };
         cell.ondragend = () => cell.classList.remove('dragging');
@@ -438,6 +443,14 @@ function openSheet(mode) {
         };
       });
     }
+  } else if (mode === 'new') {
+    const cur = modules[mi].slides[si];
+    sheetBox.innerHTML = `<h3>Nouvelle slide</h3>
+      <p class="sub">Insérée après « ${esc(disp(cur.titre) || KICKER[cur.type] || `slide ${si + 1}`)} »</p>
+      <div class="layouts">${LAYOUTS.map(([n, label]) => `<button data-n="${n}">
+        <span class="lay n${n}">${'<i></i>'.repeat(n)}</span>${label}
+      </button>`).join('')}</div>`;
+    sheetBox.querySelectorAll('.layouts button').forEach(b => b.onclick = () => addSlide(+b.dataset.n));
   }
   sheet.classList.add('on');
 }
@@ -456,9 +469,26 @@ function deleteSlide(i) {
   mod.slides.splice(i, 1);
   if (i <= si) si--;
   si = Math.max(0, Math.min(si, mod.slides.length - 1));
-  flat = modules.flatMap((m, mm) => m.slides.map((slide, s) => ({ m: mm, s, mod: m, slide })));
+  reflat();
   touch(mi);
   render(); // remet la slide et le rail à jour, et rouvre la grille puisque sheet reste .on
+}
+
+// Nouvelle slide, insérée après la courante, dans la disposition choisie. Elle
+// porte un titre d'emblée : une slide sans titre ni corps ne se relit pas.
+function addSlide(n) {
+  if (!editing) return;
+  const mod = modules[mi];
+  const slide = { type: 'concept', titre: 'Nouvelle slide', body: '', notes: '', livrable: '', colonnes: n > 1 ? n : 0 };
+  setColumns(slide, columns(slide));
+  mod.slides.splice(si + 1, 0, slide);
+  reflat();
+  touch(mi);
+  closeSheet();
+  goto(mi, si + 1);
+  const h = stage.querySelector('h2[data-edit="titre"]');
+  h.focus();
+  getSelection().selectAllChildren(h);
 }
 
 // Réordonner une slide depuis la vue d'ensemble (glisser-déposer, mode édition
@@ -471,7 +501,7 @@ function reorderSlide(from, to) {
   const [moved] = mod.slides.splice(from, 1);
   mod.slides.splice(to, 0, moved);
   si = mod.slides.indexOf(current);
-  flat = modules.flatMap((m, mm) => m.slides.map((slide, s) => ({ m: mm, s, mod: m, slide })));
+  reflat();
   touch(mi);
   render();
 }
@@ -853,6 +883,7 @@ addEventListener('beforeunload', e => {
 });
 
 $('b-edit').onclick = () => setEdit(!editing);
+$('b-add').onclick = () => openSheet('new');
 buildFmt();
 
 /* ---------------------------------------------------------- démarrage */
@@ -884,7 +915,7 @@ const fetchModule = async file => {
     const sources = await Promise.all(deck.modules.map(fetchModule));
     modules = deck.modules.map((f, i) => Object.assign(
       parseModule(f.replace(/\.md$/, ''), sources[i].src), { _file: f, _lm: sources[i].lm }));
-    flat = modules.flatMap((mod, m) => mod.slides.map((slide, s) => ({ m, s, mod, slide })));
+    reflat();
     if (!flat.length) throw new Error('Aucune slide trouvée.');
 
     buildPrint();
