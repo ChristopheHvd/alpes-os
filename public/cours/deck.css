@@ -233,9 +233,13 @@ button { font-family: inherit; color: inherit; }
 .slide.t-piege .kicker { color: var(--crit); }
 .slide.t-piege li::marker { color: var(--crit); }
 
-/* ---------- deux colonnes ---------- */
-.slide .cols { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(20px, 3vw, 48px); }
-@media (max-width: 880px) { .slide .cols { grid-template-columns: 1fr; } }
+/* ---------- colonnes ---------- */
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(20px, 3vw, 48px); align-items: start; }
+.cols.n3 { grid-template-columns: 1fr 1fr 1fr; }
+.cols > .col { min-width: 0; }
+.slide .md .col > *:first-child { margin-top: 0; }
+.slide .md .col > *:last-child { margin-bottom: 0; }
+@media (max-width: 880px) { .slide .cols, .slide .cols.n3 { grid-template-columns: 1fr; } }
 
 /* ---------- progression ---------- */
 .foot {
@@ -473,7 +477,7 @@ body.laser .laserdot { display: block; }
 .editing .slide .blk.src:hover { outline-color: var(--accent); }
 .editing .slide [data-edit]:empty::before { content: '…'; color: var(--ink-3); }
 
-.slide .typesel {
+.slide .typesel, .slide .laysel {
   font: inherit; color: inherit; background: none; border: 1px solid var(--line);
   border-radius: 4px; padding: 1px 4px;
 }
