@@ -116,6 +116,9 @@ function blocks(src) {
   return out;
 }
 
+// Les cellules d'une ligne de tableau ; un `\\|` reste dans sa cellule.
+const cellsOf = line => line.trim().split(/(?<!\\)\|/).slice(1, -1).map(c => c.trim());
+
 function md1(b) {
   const lines = () => esc(b.md).split('\n');
   switch (b.kind) {
@@ -128,7 +131,7 @@ function md1(b) {
     }
     case 'table': {
       const rows = lines().map(r => r.trim());
-      const cells = r => r.split('|').slice(1, -1).map(c => c.trim());
+      const cells = r => cellsOf(r).map(c => c.replace(/\\\|/g, '|'));
       return `<table><tr>${cells(rows[0]).map(c => `<th>${inline(c)}</th>`).join('')}</tr>`
         + rows.slice(2).map(r => `<tr>${cells(r).map(c => `<td>${inline(c)}</td>`).join('')}</tr>`).join('')
         + '</table>';
@@ -291,6 +294,7 @@ function render() {
 
   hideTools();
   insEl.hidden = true;
+  tblEl.hidden = true;
   stage.innerHTML = `<article class="slide t-${slide.type}">${parts.join('')}</article>`;
 
   const idx = flat.findIndex(f => f.m === mi && f.s === si);
@@ -776,6 +780,7 @@ function bindEdit() {
   };
 
   for (const el of stage.querySelectorAll('.blk')) {
+    if (el.dataset.kind === 'table') { bindTable(el, slide); continue; }
     if (!EDITABLE[el.dataset.kind]) { el.classList.add('src'); el.onclick = () => srcEdit(el, slide); continue; }
     el.contentEditable = 'true';
     el.addEventListener('blur', () => commit(el, slide));
@@ -874,6 +879,8 @@ function insertBlock(c, src) {
   });
   render();
   const el = stage.querySelector(`.blk[data-c="${c}"][data-i="${at}"]`);
+  const cell = el?.querySelector('th[contenteditable="true"]');
+  if (cell) return focusCell(cell);
   if (!el?.isContentEditable) return;
   el.focus();
   getSelection().selectAllChildren(el.querySelector('li, h3, p') || el);
@@ -927,6 +934,102 @@ function blockAction(el, act) {
   render();
   const moved = act !== 'del' && stage.querySelector(`.blk[data-c="${c}"][data-i="${to}"]`);
   if (moved) showTools(moved);
+}
+
+/* --- tableaux --- */
+
+// Les cellules s'éditent en place. Une cellule qu'on n'a pas touchée garde son
+// markdown d'origine, et le tableau n'est réécrit que si l'une a changé.
+const tblEl = $('tbltools');
+
+function tableMd(rows, sep) {
+  const n = Math.max(...rows.map(r => r.length));
+  const line = cs => `| ${[...cs, ...Array(n - cs.length).fill('')].join(' | ')} |`;
+  if (!sep || cellsOf(sep).length !== n) sep = line(Array(n).fill('---'));
+  return [line(rows[0]), sep, ...rows.slice(1).map(line)].join('\n');
+}
+
+function tableRows(el, src) {
+  const lines = src.split('\n');
+  const orig = [lines[0], ...lines.slice(2)].map(cellsOf);
+  return [...el.querySelectorAll('tr')].map((tr, r) => [...tr.children].map((td, k) =>
+    td.innerHTML === td._html ? orig[r]?.[k] ?? '' : clean(walk(td)).replace(/(?<!\\)\|/g, '\\|')));
+}
+
+const tableSrc = (slide, el) => blocks(columns(slide)[+el.dataset.c])[+el.dataset.i].md;
+
+function focusCell(td) {
+  td.focus();
+  getSelection().selectAllChildren(td);
+}
+
+function bindTable(el, slide) {
+  const cells = [...el.querySelectorAll('th, td')];
+  for (const td of cells) {
+    td.contentEditable = 'true';
+    td._html = td.innerHTML;
+    // Entrée et Tab passent à la cellule suivante, son contenu sélectionné ; Maj+Tab revient
+    td.onkeydown = e => {
+      if (e.key !== 'Enter' && e.key !== 'Tab') return;
+      const next = cells[cells.indexOf(td) + (e.key === 'Tab' && e.shiftKey ? -1 : 1)];
+      if (!next && e.key === 'Tab') return;
+      e.preventDefault();
+      next ? focusCell(next) : td.blur();
+    };
+  }
+  el.addEventListener('focusin', () => {
+    const r = el.getBoundingClientRect();
+    tblEl.hidden = false;
+    tblEl.style.left = `${r.left}px`;
+    tblEl.style.top = `${r.top}px`;
+  });
+  el.addEventListener('focusout', e => {
+    if (el.contains(e.relatedTarget) || el._done) return;
+    tblEl.hidden = true;
+    if (cells.some(td => td.innerHTML !== td._html)) writeTable(el, slide, tableRows(el, tableSrc(slide, el)));
+  });
+}
+
+// `at` : la cellule [ligne, colonne] où remettre le curseur une fois le tableau redessiné.
+function writeTable(el, slide, rows, at) {
+  const c = +el.dataset.c, i = +el.dataset.i;
+  el._done = true; // le redessin retire la cellule active : son focusout n'a plus rien à écrire
+  editBlocks(slide, c, bs => {
+    const md = tableMd(rows, bs[i].md.split('\n')[1]);
+    if (md === bs[i].md) return false;
+    bs[i] = { ...bs[i], md };
+  });
+  render();
+  const t = stage.querySelector(`.blk[data-c="${c}"][data-i="${i}"]`);
+  const td = at && t?.querySelectorAll('tr')[at[0]]?.children[at[1]];
+  if (td) focusCell(td);
+  return t;
+}
+
+tblEl.onmousedown = e => {
+  e.preventDefault();
+  const b = e.target.closest('button'), td = document.activeElement?.closest?.('th, td');
+  const el = td?.closest('.blk');
+  if (b && el) tableOp(el, td, b.dataset.op);
+};
+
+function tableOp(el, td, op) {
+  const slide = modules[mi].slides[si], rows = tableRows(el, tableSrc(slide, el));
+  const r = [...el.querySelectorAll('tr')].indexOf(td.parentElement), k = [...td.parentElement.children].indexOf(td);
+  const n = rows[0].length;
+  let at = [r, k];
+  if (op === 'row+') { rows.splice(r + 1, 0, Array(n).fill('')); at = [r + 1, k]; }
+  else if (op === 'col+') { rows.forEach(row => row.splice(k + 1, 0, '')); at = [r, k + 1]; }
+  else if (op === 'row-') {
+    if (r === 0) return say("la ligne d'en-tête ne se retire pas", true);
+    rows.splice(r, 1);
+    at = [Math.min(r, rows.length - 1), k];
+  } else if (op === 'col-') {
+    if (n === 1) return say('un tableau garde au moins une colonne', true);
+    rows.forEach(row => row.splice(k, 1));
+    at = [r, Math.min(k, n - 2)];
+  } else if (op === 'src') return srcEdit(writeTable(el, slide, rows), slide);
+  writeTable(el, slide, rows, at);
 }
 
 /* --- barre de mise en forme --- */
