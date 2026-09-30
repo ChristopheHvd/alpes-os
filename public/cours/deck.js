@@ -25,8 +25,21 @@
      type: atelier
      livrable: Un prompt maître enregistré
 
-   Les slides sont séparées par `---` seul sur sa ligne. `{{client.prenom}}`
-   est remplacé par le profil client passé en ?client=<id>.
+     ---
+
+     ## Slide en colonnes
+     colonnes: 2
+
+     Colonne de gauche.
+
+     ::: colonne
+
+     Colonne de droite.
+
+   Les slides sont séparées par `---` seul sur sa ligne. `colonnes: 2` ou `3`
+   répartit le corps entre les séparateurs `::: colonne` ; sans la clé, la
+   slide est sur une seule colonne. `{{client.prenom}}` est remplacé par le
+   profil client passé en ?client=<id>.
    ============================================================ */
 'use strict';
 
@@ -149,10 +162,34 @@ function md1(b) {
 // Recompose une source à partir de ses blocs, en gardant les séparations d'origine.
 const unblock = bs => bs.map((b, i) => b.md + (i < bs.length - 1 ? b.gap : '')).join('');
 
-function md(src, wrap = false) {
+function md(src, wrap = false, c = 0) {
   return blocks(src).map((b, i) => wrap
-    ? `<div class="blk" data-i="${i}" data-kind="${b.kind}">${md1(b)}</div>`
+    ? `<div class="blk" data-c="${c}" data-i="${i}" data-kind="${b.kind}">${md1(b)}</div>`
     : md1(b)).join('');
+}
+
+/* ---------------------------------------------------------- colonnes */
+
+const COL_SEP = /^[ \t]*:::[ \t]*colonne[ \t]*$/m;
+
+// Le corps découpé en autant de colonnes que la slide en déclare : ce qui
+// dépasse retombe dans la dernière, ce qui manque reste vide.
+function columns(slide) {
+  const n = slide.colonnes > 1 ? slide.colonnes : 1;
+  const cs = slide.body.split(COL_SEP).map(p => p.trim());
+  if (cs.length > n) cs.splice(n - 1, cs.length, cs.slice(n - 1).filter(Boolean).join('\n\n'));
+  while (cs.length < n) cs.push('');
+  return cs;
+}
+
+function setColumns(slide, cs) {
+  slide.body = cs.map((p, i) => (i ? '::: colonne' + (p ? `\n\n${p}` : '') : p)).join('\n\n').trim();
+}
+
+function bodyHtml(slide, wrap = false, tx = disp) {
+  const cs = columns(slide);
+  if (cs.length === 1) return `<div class="md">${md(tx(cs[0]), wrap)}</div>`;
+  return `<div class="md cols n${cs.length}">${cs.map((p, c) => `<div class="col" data-c="${c}">${md(tx(p), wrap, c)}</div>`).join('')}</div>`;
 }
 
 /* ---------------------------------------------------------- parsing */
@@ -183,7 +220,7 @@ function parseModule(id, src) {
   }
 
   meta.slides = src.split(/\n---\n/).map(chunk => {
-    const slide = { type: 'concept', titre: '', body: '', notes: '', livrable: '' };
+    const slide = { type: 'concept', titre: '', body: '', notes: '', livrable: '', colonnes: 0 };
 
     // les notes formateur sortent avant tout le reste
     slide.notes = (chunk.match(/^:::\s*notes\n([\s\S]*?)\n:::\s*$/m) || [, ''])[1].trim();
@@ -193,9 +230,9 @@ function parseModule(id, src) {
     if (/^##\s+/.test(lines[0] || '')) slide.titre = lines.shift().replace(/^##\s+/, '').trim();
     // les clés éventuelles suivent immédiatement le titre
     while (lines.length) {
-      const kv = lines[0].match(/^(type|livrable)\s*:\s*(.*)$/);
+      const kv = lines[0].match(/^(type|livrable|colonnes)\s*:\s*(.*)$/);
       if (!kv) break;
-      slide[kv[1]] = kv[2].trim();
+      slide[kv[1]] = kv[1] === 'colonnes' ? parseInt(kv[2], 10) || 0 : kv[2].trim();
       lines.shift();
     }
     slide.body = lines.join('\n').trim();
@@ -209,7 +246,8 @@ function parseModule(id, src) {
 function serializeModule(mod) {
   const fm = mod._fm.map(k => `${k}: ${mod[k]}`).join('\n');
   const chunks = mod.slides.map(s => {
-    const head = [`## ${s.titre}`, s.type && `type: ${s.type}`, s.livrable && `livrable: ${s.livrable}`];
+    const head = [s.titre && `## ${s.titre}`, s.type && `type: ${s.type}`, s.livrable && `livrable: ${s.livrable}`,
+      s.colonnes > 1 && `colonnes: ${s.colonnes}`];
     const parts = [head.filter(Boolean).join('\n'), s.body, s.notes && `::: notes\n${s.notes}\n:::`];
     return parts.filter(Boolean).join('\n\n');
   });
@@ -223,6 +261,8 @@ const KICKER = {
   atelier: 'Atelier', recap: 'À retenir', piege: 'Piège',
 };
 
+const LAYOUTS = [[1, 'Central'], [2, '2 colonnes'], [3, '3 colonnes']];
+
 function render() {
   const mod = modules[mi], slide = mod.slides[si];
   document.title = `${disp(mod.titre)} — ${disp(slide.titre) || 'Support'}`;
@@ -230,7 +270,8 @@ function render() {
 
   const kicker = slide.type === 'titre' ? `Module ${mi + 1} · ${KICKER.titre}` : KICKER[slide.type] || KICKER.concept;
   const parts = [editing
-    ? `<p class="kicker"><select class="typesel">${Object.keys(KICKER).map(k => `<option value="${k}"${k === slide.type ? ' selected' : ''}>${esc(KICKER[k])}</option>`).join('')}</select></p>`
+    ? `<p class="kicker"><select class="typesel">${Object.keys(KICKER).map(k => `<option value="${k}"${k === slide.type ? ' selected' : ''}>${esc(KICKER[k])}</option>`).join('')}</select>
+      <select class="laysel" title="Disposition">${LAYOUTS.map(([n, label]) => `<option value="${n}"${n === columns(slide).length ? ' selected' : ''}>${label}</option>`).join('')}</select></p>`
     : `<p class="kicker">${esc(kicker)}</p>`];
   if (slide.type === 'titre' && mod.gif) {
     parts.push(`<div class="titre-row">
@@ -240,7 +281,7 @@ function render() {
   } else if (slide.titre || editing) {
     parts.push(`<h2 data-edit="titre">${inline(esc(disp(slide.titre)))}</h2>`);
   }
-  if (slide.body) parts.push(`<div class="md">${md(disp(slide.body), editing)}</div>`);
+  if (slide.body || editing) parts.push(bodyHtml(slide, editing));
   if (slide.type === 'titre' && (mod.objectif || editing)) {
     parts.push(`<div class="obj"><b>Objectif</b> <span data-edit="objectif">${esc(disp(mod.objectif))}</span>${mod.duree || editing ? ` · <span data-edit="duree">${mod.duree}</span> min` : ''}</div>`);
   }
@@ -444,7 +485,7 @@ function buildPrint() {
         <p class="mo">${esc(interpolate(m.objectif))}${m.duree ? ` — ${m.duree} min` : ''}</p>
         ${m.slides.filter(s => s.type !== 'titre').map(s => `<div class="ps">
           <h4>${esc(interpolate(s.titre))}</h4>
-          <div class="md">${md(interpolate(s.body))}</div>
+          ${bodyHtml(s, false, interpolate)}
           ${s.livrable ? `<div class="nt">Livrable : ${esc(interpolate(s.livrable))}</div>` : ''}
           ${s.notes ? `<div class="nt">${md(interpolate(s.notes))}</div>` : ''}
         </div>`).join('')}
@@ -691,6 +732,15 @@ function bindEdit() {
   const sel = stage.querySelector('.typesel');
   if (sel) sel.onchange = () => write(slide, 'type', sel.value);
 
+  // moins de colonnes : columns() replie celles qu'on retire dans la dernière gardée
+  const lay = stage.querySelector('.laysel');
+  if (lay) lay.onchange = () => {
+    slide.colonnes = +lay.value;
+    setColumns(slide, columns(slide));
+    touch(mi);
+    render();
+  };
+
   for (const el of stage.querySelectorAll('.blk')) {
     if (!EDITABLE[el.dataset.kind]) { el.classList.add('src'); el.onclick = () => srcEdit(el, slide); continue; }
     el.contentEditable = 'true';
@@ -702,32 +752,46 @@ function bindEdit() {
 // l'avoir touché ne doit pas replier la source pour autant.
 const same = a => a.replace(/\s+/g, ' ').trim();
 
-function commit(el, slide) {
-  const i = +el.dataset.i, bs = blocks(slide.body), now = editedMd(el);
-  if (!bs[i] || same(now) === same(bs[i].md)) return;
-  if (now) bs[i] = { ...bs[i], md: now }; else bs.splice(i, 1);
-  slide.body = unblock(bs);
+// Réécrit une colonne de la slide à travers ses blocs. `fn` modifie le tableau
+// sur place ; s'il renvoie false, rien n'a changé.
+function editBlocks(slide, c, fn) {
+  const cs = columns(slide), bs = blocks(cs[c]);
+  if (fn(bs) === false) return false;
+  cs[c] = unblock(bs);
+  setColumns(slide, cs);
   touch(mi);
-  render();
+  return true;
+}
+
+// Deux paragraphes séparés d'un simple retour se relisent comme un seul : un
+// bloc retiré laisse une ligne vide entre ses voisins.
+function drop(bs, i) {
+  bs.splice(i, 1);
+  if (bs[i - 1]) bs[i - 1].gap = '\n\n';
+}
+
+function commit(el, slide) {
+  const i = +el.dataset.i, now = editedMd(el);
+  const changed = editBlocks(slide, +el.dataset.c, bs => {
+    if (!bs[i] || same(now) === same(bs[i].md)) return false;
+    if (now) bs[i] = { ...bs[i], md: now }; else drop(bs, i);
+  });
+  if (changed) render();
 }
 
 // Tableaux, schémas ```svg, blocs de code : leur markdown se corrige mieux à la
 // main que dans un contenteditable.
 function srcEdit(el, slide) {
-  const i = +el.dataset.i, bs = blocks(slide.body);
+  const c = +el.dataset.c, i = +el.dataset.i, was = blocks(columns(slide)[c])[i].md;
   const ta = document.createElement('textarea');
   ta.className = 'srcbox';
-  ta.value = bs[i].md;
-  ta.rows = Math.min(24, bs[i].md.split('\n').length + 1);
+  ta.value = was;
+  ta.rows = Math.min(24, was.split('\n').length + 1);
   el.replaceWith(ta);
   ta.focus();
   ta.onblur = () => {
     const v = ta.value.trim();
-    if (v !== bs[i].md) {
-      if (v) bs[i] = { ...bs[i], md: v }; else bs.splice(i, 1);
-      slide.body = unblock(bs);
-      touch(mi);
-    }
+    if (v !== was) editBlocks(slide, c, bs => { if (v) bs[i] = { ...bs[i], md: v }; else drop(bs, i); });
     render();
   };
 }
