@@ -186,10 +186,12 @@ function setColumns(slide, cs) {
   slide.body = cs.map((p, i) => (i ? '::: colonne' + (p ? `\n\n${p}` : '') : p)).join('\n\n').trim();
 }
 
+// En édition, chaque colonne finit par le bouton qui y ajoute un bloc.
 function bodyHtml(slide, wrap = false, tx = disp) {
   const cs = columns(slide);
-  if (cs.length === 1) return `<div class="md">${md(tx(cs[0]), wrap)}</div>`;
-  return `<div class="md cols n${cs.length}">${cs.map((p, c) => `<div class="col" data-c="${c}">${md(tx(p), wrap, c)}</div>`).join('')}</div>`;
+  const col = (p, c) => md(tx(p), wrap, c) + (wrap ? `<button class="addblk" data-c="${c}" title="Ajouter un bloc">＋</button>` : '');
+  if (cs.length === 1) return `<div class="md">${col(cs[0], 0)}</div>`;
+  return `<div class="md cols n${cs.length}">${cs.map((p, c) => `<div class="col" data-c="${c}">${col(p, c)}</div>`).join('')}</div>`;
 }
 
 /* ---------------------------------------------------------- parsing */
@@ -287,6 +289,8 @@ function render() {
   }
   if (slide.livrable || editing) parts.push(`<div class="livrable"><b>Livrable</b><br><span data-edit="livrable">${inline(esc(disp(slide.livrable)))}</span></div>`);
 
+  hideTools();
+  insEl.hidden = true;
   stage.innerHTML = `<article class="slide t-${slide.type}">${parts.join('')}</article>`;
 
   const idx = flat.findIndex(f => f.m === mi && f.s === si);
@@ -776,6 +780,9 @@ function bindEdit() {
     el.contentEditable = 'true';
     el.addEventListener('blur', () => commit(el, slide));
   }
+
+  // mousedown : le bloc en cours d'écriture garde le focus, sinon il se réenregistre et le clic se perd
+  for (const b of stage.querySelectorAll('.addblk')) b.onmousedown = e => { e.preventDefault(); openIns(b); };
 }
 
 // Un paragraphe écrit sur deux lignes est rendu sur une seule : le quitter sans
@@ -824,6 +831,102 @@ function srcEdit(el, slide) {
     if (v !== was) editBlocks(slide, c, bs => { if (v) bs[i] = { ...bs[i], md: v }; else drop(bs, i); });
     render();
   };
+}
+
+/* --- ajouter un bloc --- */
+
+const insEl = $('insmenu');
+
+const NEW_BLOCKS = [
+  ['Sous-titre', c => insertBlock(c, '### Sous-titre')],
+  ['Texte', c => insertBlock(c, 'Texte')],
+  ['Liste', c => insertBlock(c, '- Premier point\n- Deuxième point')],
+  ['Tableau', c => insertBlock(c, '| Colonne 1 | Colonne 2 |\n| --- | --- |\n| … | … |')],
+];
+
+function openIns(btn) {
+  const c = +btn.dataset.c, r = btn.getBoundingClientRect();
+  insEl.innerHTML = NEW_BLOCKS.map(([label], j) => `<button data-j="${j}">${label}</button>`).join('');
+  insEl.hidden = false;
+  insEl.style.left = `${r.left}px`;
+  // près du bas de l'écran, le menu s'ouvre vers le haut
+  insEl.style.top = `${r.bottom + 4 + insEl.offsetHeight > innerHeight ? r.top - 4 - insEl.offsetHeight : r.bottom + 4}px`;
+  insEl.onmousedown = e => {
+    e.preventDefault();
+    const b = e.target.closest('button');
+    if (!b) return;
+    insEl.hidden = true;
+    NEW_BLOCKS[+b.dataset.j][1](c);
+  };
+}
+
+addEventListener('mousedown', e => { if (!e.target.closest?.('.insmenu, .addblk')) insEl.hidden = true; }, true);
+
+// Le bloc arrive en fin de colonne, son texte sélectionné : on tape pour le remplacer.
+function insertBlock(c, src) {
+  const slide = modules[mi].slides[si];
+  if (stage.contains(document.activeElement)) document.activeElement.blur();
+  let at = 0;
+  editBlocks(slide, c, bs => {
+    at = bs.length;
+    if (bs[at - 1]) bs[at - 1].gap = '\n\n';
+    bs.push({ kind: '', md: src, gap: '\n\n' });
+  });
+  render();
+  const el = stage.querySelector(`.blk[data-c="${c}"][data-i="${at}"]`);
+  if (!el?.isContentEditable) return;
+  el.focus();
+  getSelection().selectAllChildren(el.querySelector('li, h3, p') || el);
+}
+
+/* --- monter, descendre, retirer un bloc --- */
+
+// Une seule barre, posée sur le bloc (ou le titre) survolé.
+const toolsEl = $('blktools');
+let toolsFor = null;
+
+function showTools(el) {
+  toolsFor = el;
+  toolsEl.classList.toggle('title', !!el.dataset.edit);
+  toolsEl.hidden = false;
+  const r = el.getBoundingClientRect();
+  toolsEl.style.left = `${r.right}px`;
+  toolsEl.style.top = `${r.top}px`;
+}
+function hideTools() { toolsEl.hidden = true; toolsFor = null; }
+
+stage.addEventListener('mouseover', e => {
+  if (!editing) return;
+  const el = e.target.closest('.blk, h2[data-edit]');
+  if (!el) hideTools();
+  else if (el !== toolsFor) showTools(el);
+});
+stage.addEventListener('scroll', hideTools, true);
+
+toolsEl.onmousedown = e => {
+  e.preventDefault();
+  const b = e.target.closest('button');
+  if (b && toolsFor) blockAction(toolsFor, b.dataset.a);
+};
+
+function blockAction(el, act) {
+  const slide = modules[mi].slides[si];
+  // un bloc en cours d'écriture s'enregistre d'abord, tant que ses index sont justes
+  if (el.contains(document.activeElement)) document.activeElement.blur();
+  if (el.dataset.edit) { slide.titre = ''; touch(mi); render(); return; }
+  const c = +el.dataset.c, i = +el.dataset.i, to = act === 'up' ? i - 1 : i + 1;
+  const done = editBlocks(slide, c, bs => {
+    if (!bs[i]) return false;
+    if (act === 'del') return drop(bs, i);
+    if (!bs[to]) return false;
+    bs.splice(to, 0, bs.splice(i, 1)[0]);
+    const lo = Math.min(i, to);
+    for (const x of [bs[lo - 1], bs[lo], bs[lo + 1]]) if (x) x.gap = '\n\n';
+  });
+  if (!done) return;
+  render();
+  const moved = act !== 'del' && stage.querySelector(`.blk[data-c="${c}"][data-i="${to}"]`);
+  if (moved) showTools(moved);
 }
 
 /* --- barre de mise en forme --- */
