@@ -337,6 +337,29 @@ body:has(.notes.on) .foot { right: var(--notes-w); }
 .grid button[data-t="demo"] .ty { color: var(--accent); }
 .grid button[data-t="atelier"] .ty { color: var(--good); }
 .grid button[data-t="piege"] .ty { color: var(--crit); }
+.grid .cell.add button.new {
+  align-items: center; justify-content: center; border-style: dashed;
+  background: none; color: var(--ink-3); font-size: 13px; font-weight: 500;
+}
+.grid .cell.add button.new:hover { color: var(--accent); }
+
+/* ---------- nouvelle slide : choix de la disposition ---------- */
+.layouts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.layouts button {
+  border: 1px solid var(--line); background: var(--surface); border-radius: var(--r);
+  padding: 14px; cursor: pointer; display: flex; flex-direction: column; gap: 10px;
+  font-size: 13px; font-weight: 500; color: var(--ink); transition: border-color .12s, transform .12s;
+}
+.layouts button:hover { border-color: var(--accent); transform: translateY(-2px); }
+.lay {
+  display: grid; grid-template-columns: 1fr; grid-template-rows: 8px 1fr; gap: 6px;
+  aspect-ratio: 16 / 9; padding: 12px; border: 1px solid var(--line-soft);
+  border-radius: 6px; background: var(--bg);
+}
+.lay.n2 { grid-template-columns: 1fr 1fr; }
+.lay.n3 { grid-template-columns: 1fr 1fr 1fr; }
+.lay::before { content: ""; grid-column: 1 / -1; width: 45%; background: var(--ink-3); border-radius: 3px; }
+.lay i { background: var(--sunken); border-radius: 3px; }
 
 /* ---------- touches ---------- */
 kbd {
@@ -459,6 +482,8 @@ body.laser .laserdot { display: block; }
 /* Les contours n'apparaissent qu'au survol : en édition la slide doit rester
    une slide, pas devenir un formulaire. */
 .bar .save { font-size: 11px; color: var(--ink-3); margin-right: 4px; white-space: nowrap; }
+#b-add { display: none; }
+.editing #b-add { display: grid; }
 .bar .save.bad { color: var(--crit); }
 
 .editing .slide .blk,
