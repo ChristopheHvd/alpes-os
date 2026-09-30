@@ -847,6 +847,7 @@ const NEW_BLOCKS = [
   ['Texte', c => insertBlock(c, 'Texte')],
   ['Liste', c => insertBlock(c, '- Premier point\n- Deuxième point')],
   ['Tableau', c => insertBlock(c, '| Colonne 1 | Colonne 2 |\n| --- | --- |\n| … | … |')],
+  ['Image', c => pickImage(c)],
 ];
 
 function openIns(btn) {
@@ -867,15 +868,15 @@ function openIns(btn) {
 
 addEventListener('mousedown', e => { if (!e.target.closest?.('.insmenu, .addblk')) insEl.hidden = true; }, true);
 
-// Le bloc arrive en fin de colonne, son texte sélectionné : on tape pour le remplacer.
-function insertBlock(c, src) {
+// Le bloc arrive en fin de colonne (ou en position `at`), son texte sélectionné :
+// on tape pour le remplacer.
+function insertBlock(c, src, at) {
   const slide = modules[mi].slides[si];
   if (stage.contains(document.activeElement)) document.activeElement.blur();
-  let at = 0;
   editBlocks(slide, c, bs => {
-    at = bs.length;
+    at = Math.min(at ?? bs.length, bs.length);
     if (bs[at - 1]) bs[at - 1].gap = '\n\n';
-    bs.push({ kind: '', md: src, gap: '\n\n' });
+    bs.splice(at, 0, { kind: '', md: src, gap: '\n\n' });
   });
   render();
   const el = stage.querySelector(`.blk[data-c="${c}"][data-i="${at}"]`);
@@ -885,6 +886,43 @@ function insertBlock(c, src) {
   el.focus();
   getSelection().selectAllChildren(el.querySelector('li, h3, p') || el);
 }
+
+/* --- images --- */
+
+// L'image est déposée dans <deck>/img/ par le serveur, qui renvoie son chemin.
+async function uploadImage(file, name) {
+  say("envoi de l'image…");
+  const r = await fetch(`/api/cours/${DECK}/img?name=${encodeURIComponent(name)}`, {
+    method: 'POST', headers: { 'content-type': file.type }, body: file,
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || `erreur ${r.status}`);
+  return j.src;
+}
+
+async function addImage(file, name, c, at) {
+  try { insertBlock(c, `![](${await uploadImage(file, name)})`, at); }
+  catch (e) { say(e.message, true); }
+}
+
+function pickImage(c) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/png,image/jpeg,image/gif,image/webp,image/svg+xml';
+  input.onchange = () => { if (input.files[0]) addImage(input.files[0], input.files[0].name, c); };
+  input.click();
+}
+
+// Une capture collée arrive sous le bloc en cours d'écriture, sinon en fin de
+// première colonne. Elle prend le nom du module : une capture n'en a pas.
+document.addEventListener('paste', e => {
+  if (!editing || e.target.tagName === 'TEXTAREA') return;
+  const file = [...(e.clipboardData?.files || [])].find(f => f.type.startsWith('image/'));
+  if (!file) return;
+  e.preventDefault();
+  const blk = e.target.closest?.('.blk');
+  addImage(file, modules[mi].id, blk ? +blk.dataset.c : 0, blk ? +blk.dataset.i + 1 : undefined);
+});
 
 /* --- monter, descendre, retirer un bloc --- */
 
