@@ -2401,7 +2401,7 @@ function suRender() {
   }
   if (phase === 'done') {
     step.textContent = '';
-    body.innerHTML = `<div class="recap">${md(suState.outcome || 'Journée composée.')}</div>`;
+    body.innerHTML = `<div class="recap">${md(suState.flash || suState.outcome || 'Journée composée.')}</div>`;
     foot.innerHTML = `<span class="hintkey">Consigné dans brain/journal/standup.md</span><span class="sp"></span><button class="btn acc" id="su-ok">Terminé</button>`;
     $('#su-ok').onclick = () => { suClose(); loadTodo(); loadProjects(); };
     return;
@@ -2483,7 +2483,7 @@ async function suCompose() {
       body: JSON.stringify({ slot: suState.slot, questions: suState.questions, answers: suState.answers }) });
     if (r.error) throw new Error(r.error);
     suClearProgress(suState.slot);
-    suState = { ...suState, phase: 'done', outcome: r.outcome };
+    suState = { ...suState, phase: 'done', outcome: r.outcome, flash: r.flash };
     credoReady('Ta journée est composée.');
     loadTodo(); loadProjects(); loadRuns();
   } catch (e) { suState = { ...suState, phase: 'error', error: e.message }; credoReady('La composition a échoué.'); }

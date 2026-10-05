@@ -373,7 +373,8 @@ async function standupContext(slot) {
 
 // The headless skill has no calendar tool: it lists the events it wants in a JSON
 // file and the server posts them. The file is renamed once read so a retry never
-// creates the same event twice. What happened is appended to the compose report.
+// creates the same event twice. What happened is appended to the compose report,
+// replacing any Agenda section the skill copied from past reports.
 async function createStandupEvents(date, slot, report) {
   const f = path.join(ROOT, 'output', 'standup', `events-${date}-${slot}.json`);
   if (!fs.existsSync(f)) return;
@@ -389,7 +390,10 @@ async function createStandupEvents(date, slot, report) {
     }
   } catch (e) { lines.push(`- Événements illisibles : ${e.message}`); }
   dropCalCache();
-  if (lines.length) fs.appendFileSync(report, `\n## Agenda\n\n${lines.join('\n')}\n`);
+  if (!lines.length) return;
+  const kept = (fs.existsSync(report) ? fs.readFileSync(report, 'utf8') : '')
+    .replace(/\n*^## Agenda\n[\s\S]*?(?=^## |(?![\s\S]))/gm, '\n\n').trimEnd();
+  fs.writeFileSync(report, `${kept}\n\n## Agenda\n\n${lines.join('\n')}\n`);
 }
 
 // The compose step writes the todo it proposes to output/standup/todo-<date>-<slot>.md;
@@ -461,7 +465,10 @@ app.post('/api/standup/compose', async (req, res) => {
     await createStandupEvents(ctx.date, slot, out);
     const outcome = fs.existsSync(out) ? fs.readFileSync(out, 'utf8') : '';
     if (outcome) standup.append({ date: ctx.date, slot, questions: [], answers: {}, outcome });
-    res.json({ ok: r.status === 'done', outcome, todo: adoptComposedTodo(ctx.date, slot) ?? readTodo(todoFile), log: r.status === 'done' ? undefined : r.output.slice(-800) });
+    // the few lines shown on screen; the full report above stays in the journal
+    const flashFile = path.join(ROOT, 'output', 'standup', `flash-${ctx.date}-${slot}.md`);
+    const flash = fs.existsSync(flashFile) ? fs.readFileSync(flashFile, 'utf8') : '';
+    res.json({ ok: r.status === 'done', outcome, flash, todo: adoptComposedTodo(ctx.date, slot) ?? readTodo(todoFile), log: r.status === 'done' ? undefined : r.output.slice(-800) });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
