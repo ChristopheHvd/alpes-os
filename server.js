@@ -353,6 +353,8 @@ async function standupContext(slot) {
     moment: slot,
     heure: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
     second_brain: cfg.secondBrain,
+    // where the skill drops its event: a test instance keeps it out of the curator's queue
+    file_attente: sbQueue,
     consignes_boite: mailState.get().notes,
     todo_du_jour: todo.items,
     taches_reportees: todo.carried,
@@ -384,6 +386,7 @@ async function createStandupEvents(date, slot, report) {
     fs.renameSync(f, f.replace(/\.json$/, `.done-${Date.now()}.json`));
     for (const ev of Array.isArray(list) ? list : list.events ?? []) {
       const when = new Date(ev.start).toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+      if (sbQueue !== CURATOR_QUEUE) { lines.push(`- Non posé (instance de test) : ${ev.title} (${when})`); continue; }
       if (!gmail.status().hasCalendarWrite) { lines.push(`- Non posé : ${ev.title} (${when}) — écriture agenda non autorisée, clique « Reconnecter Google »`); continue; }
       try { await calendar.createEvent(ev); lines.push(`- Posé : ${ev.title} (${when})`); }
       catch (e) { lines.push(`- Échec : ${ev.title} (${when}) — ${e.message.slice(0, 160)}`); }
