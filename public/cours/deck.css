@@ -169,11 +169,33 @@ button { font-family: inherit; color: inherit; }
 .slide .md figure.shot figcaption {
   font-size: clamp(12px, 1.15vw, 15px); color: var(--ink-3); text-align: center;
 }
+/* schémas volontairement grand format : la limite habituelle de 46vh ne s'applique pas */
+.slide .md figure.shot img[src*="fenetre-contexte"],
+.slide .md figure.shot img[src*="fiche-conception"],
+.slide .md figure.shot img[src*="ai-act-pyramide"],
+.slide .md figure.shot img[src*="boucle-operateur"],
+.slide .md figure.shot img[src*="instructions-claude"],
+.slide .md figure.shot img[src*="gouvernance-demarrage"],
+.slide .md figure.shot img[src*="sous-agents"] { max-height: 78vh; }
+/* plusieurs captures d'écran sur une même ligne markdown : rangée centrée qui s'enroule */
+.slide .md p:has(img) { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 20px; }
+.slide .md p img {
+  border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow);
+  max-height: 42vh; width: auto;
+}
 
 /* ---------- slide types ---------- */
 /* titre : plein cadre, la couverture du module */
 .slide.t-titre { text-align: left; }
 .slide.t-titre h2 { font-size: clamp(38px, 6vw, 88px); margin-bottom: clamp(18px, 2.4vw, 36px); }
+.slide.t-titre .titre-row {
+  display: flex; align-items: center; gap: clamp(18px, 2.6vw, 34px); margin-bottom: clamp(18px, 2.4vw, 36px);
+}
+.slide.t-titre .titre-row h2 { margin-bottom: 0; }
+.slide.t-titre .mod-gif {
+  width: clamp(64px, 7vw, 104px); height: clamp(64px, 7vw, 104px); flex: none;
+  border-radius: var(--r); object-fit: cover; box-shadow: var(--shadow);
+}
 .slide.t-titre .md { font-size: clamp(17px, 1.85vw, 29px); color: var(--ink-2); max-width: 34ch; }
 .slide.t-titre .obj {
   display: inline-flex; align-items: baseline; gap: 10px; margin-top: clamp(22px, 3vw, 44px);
@@ -286,13 +308,25 @@ body:has(.notes.on) .foot { right: var(--notes-w); }
 
 /* ---------- vue d'ensemble ---------- */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+.grid .cell { position: relative; }
 .grid button {
   border: 1px solid var(--line); background: var(--surface); border-radius: var(--r);
-  padding: 13px 14px; cursor: pointer; text-align: left; min-height: 96px;
+  padding: 13px 14px; cursor: pointer; text-align: left; min-height: 96px; width: 100%;
   display: flex; flex-direction: column; gap: 7px; transition: border-color .12s, transform .12s;
 }
 .grid button:hover { border-color: var(--accent); transform: translateY(-2px); }
 .grid button.on { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.grid .cell .del {
+  position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; min-height: 0; z-index: 1;
+  display: flex; align-items: center; justify-content: center; padding: 0; gap: 0;
+  border: 1px solid var(--line); border-radius: 50%; background: var(--bg);
+  color: var(--ink-3); font-size: 13px; line-height: 1; cursor: pointer;
+  transition: border-color .12s, color .12s, background .12s;
+}
+.grid .cell .del:hover { border-color: var(--crit); color: var(--crit); }
+.editing .grid .cell[draggable="true"] { cursor: grab; }
+.grid .cell.dragging { opacity: .4; }
+.grid .cell.over button { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .grid .n { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
 .grid .tt { font-size: 13px; font-weight: 500; line-height: 1.35; color: var(--ink); }
 .grid .ty {
@@ -370,6 +404,17 @@ kbd {
   padding: 5px 9px; border-radius: 5px; pointer-events: none;
   max-width: 52vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+
+/* ---------- pointeur laser ---------- */
+body.laser, body.laser * { cursor: none !important; }
+.laserdot {
+  position: fixed; top: 0; left: 0; z-index: 70; display: none;
+  width: 18px; height: 18px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, #ff3b30 0%, #ff3b30 40%, rgba(255,59,48,0) 75%);
+  box-shadow: 0 0 16px 6px rgba(255,59,48,.55);
+  transform: translate(-50%, -50%); transition: transform .05s linear;
+}
+body.laser .laserdot { display: block; }
 
 .loading { color: var(--ink-3); font-size: 14px; }
 .err {

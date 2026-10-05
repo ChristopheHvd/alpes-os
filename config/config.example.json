@@ -35,12 +35,6 @@
   "chat": {
     "model": "claude-opus-5"
   },
-  "chantiers": {
-    "dir": "chantiers",
-    "model": "claude-opus-5-5",
-    "maxParallel": 2,
-    "maxMinutes": 120
-  },
   "apps": [
     {
       "id": "devis",

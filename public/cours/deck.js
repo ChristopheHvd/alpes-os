@@ -37,12 +37,12 @@ const BASE = `/content/cours/${DECK}`;
 
 const $ = id => document.getElementById(id);
 const stage = $('stage'), sheet = $('sheet'), sheetBox = $('sheet-box'), notesEl = $('notes');
-const rail = $('rail'), legend = $('legend'), tip = $('tip');
+const rail = $('rail'), legend = $('legend'), tip = $('tip'), laserdot = $('laserdot');
 
 let modules = [];        // [{ id, titre, duree, objectif, slides: [...] }]
 let flat = [];           // [{ m, s, mod, slide }] toutes les slides à la file
 let mi = 0, si = 0;      // module / slide courants
-let deck = {}, vars = {}, editing = false;
+let deck = {}, vars = {}, editing = false, laser = false;
 
 /* ---------------------------------------------------------- markdown */
 
@@ -232,7 +232,14 @@ function render() {
   const parts = [editing
     ? `<p class="kicker"><select class="typesel">${Object.keys(KICKER).map(k => `<option value="${k}"${k === slide.type ? ' selected' : ''}>${esc(KICKER[k])}</option>`).join('')}</select></p>`
     : `<p class="kicker">${esc(kicker)}</p>`];
-  if (slide.titre || editing) parts.push(`<h2 data-edit="titre">${inline(esc(disp(slide.titre)))}</h2>`);
+  if (slide.type === 'titre' && mod.gif) {
+    parts.push(`<div class="titre-row">
+      <h2 data-edit="titre">${inline(esc(disp(slide.titre)))}</h2>
+      <img class="mod-gif" src="${esc(mod.gif)}" alt="" loading="lazy">
+    </div>`);
+  } else if (slide.titre || editing) {
+    parts.push(`<h2 data-edit="titre">${inline(esc(disp(slide.titre)))}</h2>`);
+  }
   if (slide.body) parts.push(`<div class="md">${md(disp(slide.body), editing)}</div>`);
   if (slide.type === 'titre' && (mod.objectif || editing)) {
     parts.push(`<div class="obj"><b>Objectif</b> <span data-edit="objectif">${esc(disp(mod.objectif))}</span>${mod.duree || editing ? ` · <span data-edit="duree">${mod.duree}</span> min` : ''}</div>`);
@@ -288,6 +295,7 @@ function buildLegend() {
       <dt><kbd>F</kbd></dt><dd>Plein écran</dd>
       <dt><kbd>P</kbd></dt><dd>Version imprimable</dd>
       <dt><kbd>E</kbd></dt><dd>Mode édition</dd>
+      <dt><kbd>L</kbd></dt><dd>Pointeur laser</dd>
       <dt><kbd>?</kbd></dt><dd>Épingler cette légende</dd>
     </dl>
     <p class="pin">Épinglé, le panneau reste affiché ; sinon il s'efface quand la souris s'arrête.</p>`;
@@ -365,17 +373,67 @@ function openSheet(mode) {
     sheetBox.innerHTML = `<h3>${esc(disp(mod.titre))}</h3>
       <p class="sub">${mod.slides.length} slides${mod.duree ? ` · ${mod.duree} min` : ''}</p>
       <div class="grid">${mod.slides.map((s, i) => `
-        <button data-s="${i}" data-t="${s.type}" class="${i === si ? 'on' : ''}">
-          <span class="n">${String(i + 1).padStart(2, '0')}</span>
-          <span class="tt">${esc(disp(s.titre) || '—')}</span>
-          <span class="ty">${esc(KICKER[s.type] || s.type)}</span>
-        </button>`).join('')}</div>`;
-    sheetBox.querySelectorAll('.grid button').forEach(b => b.onclick = () => { goto(mi, +b.dataset.s); closeSheet(); });
+        <div class="cell">
+          <button data-s="${i}" data-t="${s.type}" class="${i === si ? 'on' : ''}">
+            <span class="n">${String(i + 1).padStart(2, '0')}</span>
+            <span class="tt">${esc(disp(s.titre) || '—')}</span>
+            <span class="ty">${esc(KICKER[s.type] || s.type)}</span>
+          </button>
+          ${editing ? `<button class="del" data-del="${i}" title="Supprimer cette slide">×</button>` : ''}
+        </div>`).join('')}</div>`;
+    sheetBox.querySelectorAll('.grid button[data-s]').forEach(b => b.onclick = () => { goto(mi, +b.dataset.s); closeSheet(); });
+    sheetBox.querySelectorAll('.grid button.del').forEach(b => b.onclick = e => { e.stopPropagation(); deleteSlide(+b.dataset.del); });
+    if (editing) {
+      sheetBox.querySelectorAll('.grid .cell').forEach((cell, i) => {
+        cell.draggable = true;
+        cell.ondragstart = e => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', i); cell.classList.add('dragging'); };
+        cell.ondragend = () => cell.classList.remove('dragging');
+        cell.ondragover = e => { e.preventDefault(); cell.classList.add('over'); };
+        cell.ondragleave = () => cell.classList.remove('over');
+        cell.ondrop = e => {
+          e.preventDefault();
+          cell.classList.remove('over');
+          reorderSlide(+e.dataTransfer.getData('text/plain'), i);
+        };
+      });
+    }
   }
   sheet.classList.add('on');
 }
 function closeSheet() { sheet.classList.remove('on'); sheetMode = null; }
 function toggleSheet(mode) { sheetMode === mode ? closeSheet() : openSheet(mode); }
+
+// Supprimer une slide du module courant depuis la vue d'ensemble : seulement
+// en mode édition (openSheet ne pose le bouton que dans ce cas). Un module
+// garde toujours au moins une slide.
+function deleteSlide(i) {
+  if (!editing) return;
+  const mod = modules[mi];
+  if (mod.slides.length <= 1) { say('impossible de supprimer la dernière slide du module', true); return; }
+  const titre = disp(mod.slides[i].titre) || KICKER[mod.slides[i].type] || `slide ${i + 1}`;
+  if (!confirm(`Supprimer « ${titre} » ?`)) return;
+  mod.slides.splice(i, 1);
+  if (i <= si) si--;
+  si = Math.max(0, Math.min(si, mod.slides.length - 1));
+  flat = modules.flatMap((m, mm) => m.slides.map((slide, s) => ({ m: mm, s, mod: m, slide })));
+  touch(mi);
+  render(); // remet la slide et le rail à jour, et rouvre la grille puisque sheet reste .on
+}
+
+// Réordonner une slide depuis la vue d'ensemble (glisser-déposer, mode édition
+// seulement). Pas de notion de position à gérer côté fichier : serializeModule
+// écrit déjà mod.slides dans son ordre courant.
+function reorderSlide(from, to) {
+  if (!editing || from === to) return;
+  const mod = modules[mi];
+  const current = mod.slides[si];
+  const [moved] = mod.slides.splice(from, 1);
+  mod.slides.splice(to, 0, moved);
+  si = mod.slides.indexOf(current);
+  flat = modules.flatMap((m, mm) => m.slides.map((slide, s) => ({ m: mm, s, mod: m, slide })));
+  touch(mi);
+  render();
+}
 
 /* ---------------------------------------------------------- handout */
 
@@ -478,6 +536,7 @@ addEventListener('keydown', e => {
   if (l === 't') { toggleTimer(); return e.preventDefault(); }
   if (l === 'p') { print(); return e.preventDefault(); }
   if (l === 'e') { setEdit(!editing); return e.preventDefault(); }
+  if (l === 'l') { setLaser(!laser); return e.preventDefault(); }
   if (l === 'f') {
     document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
     return e.preventDefault();
@@ -500,6 +559,7 @@ let saveTimer = null;
 const EDITABLE = { p: 1, list: 1, h: 1, quote: 1 };
 
 function setEdit(on) {
+  if (on && laser) setLaser(false);
   editing = on;
   document.body.classList.toggle('editing', on);
   $('b-edit').classList.toggle('on', on);
@@ -508,6 +568,20 @@ function setEdit(on) {
   render();
   if (on) wake();
 }
+
+// Pointeur laser : remplace le curseur système par un point rouge qui suit la
+// souris, pour pointer à l'écran en présentation. Coupé automatiquement en
+// entrant en édition, qui a besoin d'un vrai curseur pour sélectionner du texte.
+function setLaser(on) {
+  laser = on;
+  document.body.classList.toggle('laser', on);
+  $('b-laser').classList.toggle('on', on);
+}
+addEventListener('mousemove', e => {
+  laserdot.style.left = e.clientX + 'px';
+  laserdot.style.top = e.clientY + 'px';
+});
+$('b-laser').onclick = () => setLaser(!laser);
 
 function say(msg, bad = false) {
   saveEl.textContent = msg;

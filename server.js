@@ -10,9 +10,6 @@ import { getGraph, readNote } from './lib/brain.js';
 import { readTodo, writeTodo, completeCarried, addItem, tidyTodo } from './lib/todo.js';
 import { makeGmail } from './lib/gmail.js';
 import { makeRunner } from './lib/runs.js';
-import { makeChantiers } from './lib/chantiers.js';
-import { notify } from './lib/notify.js';
-import { EventEmitter } from 'node:events';
 import { listProjects, updateProject, createProject } from './lib/projects.js';
 import { listClients, createClient } from './lib/clients.js';
 import { portfolio } from './lib/portfolio.js';
@@ -81,44 +78,12 @@ const chatLog = makeChatLog(cfg.secondBrain);
 const chat = makeChat(ROOT, { port: PORT, bin: cfg.claude.bin, model: cfg.chat?.model ?? 'claude-opus-5', log: chatLog });
 setInterval(() => chat.sweep(), 5 * 60e3).unref();
 const runner = makeRunner(ROOT, { ...cfg.claude, apps: cfg.apps, secondBrain: cfg.secondBrain, driveRoot });
-// Page-wide events (GET /api/events), for news that isn't tied to one conversation.
-const events = new EventEmitter();
-events.setMaxListeners(50);
-const BACK = { pret: 'prêt', bloque: 'bloqué, il a une question', echec: 'en échec', interrompu: 'interrompu' };
-const chantiers = makeChantiers(ROOT, { bin: cfg.claude.bin, secondBrain: cfg.secondBrain, ...cfg.chantiers }, { onChange: onChantier });
-
-// A chantier that comes back — ready, blocked on a question, failed, cut short —
-// is announced three ways: a macOS notification, the page's event stream, and a
-// message in the conversation that delegated it, so the agent picks it up.
-function onChantier(c, event) {
-  events.emit('event', { type: 'chantier', id: c.id, titre: c.titre, statut: c.statut, event });
-  if (!BACK[event] || c.raison === 'arrêté à la demande') return;
-  notify(`Chantier ${BACK[event]}`, c.question ? `${c.titre} — ${c.question}` : c.titre);
-  // the project sheet (if the chantier's project has one) points to what's waiting on the user
-  if (event === 'pret' || event === 'bloque') {
-    try { updateProject(cfg.secondBrain, c.projet, { next: c.question ? `Répondre au chantier « ${c.titre} » : ${c.question}` : `Relire le chantier « ${c.titre} »` }); } catch (e) { /* no sheet, nothing to point */ }
-  }
-  if (!c.chatId) return;
-  const abs = f => path.resolve(c.dossier, path.relative(c.worktree, f));
-  chat.inject(c.chatId, [
-    `[Chantier « ${c.titre} » ${BACK[event]}] (id ${c.id})`,
-    c.resume && `Résumé : ${c.resume}`,
-    c.question && `Question : ${c.question}`,
-    c.raison && `Raison : ${c.raison}`,
-    c.livrables.length && `Livrables :\n${c.livrables.map(f => '- ' + abs(f)).join('\n')}`,
-  ].filter(Boolean).join('\n'));
-}
-
 const app = express();
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(ROOT, 'public')));
 app.use('/output', express.static(path.join(ROOT, 'output'), {
   setHeaders: (res, f) => { if (f.endsWith('.md') || f.endsWith('.txt')) res.type('text/plain; charset=utf-8'); },
 }));
-// What the chantiers produce, mockups first, opened straight in a tab. Their
-// worktrees sit under .worktrees/, so dotfiles are served — except git's own.
-app.use('/chantiers', (req, res, next) => (/(^|\/)\.git(\/|$)/.test(req.path) ? res.status(403).end() : next()),
-  express.static(chantiers.dir, { dotfiles: 'allow' }));
 // Les supports de formation vivent dans le second brain (dépôt privé) : ils
 // portent des formulations, une progression et des profils clients réels, et
 // ce dépôt-ci est public. Le dashboard les monte de là et les sert sous
@@ -143,6 +108,12 @@ app.use('/content/cours', express.static(coursDir, {
 // c'est le garde-fou contre la traversée de chemin. `lastModified` est celui
 // reçu du serveur au chargement — s'il ne colle plus, quelqu'un d'autre a écrit
 // entre temps (une session Claude dans un terminal) et on refuse plutôt qu'on écrase.
+//
+// Contrairement aux autres écritures du dashboard, celle-ci ne passe pas par
+// la file du curateur (bundle) : un cours en édition se travaille en direct
+// avec un agent qui lit les fichiers du disque, et attendre un passage du
+// curateur romprait ça. Écriture directe, donc — fichier temporaire puis
+// renommage, pour ne jamais laisser un fichier à moitié écrit.
 app.put('/api/cours/:deck/:file', (req, res) => {
   try {
     const { deck, file } = req.params;
@@ -153,15 +124,17 @@ app.put('/api/cours/:deck/:file', (req, res) => {
 
     const target = path.join(dir, file);
     const seen = Date.parse(req.body?.lastModified ?? '');
-    const now = bundle.mtime(target);
+    const now = fs.statSync(target).mtimeMs;
     // Last-Modified est à la seconde près, mtime à la milliseconde
     if (Number.isFinite(seen) && Math.floor(now / 1000) !== Math.floor(seen / 1000)) {
       return res.status(409).json({ error: 'le fichier a changé sur le disque' });
     }
     const src = String(req.body?.src ?? '');
     if (!src.trim()) return res.status(400).json({ error: 'contenu vide' });
-    bundle.replace(target, src, { why: `module ${file} du support ${deck} modifié dans l'éditeur de cours`, subject: `Cours ${deck}/${file}` });
-    res.json({ ok: true, lastModified: new Date(bundle.mtime(target)).toUTCString() });
+    const tmp = `${target}.tmp`;
+    fs.writeFileSync(tmp, src);
+    fs.renameSync(tmp, target);
+    res.json({ ok: true, lastModified: new Date(fs.statSync(target).mtimeMs).toUTCString() });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -227,30 +200,6 @@ app.post('/api/runs', (req, res) => {
   if (!a || !act || !req.body.brief?.trim()) return res.status(400).json({ error: 'app, action et brief requis' });
   res.json(runner.start({ app: a, action: act, brief: req.body.brief.trim(), model: req.body.model, from: req.body.from }));
 });
-// Chantiers — work delegated to background Claude Code runs (lib/chantiers.js)
-// A chantier that planned its next step (REPRENDRE: <date>) is resumed when the
-// date comes. A test instance only does it when asked: each pass is a real run.
-setInterval(() => {
-  if (sbQueue !== CURATOR_QUEUE && process.env.ALPES_OS_CH_AUTO !== '1') return;
-  for (const c of chantiers.due()) {
-    try { chantiers.resume(c.id, c.prochaineReprise.consigne); } catch (e) { console.error('chantier', c.id, e.message); }
-  }
-}, 10 * 60e3).unref();
-app.get('/api/events', (req, res) => {
-  res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
-  res.write(': ok\n\n');
-  const on = msg => res.write(`data: ${JSON.stringify(msg)}\n\n`);
-  events.on('event', on);
-  const beat = setInterval(() => res.write(': ping\n\n'), 20e3);
-  req.on('close', () => { clearInterval(beat); events.off('event', on); });
-});
-const guard = fn => (req, res) => { try { res.json(fn(req)); } catch (e) { res.status(400).json({ error: e.message }); } };
-app.get('/api/chantiers', (req, res) => res.json(chantiers.list()));
-app.get('/api/chantiers/:id', (req, res) => { const c = chantiers.get(req.params.id); c ? res.json({ ...c, log: chantiers.log(c.id) }) : res.status(404).json({ error: 'chantier introuvable' }); });
-app.post('/api/chantiers', guard(req => chantiers.start({ titre: req.body?.titre, objectif: req.body?.objectif, projet: req.body?.projet, chatId: req.body?.chatId })));
-app.post('/api/chantiers/:id/resume', guard(req => chantiers.resume(req.params.id, req.body?.consigne)));
-app.post('/api/chantiers/:id/stop', guard(req => chantiers.stop(req.params.id)));
-app.post('/api/chantiers/:id/close', guard(req => chantiers.close(req.params.id)));
 // Projects — long-running work, read from brain/projects/ in the second brain
 app.get('/api/projects', (req, res) => res.json(listProjects(cfg.secondBrain)));
 app.patch('/api/projects/:slug', (req, res) => {
@@ -345,13 +294,11 @@ async function standupContext(slot) {
     moment: slot,
     heure: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
     second_brain: cfg.secondBrain,
+    // where the skill drops its event: a test instance keeps it out of the curator's queue
+    file_attente: sbQueue,
     consignes_boite: mailState.get().notes,
     todo_du_jour: todo.items,
     taches_reportees: todo.carried,
-    chantiers: chantiers.list().filter(c => c.statut !== 'clos').slice(0, 10).map(c => ({
-      titre: c.titre, projet: c.projet, statut: c.statut, question: c.question, resume: c.resume,
-      depuis_jours: daysSince(c.etapes[c.etapes.length - 1].fin ?? c.creeLe), reprise_prevue: c.prochaineReprise?.at ?? null,
-    })),
     plus_tard: todo.later,
     max_taches_actives: todo.max,
     projets: projects,
@@ -365,7 +312,8 @@ async function standupContext(slot) {
 
 // The headless skill has no calendar tool: it lists the events it wants in a JSON
 // file and the server posts them. The file is renamed once read so a retry never
-// creates the same event twice. What happened is appended to the compose report.
+// creates the same event twice. What happened is appended to the compose report,
+// replacing any Agenda section the skill copied from past reports.
 async function createStandupEvents(date, slot, report) {
   const f = path.join(ROOT, 'output', 'standup', `events-${date}-${slot}.json`);
   if (!fs.existsSync(f)) return;
@@ -375,13 +323,17 @@ async function createStandupEvents(date, slot, report) {
     fs.renameSync(f, f.replace(/\.json$/, `.done-${Date.now()}.json`));
     for (const ev of Array.isArray(list) ? list : list.events ?? []) {
       const when = new Date(ev.start).toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+      if (sbQueue !== CURATOR_QUEUE) { lines.push(`- Non posé (instance de test) : ${ev.title} (${when})`); continue; }
       if (!gmail.status().hasCalendarWrite) { lines.push(`- Non posé : ${ev.title} (${when}) — écriture agenda non autorisée, clique « Reconnecter Google »`); continue; }
       try { await calendar.createEvent(ev); lines.push(`- Posé : ${ev.title} (${when})`); }
       catch (e) { lines.push(`- Échec : ${ev.title} (${when}) — ${e.message.slice(0, 160)}`); }
     }
   } catch (e) { lines.push(`- Événements illisibles : ${e.message}`); }
   dropCalCache();
-  if (lines.length) fs.appendFileSync(report, `\n## Agenda\n\n${lines.join('\n')}\n`);
+  if (!lines.length) return;
+  const kept = (fs.existsSync(report) ? fs.readFileSync(report, 'utf8') : '')
+    .replace(/\n*^## Agenda\n[\s\S]*?(?=^## |(?![\s\S]))/gm, '\n\n').trimEnd();
+  fs.writeFileSync(report, `${kept}\n\n## Agenda\n\n${lines.join('\n')}\n`);
 }
 
 // The compose step writes the todo it proposes to output/standup/todo-<date>-<slot>.md;
@@ -453,7 +405,10 @@ app.post('/api/standup/compose', async (req, res) => {
     await createStandupEvents(ctx.date, slot, out);
     const outcome = fs.existsSync(out) ? fs.readFileSync(out, 'utf8') : '';
     if (outcome) standup.append({ date: ctx.date, slot, questions: [], answers: {}, outcome });
-    res.json({ ok: r.status === 'done', outcome, todo: adoptComposedTodo(ctx.date, slot) ?? readTodo(todoFile), log: r.status === 'done' ? undefined : r.output.slice(-800) });
+    // the few lines shown on screen; the full report above stays in the journal
+    const flashFile = path.join(ROOT, 'output', 'standup', `flash-${ctx.date}-${slot}.md`);
+    const flash = fs.existsSync(flashFile) ? fs.readFileSync(flashFile, 'utf8') : '';
+    res.json({ ok: r.status === 'done', outcome, flash, todo: adoptComposedTodo(ctx.date, slot) ?? readTodo(todoFile), log: r.status === 'done' ? undefined : r.output.slice(-800) });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -742,10 +697,6 @@ app.get('/api/apps/:id', (req, res) => {
 // apps like devis, "drive:<path relative to driveRoot>" — resolve either form to a
 // safe absolute path, or null if it escapes its allowed root.
 function resolveArtifact(rel) {
-  if (rel.startsWith('chantier:')) {
-    const abs = path.resolve(chantiers.dir, rel.slice('chantier:'.length));
-    return abs.startsWith(chantiers.dir + path.sep) && !abs.split(path.sep).includes('.git') ? abs : null;
-  }
   if (rel.startsWith('drive:')) {
     const abs = path.resolve(driveRoot, rel.slice('drive:'.length));
     return abs === driveRoot || abs.startsWith(driveRoot + path.sep) ? abs : null;
