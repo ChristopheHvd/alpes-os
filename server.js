@@ -19,6 +19,7 @@ import { makeMailState } from './lib/mailstate.js';
 import { makeCalendarState } from './lib/calendarstate.js';
 import { searchBrain } from './lib/search.js';
 import { makeChat } from './lib/chat.js';
+import { makeDelegations } from './lib/delegations.js';
 import { makeStandup, slotNow } from './lib/standup.js';
 import { makeChatLog } from './lib/chatlog.js';
 import { readCredo, shuffleForDay } from './lib/credo.js';
@@ -77,6 +78,37 @@ const PORT = Number(process.env.ALPES_OS_PORT) || cfg.port;
 const chatLog = makeChatLog(cfg.secondBrain);
 const chat = makeChat(ROOT, { port: PORT, bin: cfg.claude.bin, model: cfg.chat?.model ?? 'claude-opus-5', log: chatLog });
 setInterval(() => chat.sweep(), 5 * 60e3).unref();
+// Délégations: a todo task handed to a background agent. Each finished pass is
+// journaled in the second brain with its report, through the curator's queue.
+const DELEG_HEADER = `---
+type: Journal
+title: Délégations
+description: Tâches de la todo confiées à un agent depuis Alpes OS — résultat et rapport de chaque passage.
+tags: [journal, delegation, alpes-os]
+status: draft
+---
+
+# Délégations
+
+`;
+const delegations = makeDelegations(ROOT, {
+  port: PORT, bin: cfg.claude.bin, secondBrain: cfg.secondBrain,
+  model: cfg.delegations?.model ?? cfg.chat?.model ?? 'claude-opus-5', maxMinutes: cfg.delegations?.maxMinutes,
+  denyRead: [path.join(ROOT, 'credentials'), path.join(ROOT, 'config')],
+}, {
+  onChange(d, event) {
+    if (event !== 'pret' && event !== 'bloque') return;
+    const report = delegations.report(d.id).trim().slice(0, 12000);
+    const block = [`## ${new Date().toISOString().slice(0, 10)} · ${d.tache}`, '',
+      `Statut : ${event === 'pret' ? 'terminé, à relire' : 'en attente de réponse'}${d.question ? ` — question : ${d.question}` : ''}`,
+      d.resume ? `\n${d.resume}` : '',
+      d.brouillons.length ? `\nBrouillons Gmail : ${d.brouillons.map(b => `${b.to} « ${b.subject} »`).join(' ; ')}` : '',
+      report ? `\n### Rapport\n\n${report.replace(/^#{1,3} /gm, '#### ')}` : '', ''].join('\n');
+    bundle.append(path.join(cfg.secondBrain, 'brain', 'journal', 'delegations.md'), block, { header: DELEG_HEADER, subject: `Délégation : ${d.tache}`, why: `passage de l'agent délégué (${event})` });
+  },
+});
+process.on('SIGTERM', () => { delegations.stopAll(); process.exit(0); });
+process.on('SIGINT', () => { delegations.stopAll(); process.exit(0); });
 const runner = makeRunner(ROOT, { ...cfg.claude, apps: cfg.apps, secondBrain: cfg.secondBrain, driveRoot });
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -307,6 +339,10 @@ async function standupContext(slot) {
     agenda_ecriture: gmail.status().hasCalendarWrite,
     mails_a_traiter: mails,
     standups_recents: standup.last(3),
+    chantiers: delegations.list().slice(0, 10).map(d => ({
+      titre: d.tache, projet: 'délégation', statut: d.statut, question: d.question, resume: d.resume ?? d.raison,
+      depuis_jours: daysSince(d.etapes[d.etapes.length - 1].fin ?? d.creeLe), reprise_prevue: null,
+    })),
   };
 }
 
@@ -426,6 +462,36 @@ app.post('/api/projects', (req, res) => {
 app.post('/api/todo/add', (req, res) => {
   try { res.json(addItem(todoFile, req.body ?? {})); }
   catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+app.get('/api/delegations', (req, res) => res.json({ items: delegations.list({ all: req.query.all === '1' }), drafts: gmail.status().hasDrafts }));
+app.get('/api/delegations/:id', (req, res) => {
+  const d = delegations.get(req.params.id);
+  d ? res.json({ ...d, rapport: delegations.report(d.id) }) : res.status(404).json({ error: 'délégation introuvable' });
+});
+app.post('/api/delegations', (req, res) => {
+  try { res.json(delegations.create({ tache: req.body?.tache, contexte: req.body?.contexte, source: req.body?.source ?? null })); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+app.post('/api/delegations/:id/:act', (req, res) => {
+  const { id, act } = req.params;
+  try {
+    if (act === 'reply') return res.json(delegations.reply(id, req.body?.texte));
+    if (act === 'stop') return res.json(delegations.stop(id));
+    if (act === 'close') return res.json(delegations.close(id));
+    res.status(404).json({ error: 'action inconnue' });
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+// the only way out for a delegated agent: a draft, never a sent mail
+app.post('/api/mail/draft', async (req, res) => {
+  const { to, cc, subject, body, delegation } = req.body ?? {};
+  if (!to || !subject || !body) return res.status(400).json({ error: 'destinataire, objet et corps sont requis' });
+  if (!gmail.status().hasDrafts) return res.status(403).json({ error: "les brouillons Gmail ne sont pas autorisés : Christophe doit cliquer « Reconnecter Google » dans Alpes OS. Note le texte du mail dans RAPPORT.md en attendant." });
+  try {
+    const d = await gmail.createDraft({ to, cc, subject, body });
+    if (delegation) delegations.noteDraft(String(delegation), { to, subject, id: d.id });
+    res.json(d);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/calendar/event', async (req, res) => {
