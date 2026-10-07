@@ -20,6 +20,7 @@ import { makeCalendarState } from './lib/calendarstate.js';
 import { searchBrain } from './lib/search.js';
 import { makeChat } from './lib/chat.js';
 import { makeDelegations } from './lib/delegations.js';
+import { makeMeetings, MEETINGS_TOOLS } from './lib/meetings.js';
 import { makeStandup, slotNow } from './lib/standup.js';
 import { makeChatLog } from './lib/chatlog.js';
 import { readCredo, shuffleForDay } from './lib/credo.js';
@@ -744,14 +745,49 @@ app.post('/api/sb/integrate', (req, res) => {
   const r = integrate('demandé depuis le dashboard');
   r.error ? res.status(409).json(r) : res.json({ run: runInfo(r.run) });
 });
+// Meetings transcribed in Wispr Flow: a run reads them through the claude.ai
+// connector and queues one event per finished meeting, before the curator's pass.
+const MEETINGS = {
+  id: 'meetings', name: 'Réunions Wispr Flow', description: 'Rapatrie les réunions transcrites dans le second brain', skill: '',
+  model: cfg.claude.defaultModel, output: 'output/meetings', allowedTools: MEETINGS_TOOLS,
+  actions: [{ id: 'collecter', label: 'Rapatrier les réunions', placeholder: '' }],
+};
+const meetings = makeMeetings(path.join(ROOT, 'output', 'meetings-state.json'));
+let meetingsRun = null;
+function collectMeetings(reason) {
+  if (meetingsRun && runner.get(meetingsRun.id)?.status === 'running') return { error: 'rapatriement des réunions déjà en cours' };
+  const checkedAt = new Date().toISOString();
+  const resultFile = path.join(ROOT, 'output', 'meetings', `result-${Date.now()}.json`);
+  meetingsRun = runner.start({ app: MEETINGS, action: MEETINGS.actions[0], brief: `${meetings.brief({ queueDir: sbQueue, resultFile })}\n\n(${reason})` });
+  const done = waitRun(meetingsRun).then(r => {
+    const found = r.status === 'done' ? meetings.adopt(resultFile, { checkedAt }) : null;
+    if (found?.length) console.log(`réunions : ${found.length} déposée(s) dans la file`);
+    return found;
+  });
+  return { run: meetingsRun, done };
+}
+app.post('/api/meetings/collect', (req, res) => {
+  const r = collectMeetings('demandé depuis le dashboard');
+  r.error ? res.status(409).json(r) : res.json({ run: runInfo(r.run), state: meetings.state() });
+});
+app.get('/api/meetings', (req, res) => res.json({ ...meetings.state(), run: runInfo(meetingsRun && runner.get(meetingsRun.id)) }));
+
+// A test instance only reads Wispr Flow when asked (ALPES_OS_MEET_AUTO=1)
+const MEET_AUTO = sbQueue === CURATOR_QUEUE || process.env.ALPES_OS_MEET_AUTO === '1';
 // only new events trigger the automatic pass: one stuck in processing needs a human
-setInterval(() => {
+async function brainPass() {
+  if (MEET_AUTO) {
+    try { await collectMeetings('passage automatique').done; } catch (e) { console.error('meetings', e.message); }
+  }
   try {
     bundle.flush();
     const st = bundle.status();
     if (st.inbox && !st.locked && brainClean()) integrate('passage automatique');
   } catch (e) { console.error('curator', e.message); }
-}, 2 * 60 * 60e3).unref();
+}
+setInterval(brainPass, 2 * 60 * 60e3).unref();
+// a restart shouldn't delay new meetings by two hours: look once shortly after start
+if (MEET_AUTO) setTimeout(() => collectMeetings('au démarrage'), 2 * 60e3).unref();
 
 app.get('/api/artifacts', (req, res) => res.json(runner.artifacts(req.query.app ? String(req.query.app) : null)));
 // everything one app has ever done: its runs, and the files no run claims
