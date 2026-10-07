@@ -340,6 +340,11 @@ async function standupContext(slot) {
     agenda_ecriture: gmail.status().hasCalendarWrite,
     mails_a_traiter: mails,
     standups_recents: standup.last(3),
+    // meetings brought in from Wispr Flow whose actions haven't been put to Christophe yet
+    reunions: meetings.pending().map(m => ({
+      titre: m.titre, actions: m.actions,
+      quand: m.date ? new Date(m.date).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : null,
+    })),
     chantiers: delegations.list().slice(0, 10).map(d => ({
       titre: d.tache, projet: 'délégation', statut: d.statut, question: d.question, resume: d.resume ?? d.raison,
       depuis_jours: daysSince(d.etapes[d.etapes.length - 1].fin ?? d.creeLe), reprise_prevue: null,
@@ -442,6 +447,8 @@ app.post('/api/standup/compose', async (req, res) => {
     await createStandupEvents(ctx.date, slot, out);
     const outcome = fs.existsSync(out) ? fs.readFileSync(out, 'utf8') : '';
     if (outcome) standup.append({ date: ctx.date, slot, questions: [], answers: {}, outcome });
+    // an interview took place: its questions put the meeting actions to him, so they leave the list
+    if (r.status === 'done' && questions.length) meetings.proposed(meetings.pending().map(m => m.id));
     // the few lines shown on screen; the full report above stays in the journal
     const flashFile = path.join(ROOT, 'output', 'standup', `flash-${ctx.date}-${slot}.md`);
     const flash = fs.existsSync(flashFile) ? fs.readFileSync(flashFile, 'utf8') : '';
