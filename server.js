@@ -484,11 +484,12 @@ app.post('/api/delegations/:id/:act', (req, res) => {
 });
 // the only way out for a delegated agent: a draft, never a sent mail
 app.post('/api/mail/draft', async (req, res) => {
-  const { to, cc, subject, body, delegation } = req.body ?? {};
+  const { id, to, cc, subject, body, delegation } = req.body ?? {};
   if (!to || !subject || !body) return res.status(400).json({ error: 'destinataire, objet et corps sont requis' });
   if (!gmail.status().hasDrafts) return res.status(403).json({ error: "les brouillons Gmail ne sont pas autorisés : Christophe doit cliquer « Reconnecter Google » dans Alpes OS. Note le texte du mail dans RAPPORT.md en attendant." });
+  if (id && delegation && !delegations.ownsDraft(String(delegation), String(id))) return res.status(403).json({ error: "ce brouillon n'a pas été créé par cette tâche : tu ne peux modifier que les tiens" });
   try {
-    const d = await gmail.createDraft({ to, cc, subject, body });
+    const d = id ? await gmail.updateDraft(String(id), { to, cc, subject, body }) : await gmail.createDraft({ to, cc, subject, body });
     if (delegation) delegations.noteDraft(String(delegation), { to, subject, id: d.id });
     res.json(d);
   } catch (e) { res.status(500).json({ error: e.message }); }

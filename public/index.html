@@ -128,8 +128,8 @@ body.resizing { cursor: col-resize; user-select: none; }
 .dg .livs a { font: 400 12px/1.4 var(--mono); color: var(--accent); cursor: pointer; text-decoration: none; }
 .dg .livs a:hover { text-decoration: underline; }
 .dg .livs span { font: 400 12px/1.4 var(--font); color: var(--ink-3); }
-.dg .again { display: flex; gap: 5px; margin: 6px 0 0 33px; }
-.dg .again input { flex: 1; min-width: 0; font: 400 12.5px var(--font); padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
+.dg .again { display: flex; gap: 5px; margin: 6px 0 0 33px; align-items: flex-end; }
+.dg .again textarea { flex: 1; min-width: 0; resize: vertical; font: 400 12.5px/1.45 var(--font); padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
 #dg-meta a { color: var(--accent); }
 .doc.trace .tr { font: 400 12.5px/1.5 var(--font); padding: 4px 0; border-bottom: 1px solid var(--line); white-space: pre-wrap; }
 .doc.trace .tr b { font: 500 11px/1 var(--mono); color: var(--ink-3); margin-right: 8px; text-transform: uppercase; }
@@ -2763,7 +2763,7 @@ async function loadDelegations() {
       ${d.livrables.length || d.brouillons.length ? `<div class="livs">${d.livrables.map(f => `<a data-file="${esc(f)}">${esc(f.split('/').pop())}</a>`).join('')}${d.brouillons.length ? `<span>${d.brouillons.length} brouillon${d.brouillons.length > 1 ? 's' : ''} Gmail</span>` : ''}</div>` : ''}
       <div class="act">${d.enCours
         ? '<button class="btn sm" data-do="open">Suivre</button><button class="btn sm" data-do="stop">Arrêter</button>'
-        : `<button class="btn sm acc" data-do="again">${d.statut === 'bloque' ? 'Répondre' : d.statut === 'pret' ? 'Relancer' : 'Reprendre'}</button><button class="btn sm" data-do="open">Détail</button><button class="btn sm" data-do="close">Clore</button>`}</div>
+        : `<button class="btn sm acc" data-do="again">${d.statut === 'bloque' ? 'Répondre' : d.statut === 'pret' ? 'Compléter' : 'Reprendre'}</button><button class="btn sm" data-do="open">Détail</button><button class="btn sm" data-do="close">Clore</button>`}</div>
     </div>`;
   }).join('') : '<span class="lbl">Aucun agent. Survole une tâche de la todo et clique sur l\'icône agent pour la déléguer.</span>');
   $('#agents').querySelectorAll('.dg').forEach(el => {
@@ -2778,9 +2778,9 @@ async function dgAct(id, what, el) {
     if (el.querySelector('.again')) return;
     const row = document.createElement('div');
     row.className = 'again';
-    row.innerHTML = `<input placeholder="${d?.statut === 'bloque' ? 'Ta réponse à sa question' : 'Consigne (facultatif)'}"><button class="btn sm acc">Envoyer</button>`;
+    row.innerHTML = `<textarea rows="3" placeholder="${d?.statut === 'bloque' ? 'Ta réponse à sa question' : d?.statut === 'pret' ? 'Précisions, corrections, brouillons à modifier… L\'agent reprend avec tout son contexte.' : 'Consigne (facultatif)'}"></textarea><button class="btn sm acc" title="Entrée pour envoyer, Maj+Entrée pour aller à la ligne">Envoyer</button>`;
     el.appendChild(row);
-    const input = row.querySelector('input');
+    const input = row.querySelector('textarea');
     input.focus();
     const go = async () => {
       const r = await dgPost(`/${encodeURIComponent(id)}/reply`, { texte: input.value.trim() });
@@ -2789,7 +2789,7 @@ async function dgAct(id, what, el) {
       loadDelegations();
     };
     row.querySelector('button').onclick = go;
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') go(); if (e.key === 'Escape') { row.remove(); loadDelegations(); } });
+    input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); go(); } if (e.key === 'Escape') { row.remove(); loadDelegations(); } });
     return;
   }
   const r = await dgPost(`/${encodeURIComponent(id)}/${what}`);
@@ -2812,7 +2812,7 @@ async function dgOpen(id) {
   const tr = d.trace.slice().reverse().map(x => `<div class="tr ${x.kind}"><b>${new Date(x.at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</b>${esc(x.text)}</div>`).join('');
   body.innerHTML = (d.question ? `<p><b>Question de l'agent :</b> ${esc(d.question)}</p>` : '')
     + (d.rapport ? md(d.rapport) + '<hr>' : '')
-    + (d.brouillons.length ? `<p><b>Brouillons Gmail :</b> ${d.brouillons.map(b => `${esc(b.to)} « ${esc(b.subject)} »`).join(' ; ')}</p>` : '')
+    + (d.brouillons.length ? `<p><b>Brouillons Gmail :</b> ${d.brouillons.map(b => `${esc(b.to)} « ${esc(b.subject)} »${b.modifie ? ' (modifié)' : ''}`).join(' ; ')}</p>` : '')
     + `<h3>Activité</h3><div class="doc trace">${tr || '<span class="lbl">Rien pour le moment.</span>'}</div>`;
   renderVFiles();
   viewer.hidden = false;
