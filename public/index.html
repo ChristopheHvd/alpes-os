@@ -114,7 +114,7 @@ body.resizing { cursor: col-resize; user-select: none; }
 /* the right column holds more widgets than fit: give the agents room to be read, and let
    the training decks scroll inside their card instead of spilling over the next one */
 #w-agents:not(.collapsed) { min-height: 110px; }
-#w-agents:not(.collapsed):has(.dg) { min-height: 205px; }
+#w-agents:not(.collapsed):has(.dg) { min-height: 150px; }
 #w-linkedin, [data-widget="decks"] { overflow: hidden; }
 #decks { overflow-y: auto; min-height: 0; }
 #agents { overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
@@ -122,12 +122,6 @@ body.resizing { cursor: col-resize; user-select: none; }
 .dg .st.pret { color: var(--good); }
 .dg .st.bloque, .dg .st.echec { color: var(--crit); }
 .dg .st.en_cours { color: var(--warn); }
-.dg p { margin: 0 0 6px 33px; font: 400 12.5px/1.45 var(--font); color: var(--ink-2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.dg p.q { color: var(--ink); }
-.dg .livs { display: flex; flex-wrap: wrap; gap: 4px 10px; margin: 0 0 6px 33px; }
-.dg .livs a { font: 400 12px/1.4 var(--mono); color: var(--accent); cursor: pointer; text-decoration: none; }
-.dg .livs a:hover { text-decoration: underline; }
-.dg .livs span { font: 400 12px/1.4 var(--font); color: var(--ink-3); }
 .vreply { display: flex; gap: 8px; align-items: flex-end; padding: 12px 18px; border-top: 1px solid var(--line-soft); }
 .vreply[hidden] { display: none; }
 .vreply textarea:disabled { opacity: .6; }
@@ -2763,28 +2757,22 @@ async function loadDelegations() {
   $('#dg-meta').innerHTML = [running && `${running} en cours`, waiting && `${waiting} question${waiting > 1 ? 's' : ''}`,
     !r.drafts && `<a href="/auth/google" title="Les agents ne peuvent pas encore déposer de brouillons Gmail : reconnecte Google pour l'autoriser">Autoriser les brouillons</a>`].filter(Boolean).join(' · ');
   $('#agents').innerHTML = (dgItems.length ? dgItems.map(d => {
-    const last = d.etapes[d.etapes.length - 1];
-    const text = d.question || (d.enCours ? d.activite : d.resume || d.raison) || '';
     return `<div class="mapp dg" data-id="${esc(d.id)}">
       <div class="row1">
         <span class="ic sm"><svg><use href="#i-agent"/></svg></span>
-        <b class="head-link" data-do="open" title="Suivre le travail de l'agent">${esc(d.tache)}${d.enCours ? '<i class="live"></i>' : ''}</b>
+        <b class="head-link" data-do="reply" title="Ouvrir l'échange avec l'agent">${esc(d.tache)}${d.enCours ? '<i class="live"></i>' : ''}</b>
         <span class="st ${d.statut}">${DG_ST[d.statut] ?? d.statut}</span>
       </div>
-      <p${d.question ? ' class="q"' : ''}>${rel(last.fin || last.debut || d.creeLe)}${text ? ' · ' + esc(text) : ''}</p>
-      ${d.livrables.length || d.brouillons.length ? `<div class="livs">${d.livrables.map(f => `<a data-file="${esc(f)}">${esc(f.split('/').pop())}</a>`).join('')}${d.brouillons.length ? `<span>${d.brouillons.length} brouillon${d.brouillons.length > 1 ? 's' : ''} Gmail</span>` : ''}</div>` : ''}
       <div class="act">${d.enCours
-        ? '<button class="btn sm" data-do="open">Suivre</button><button class="btn sm" data-do="stop">Arrêter</button>'
-        : `<button class="btn sm acc" data-do="reply">Répondre</button><button class="btn sm" data-do="open">Détail</button><button class="btn sm" data-do="close">Clore</button>`}</div>
+        ? '<button class="btn sm" data-do="stop">Arrêter</button>'
+        : '<button class="btn sm acc" data-do="reply">Répondre</button><button class="btn sm" data-do="close">Clore</button>'}</div>
     </div>`;
   }).join('') : '<span class="lbl">Aucun agent. Survole une tâche de la todo et clique sur l\'icône agent pour la déléguer.</span>');
   $('#agents').querySelectorAll('.dg').forEach(el => {
-    el.querySelectorAll('[data-file]').forEach(a => a.onclick = () => openFile(a.dataset.file));
     el.querySelectorAll('[data-do]').forEach(b => b.onclick = () => dgAct(el.dataset.id, b.dataset.do));
   });
 }
 async function dgAct(id, what) {
-  if (what === 'open') return dgOpen(id);
   if (what === 'reply') return dgOpen(id, true);
   const r = await dgPost(`/${encodeURIComponent(id)}/${what}`);
   if (r.error) toast(r.error, true);
