@@ -110,6 +110,26 @@ body.resizing { cursor: col-resize; user-select: none; }
 #w-projects { flex: 1 1 34%; overflow: hidden; }
 [data-widget="apps"] { flex: 1 1 40%; overflow: hidden; }
 #w-finance { flex: 0 0 auto; }
+#w-agents { flex: 0 1 auto; max-height: 34%; overflow: hidden; }
+#agents { overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+.dg .st { margin-left: auto; flex-shrink: 0; font: 500 11px/1 var(--font); padding: 3px 7px; border-radius: 4px; color: var(--ink-2); background: var(--sunken); }
+.dg .st.pret { color: var(--good); }
+.dg .st.bloque, .dg .st.echec { color: var(--crit); }
+.dg .st.en_cours { color: var(--warn); }
+.dg p { margin: 0 0 6px 33px; font: 400 12.5px/1.45 var(--font); color: var(--ink-2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.dg p.q { color: var(--ink); }
+.dg .livs { display: flex; flex-wrap: wrap; gap: 4px 10px; margin: 0 0 6px 33px; }
+.dg .livs a { font: 400 12px/1.4 var(--mono); color: var(--accent); cursor: pointer; text-decoration: none; }
+.dg .livs a:hover { text-decoration: underline; }
+.dg .livs span { font: 400 12px/1.4 var(--font); color: var(--ink-3); }
+.dg .again { display: flex; gap: 5px; margin: 6px 0 0 33px; }
+.dg .again input { flex: 1; min-width: 0; font: 400 12.5px var(--font); padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
+#agents .scope { font: 400 12px/1.45 var(--font); color: var(--ink-3); padding: 2px 4px 6px; }
+#agents .scope a { color: var(--accent); }
+.doc.trace .tr { font: 400 12.5px/1.5 var(--font); padding: 4px 0; border-bottom: 1px solid var(--line); white-space: pre-wrap; }
+.doc.trace .tr b { font: 500 11px/1 var(--mono); color: var(--ink-3); margin-right: 8px; text-transform: uppercase; }
+.doc.trace .tr.outil { color: var(--ink-3); font-family: var(--mono); font-size: 12px; }
+.doc.trace .tr.consigne, .doc.trace .tr.fin { color: var(--ink); font-weight: 500; }
 #apps { overflow-y: auto; min-height: 0; flex: 1; display: flex; flex-direction: column; gap: 10px; }
 .col.right > .w:last-child { flex: 1 1 26%; overflow: hidden; }
 .w-head { display: flex; align-items: center; gap: 10px; }
@@ -384,10 +404,11 @@ a.mail, .mail {
 .todo .pr.h { background: var(--crit); } .todo .pr.m { background: var(--warn); }
 .todo .del { opacity: 0; font: 400 15px/1 var(--font); color: var(--ink-3); cursor: pointer; border: 0; background: transparent; padding: 0 2px; }
 .todo .it:hover .del { opacity: 1; }
-.todo .fo, .todo .ai { opacity: .55; width: 24px; height: 22px; display: grid; place-items: center; color: var(--ink-3); cursor: pointer; border: 1px solid transparent; border-radius: 5px; background: transparent; padding: 0; }
-.todo :is(.fo, .ai) svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; pointer-events: none; }
-.todo .it:hover :is(.fo, .ai), .todo :is(.fo, .ai):focus-visible { opacity: 1; border-color: var(--line); }
-.todo :is(.fo, .ai):hover { color: var(--accent); border-color: var(--accent); }
+.todo .fo, .todo .ai, .todo .dgb { opacity: .55; width: 24px; height: 22px; display: grid; place-items: center; color: var(--ink-3); cursor: pointer; border: 1px solid transparent; border-radius: 5px; background: transparent; padding: 0; }
+.todo :is(.fo, .ai, .dgb) svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; pointer-events: none; }
+.todo .it:hover :is(.fo, .ai, .dgb), .todo :is(.fo, .ai, .dgb):focus-visible, .todo .dgb.on { opacity: 1; border-color: var(--line); }
+.todo .dgb.on { color: var(--accent); }
+.todo :is(.fo, .ai, .dgb):hover { color: var(--accent); border-color: var(--accent); }
 .todo .del:hover { color: var(--crit); }
 [data-widget="today"] > .w-body { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
 [data-widget="today"] > .w-body > :not(.todo) { flex-shrink: 0; }
@@ -811,6 +832,7 @@ a.pf-card.res-cours p { color: var(--accent); }
   <defs>
     <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></symbol>
+    <symbol id="i-agent" viewBox="0 0 24 24"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 4v4M9.5 13v.5M14.5 13v.5M9.5 16.5h5"/></symbol>
     <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></symbol>
     <symbol id="i-focus" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/></symbol>
     <symbol id="i-euro" viewBox="0 0 24 24"><path d="M18 6a7 7 0 1 0 0 12M4 10h10M4 14h10"/></symbol>
@@ -896,6 +918,15 @@ a.pf-card.res-cours p { color: var(--accent); }
         <button class="wtoggle" aria-label="Réduire ou déplier" data-w="projects" title="Réduire"><svg><use href="#i-chev"/></svg></button>
       </div>
       <div class="projects w-body" id="projects"></div>
+    </section>
+
+    <section class="w" id="w-agents" data-widget="agents">
+      <div class="w-head">
+        <h2><svg><use href="#i-agent"/></svg>Agents</h2>
+        <span class="meta" id="dg-meta"></span>
+        <button class="wtoggle" aria-label="Réduire ou déplier" data-w="agents" title="Réduire"><svg><use href="#i-chev"/></svg></button>
+      </div>
+      <div class="w-body" id="agents"><span class="lbl">Chargement…</span></div>
     </section>
 
     <section class="w" id="w-linkedin" data-widget="linkedin">
@@ -1072,8 +1103,8 @@ Cherche le contexte dans le second brain (projet, client, décisions, échéance
 const todoTitle = t => t.s ? `${esc(t.s)} — ${esc(t.t)}` : esc(t.t);
 function renderTodo() {
   const el = $('#todo');
-  const row = (t, i, carried) => `<div class="it${carried ? ' carried' : ''}" draggable="true" data-list="${carried ? 'carried' : 'items'}" data-i="${i}"><input type="checkbox" id="td${carried ? 'c' : ''}${i}" data-i="${i}" data-c="${carried ? 1 : 0}" ${t.done ? 'checked' : ''}><label class="box" for="td${carried ? 'c' : ''}${i}"><svg><use href="#i-check"/></svg></label><div class="tx">${todoTitle(t)}${carried ? `<small>reporté du ${t.from}</small>` : ''}</div>${carried ? '<span></span>' : `<button class="del" data-i="${i}" title="Supprimer">×</button>`}<i class="pr ${t.p}"></i><div class="acts"><button class="ai" data-list="${carried ? 'carried' : 'items'}" data-i="${i}" title="Confier cette tâche à l'assistant" aria-label="Confier à l'assistant"><svg><use href="#i-play"/></svg></button><button class="fo" data-list="${carried ? 'carried' : 'items'}" data-i="${i}" title="Focus sur cette tâche" aria-label="Focus"><svg><use href="#i-focus"/></svg></button></div></div>`;
-  const later = (t, i) => `<div class="it later" draggable="true" data-list="later" data-i="${i}"><div class="tx">${todoTitle(t)}</div><button class="del" data-i="${i}" data-later="1" title="Supprimer">×</button><i class="pr ${t.p}"></i><div class="acts"><button class="ai" data-list="later" data-i="${i}" title="Confier cette tâche à l'assistant" aria-label="Confier à l'assistant"><svg><use href="#i-play"/></svg></button><button class="fo" data-list="later" data-i="${i}" title="Focus sur cette tâche" aria-label="Focus"><svg><use href="#i-focus"/></svg></button></div></div>`;
+  const row = (t, i, carried) => `<div class="it${carried ? ' carried' : ''}" draggable="true" data-list="${carried ? 'carried' : 'items'}" data-i="${i}"><input type="checkbox" id="td${carried ? 'c' : ''}${i}" data-i="${i}" data-c="${carried ? 1 : 0}" ${t.done ? 'checked' : ''}><label class="box" for="td${carried ? 'c' : ''}${i}"><svg><use href="#i-check"/></svg></label><div class="tx">${todoTitle(t)}${carried ? `<small>reporté du ${t.from}</small>` : ''}</div>${carried ? '<span></span>' : `<button class="del" data-i="${i}" title="Supprimer">×</button>`}<i class="pr ${t.p}"></i><div class="acts"><button class="dgb${dgActive(t) ? ' on' : ''}" data-list="${carried ? 'carried' : 'items'}" data-i="${i}" title="${dgActive(t) ? 'Un agent travaille déjà sur cette tâche' : 'Déléguer à un agent'}" aria-label="Déléguer à un agent"><svg><use href="#i-agent"/></svg></button><button class="ai" data-list="${carried ? 'carried' : 'items'}" data-i="${i}" title="Confier cette tâche à l'assistant" aria-label="Confier à l'assistant"><svg><use href="#i-play"/></svg></button><button class="fo" data-list="${carried ? 'carried' : 'items'}" data-i="${i}" title="Focus sur cette tâche" aria-label="Focus"><svg><use href="#i-focus"/></svg></button></div></div>`;
+  const later = (t, i) => `<div class="it later" draggable="true" data-list="later" data-i="${i}"><div class="tx">${todoTitle(t)}</div><button class="del" data-i="${i}" data-later="1" title="Supprimer">×</button><i class="pr ${t.p}"></i><div class="acts"><button class="dgb${dgActive(t) ? ' on' : ''}" data-list="later" data-i="${i}" title="${dgActive(t) ? 'Un agent travaille déjà sur cette tâche' : 'Déléguer à un agent'}" aria-label="Déléguer à un agent"><svg><use href="#i-agent"/></svg></button><button class="ai" data-list="later" data-i="${i}" title="Confier cette tâche à l'assistant" aria-label="Confier à l'assistant"><svg><use href="#i-play"/></svg></button><button class="fo" data-list="later" data-i="${i}" title="Focus sur cette tâche" aria-label="Focus"><svg><use href="#i-focus"/></svg></button></div></div>`;
   el.innerHTML = todo.items.map((t, i) => row(t, i, false)).join('') + todo.carried.map((t, i) => row(t, i, true)).join('')
     + (todo.later.length ? `<button class="later-head${laterOpen ? ' open' : ''}" data-list="later" data-i="0">Plus tard · ${todo.later.length}</button>` + (laterOpen ? todo.later.map(later).join('') : '') : '');
   const d = todo.items.filter(t => t.done).length;
@@ -1140,6 +1171,7 @@ $('#todo').addEventListener('change', async e => {
 $('#todo').addEventListener('click', e => {
   if (e.target.classList.contains('later-head')) { laterOpen = !laterOpen; renderTodo(); return; }
   if (e.target.classList.contains('ai')) { chatAsk(todoBrief(todo[e.target.dataset.list][+e.target.dataset.i])); return; }
+  if (e.target.classList.contains('dgb')) { dgDelegate(todo[e.target.dataset.list][+e.target.dataset.i]); return; }
   if (e.target.classList.contains('fo')) { focusOpen(todo[e.target.dataset.list][+e.target.dataset.i]); return; }
   if (e.target.classList.contains('del')) { todo[e.target.dataset.later ? 'later' : 'items'].splice(+e.target.dataset.i, 1); saveTodo(); }
 });
@@ -2682,6 +2714,107 @@ function chatAsk(text) {
   chatSend(text);
 }
 
+/* ---------- agents: todo tasks delegated to a background Claude Code ---------- */
+const DG_ST = { en_cours: 'en cours', pret: 'à relire', bloque: 'question', echec: 'échec', interrompu: 'interrompu', clos: 'clos' };
+let dgItems = [], dgPoll = null, dgSeen = {};
+const dgActive = t => dgItems.some(d => d.source === t.t && d.statut !== 'clos');
+const dgPost = (p, body) => api('/api/delegations' + p, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body ?? {}) });
+async function dgDelegate(t) {
+  if (dgActive(t)) { $('#w-agents').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); toast('Un agent travaille déjà sur cette tâche'); return; }
+  const contexte = [t.s && `Rangée sous « ${t.s} » dans la todo`, t.p === 'h' ? 'priorité urgente' : t.p === 'm' ? 'priorité importante' : '', t.from && `reportée du ${t.from}`].filter(Boolean).join(', ');
+  const r = await dgPost('', { tache: t.t, contexte, source: t.t });
+  if (r.error) { toast(r.error, true); return; }
+  toast('Tâche confiée à un agent');
+  loadDelegations(); renderTodo();
+}
+async function loadDelegations() {
+  let r; try { r = await api('/api/delegations'); } catch (e) { return; }
+  if (!r.items) return;
+  dgItems = r.items;
+  clearTimeout(dgPoll);
+  const running = dgItems.filter(d => d.enCours).length;
+  dgPoll = setTimeout(loadDelegations, running ? 4000 : 60e3);
+  // an agent coming back with a question or a result rings like the chat does
+  for (const d of dgItems) {
+    if (dgSeen[d.id] === 'en_cours' && ['bloque', 'pret', 'echec'].includes(d.statut)) { toast(`Agent ${DG_ST[d.statut]} : ${d.tache}`, d.statut === 'echec'); chatPing(`Agent ${DG_ST[d.statut]} : ${d.tache}`, true); }
+    dgSeen[d.id] = d.statut;
+  }
+  renderTodo();
+  // a redraw would wipe an answer being typed; it catches up after
+  if ($('#agents .again')) return;
+  const waiting = dgItems.filter(d => d.statut === 'bloque').length;
+  $('#dg-meta').textContent = [running && `${running} en cours`, waiting && `${waiting} question${waiting > 1 ? 's' : ''}`].filter(Boolean).join(' · ');
+  const scope = r.drafts ? '' : `<div class="scope">Les agents ne peuvent pas encore préparer de brouillons Gmail. <a href="/auth/google">Reconnecter Google</a> pour l'autoriser.</div>`;
+  $('#agents').innerHTML = scope + (dgItems.length ? dgItems.map(d => {
+    const last = d.etapes[d.etapes.length - 1];
+    const text = d.question || (d.enCours ? d.activite : d.resume || d.raison) || '';
+    return `<div class="mapp dg" data-id="${esc(d.id)}">
+      <div class="row1">
+        <span class="ic sm"><svg><use href="#i-agent"/></svg></span>
+        <b class="head-link" data-do="open" title="Suivre le travail de l'agent">${esc(d.tache)}${d.enCours ? '<i class="live"></i>' : ''}</b>
+        <span class="st ${d.statut}">${DG_ST[d.statut] ?? d.statut}</span>
+      </div>
+      <p${d.question ? ' class="q"' : ''}>${rel(last.fin || last.debut || d.creeLe)}${text ? ' · ' + esc(text) : ''}</p>
+      ${d.livrables.length || d.brouillons.length ? `<div class="livs">${d.livrables.map(f => `<a data-file="${esc(f)}">${esc(f.split('/').pop())}</a>`).join('')}${d.brouillons.length ? `<span>${d.brouillons.length} brouillon${d.brouillons.length > 1 ? 's' : ''} Gmail</span>` : ''}</div>` : ''}
+      <div class="act">${d.enCours
+        ? '<button class="btn sm" data-do="open">Suivre</button><button class="btn sm" data-do="stop">Arrêter</button>'
+        : `<button class="btn sm acc" data-do="again">${d.statut === 'bloque' ? 'Répondre' : d.statut === 'pret' ? 'Relancer' : 'Reprendre'}</button><button class="btn sm" data-do="open">Détail</button><button class="btn sm" data-do="close">Clore</button>`}</div>
+    </div>`;
+  }).join('') : '<span class="lbl">Aucun agent. Survole une tâche de la todo et clique sur l\'icône agent pour la déléguer.</span>');
+  $('#agents').querySelectorAll('.dg').forEach(el => {
+    el.querySelectorAll('[data-file]').forEach(a => a.onclick = () => openFile(a.dataset.file));
+    el.querySelectorAll('[data-do]').forEach(b => b.onclick = () => dgAct(el.dataset.id, b.dataset.do, el));
+  });
+}
+async function dgAct(id, what, el) {
+  const d = dgItems.find(x => x.id === id);
+  if (what === 'open') return dgOpen(id);
+  if (what === 'again') {
+    if (el.querySelector('.again')) return;
+    const row = document.createElement('div');
+    row.className = 'again';
+    row.innerHTML = `<input placeholder="${d?.statut === 'bloque' ? 'Ta réponse à sa question' : 'Consigne (facultatif)'}"><button class="btn sm acc">Envoyer</button>`;
+    el.appendChild(row);
+    const input = row.querySelector('input');
+    input.focus();
+    const go = async () => {
+      const r = await dgPost(`/${encodeURIComponent(id)}/reply`, { texte: input.value.trim() });
+      if (r.error) toast(r.error, true); else toast("L'agent reprend");
+      row.remove();
+      loadDelegations();
+    };
+    row.querySelector('button').onclick = go;
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') go(); if (e.key === 'Escape') { row.remove(); loadDelegations(); } });
+    return;
+  }
+  const r = await dgPost(`/${encodeURIComponent(id)}/${what}`);
+  if (r.error) toast(r.error, true);
+  else if (what === 'close') toast('Délégation close. Pense à cocher la tâche si elle est faite.');
+  loadDelegations();
+}
+// the agent's report when there is one, then what it did step by step
+let dgOpenId = null, dgOpenTimer = null;
+async function dgOpen(id) {
+  const d = await api('/api/delegations/' + encodeURIComponent(id));
+  if (d.error) { toast(d.error, true); return; }
+  dgOpenId = id;
+  vCtx = { path: null, run: null, files: d.livrables };
+  $('#v-name').textContent = d.tache;
+  $('#v-ext').textContent = DG_ST[d.statut] ?? d.statut;
+  $('#v-meta').textContent = `${d.model} · lancé il y a ${rel(d.creeLe)}${d.cout ? ` · ${d.cout.toFixed(2)} $` : ''} · ${d.dossier}`;
+  const body = $('#v-body');
+  body.className = 'doc';
+  const tr = d.trace.slice().reverse().map(x => `<div class="tr ${x.kind}"><b>${new Date(x.at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</b>${esc(x.text)}</div>`).join('');
+  body.innerHTML = (d.question ? `<p><b>Question de l'agent :</b> ${esc(d.question)}</p>` : '')
+    + (d.rapport ? md(d.rapport) + '<hr>' : '')
+    + (d.brouillons.length ? `<p><b>Brouillons Gmail :</b> ${d.brouillons.map(b => `${esc(b.to)} « ${esc(b.subject)} »`).join(' ; ')}</p>` : '')
+    + `<h3>Activité</h3><div class="doc trace">${tr || '<span class="lbl">Rien pour le moment.</span>'}</div>`;
+  renderVFiles();
+  viewer.hidden = false;
+  clearTimeout(dgOpenTimer);
+  if (d.statut === 'en_cours') dgOpenTimer = setTimeout(() => { if (!viewer.hidden && dgOpenId === id) dgOpen(id); }, 4000);
+}
+
 /* ---------- boot ---------- */
 /* ---------- LinkedIn: the editorial plan (#linkedin[/<plan>/<Jxx>]) ---------- */
 let li = null, liFilter = 'avenir', liDirty = null, liPoll = null;
@@ -2973,7 +3106,7 @@ addEventListener('keydown', e => {
   chatReplay();   // a reload should not wipe what was already said
   $('#gm-label').textContent = cfg.gmail.label;
   draw();
-  await Promise.all([loadGraph(), loadTodo(), loadGmail(), loadRuns(), loadProjects(), loadAgenda(), loadDecks()]);
+  await Promise.all([loadGraph(), loadTodo(), loadGmail(), loadRuns(), loadProjects(), loadAgenda(), loadDecks(), loadDelegations()]);
   setInterval(loadGraph, 30e3);      // second brain edits show up within 30 s
   setInterval(() => loadGmail(), 5 * 60e3);
   setInterval(loadAgenda, 10 * 60e3);
