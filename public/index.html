@@ -128,8 +128,9 @@ body.resizing { cursor: col-resize; user-select: none; }
 .dg .livs a { font: 400 12px/1.4 var(--mono); color: var(--accent); cursor: pointer; text-decoration: none; }
 .dg .livs a:hover { text-decoration: underline; }
 .dg .livs span { font: 400 12px/1.4 var(--font); color: var(--ink-3); }
-.dg .again { display: flex; gap: 5px; margin: 6px 0 0 33px; align-items: flex-end; }
-.dg .again textarea { flex: 1; min-width: 0; resize: vertical; font: 400 12.5px/1.45 var(--font); padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
+.vreply { display: flex; gap: 8px; align-items: flex-end; padding: 12px 18px; border-top: 1px solid var(--line-soft); }
+.vreply[hidden] { display: none; }
+.vreply textarea { flex: 1; min-width: 0; resize: vertical; min-height: 64px; font: 400 13.5px/1.5 var(--font); padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
 #dg-meta a { color: var(--accent); }
 .doc.trace .tr { font: 400 12.5px/1.5 var(--font); padding: 4px 0; border-bottom: 1px solid var(--line); white-space: pre-wrap; }
 .doc.trace .tr b { font: 500 11px/1 var(--mono); color: var(--ink-3); margin-right: 8px; text-transform: uppercase; }
@@ -767,7 +768,7 @@ a.pf-card.res-cours p { color: var(--accent); }
 .dlg textarea:focus { border-color: var(--accent); }
 .dlg select.btn { padding: 8px 10px; }
 
-.vw { width: min(1040px, 92vw); height: min(86vh, 940px); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; box-shadow: var(--shadow-lg); }
+.vw { width: min(1040px, 92vw); height: min(86vh, 940px); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; display: grid; grid-template-rows: auto 1fr auto auto; overflow: hidden; box-shadow: var(--shadow-lg); }
 .vw .top { display: flex; align-items: center; gap: 11px; padding: 15px 18px; border-bottom: 1px solid var(--line-soft); }
 .vw .top b { font: 600 15.5px/1.2 var(--font); color: var(--ink); }
 .vw .top .ext { font: 500 11px/1 var(--font); color: var(--accent); background: var(--accent-soft); border-radius: 4px; padding: 5px 8px; text-transform: uppercase; letter-spacing: .04em; }
@@ -1058,6 +1059,7 @@ a.pf-card.res-cours p { color: var(--accent); }
   <div class="vw">
     <div class="top"><span class="ext" id="v-ext"></span><b id="v-name"></b><span class="sp"></span><button class="btn" id="v-reveal">Finder</button><button class="btn" id="v-raw">Ouvrir</button><button class="btn acc" id="v-iterate">Itérer</button><button class="icobtn" id="v-close">×</button></div>
     <div class="doc" id="v-body"></div>
+    <div class="vreply" id="v-reply" hidden><textarea id="v-reply-text" rows="3"></textarea><button class="btn acc" id="v-reply-send" title="Entrée pour envoyer, Maj+Entrée pour aller à la ligne">Répondre</button></div>
     <div class="bottom"><div class="files" id="v-files"></div><span class="lbl" id="v-meta"></span></div>
   </div>
 </div>
@@ -1389,6 +1391,7 @@ function renderVFiles() {
   $('#v-raw').style.display = vCtx.path ? '' : 'none';
   $('#v-reveal').style.display = vCtx.path ? '' : 'none';
   $('#v-iterate').style.display = vCtx.run ? '' : 'none';
+  $('#v-reply').hidden = !vCtx.agent;
 }
 $('#v-close').onclick = () => viewer.hidden = true;
 viewer.addEventListener('click', e => { if (e.target === viewer) viewer.hidden = true; });
@@ -2745,8 +2748,6 @@ async function loadDelegations() {
     dgSeen[d.id] = d.statut;
   }
   renderTodo();
-  // a redraw would wipe an answer being typed; it catches up after
-  if ($('#agents .again')) return;
   const waiting = dgItems.filter(d => d.statut === 'bloque').length;
   $('#dg-meta').innerHTML = [running && `${running} en cours`, waiting && `${waiting} question${waiting > 1 ? 's' : ''}`,
     !r.drafts && `<a href="/auth/google" title="Les agents ne peuvent pas encore déposer de brouillons Gmail : reconnecte Google pour l'autoriser">Autoriser les brouillons</a>`].filter(Boolean).join(' · ');
@@ -2763,35 +2764,17 @@ async function loadDelegations() {
       ${d.livrables.length || d.brouillons.length ? `<div class="livs">${d.livrables.map(f => `<a data-file="${esc(f)}">${esc(f.split('/').pop())}</a>`).join('')}${d.brouillons.length ? `<span>${d.brouillons.length} brouillon${d.brouillons.length > 1 ? 's' : ''} Gmail</span>` : ''}</div>` : ''}
       <div class="act">${d.enCours
         ? '<button class="btn sm" data-do="open">Suivre</button><button class="btn sm" data-do="stop">Arrêter</button>'
-        : `<button class="btn sm acc" data-do="again">${d.statut === 'bloque' ? 'Répondre' : d.statut === 'pret' ? 'Compléter' : 'Reprendre'}</button><button class="btn sm" data-do="open">Détail</button><button class="btn sm" data-do="close">Clore</button>`}</div>
+        : `<button class="btn sm acc" data-do="reply">Répondre</button><button class="btn sm" data-do="open">Détail</button><button class="btn sm" data-do="close">Clore</button>`}</div>
     </div>`;
   }).join('') : '<span class="lbl">Aucun agent. Survole une tâche de la todo et clique sur l\'icône agent pour la déléguer.</span>');
   $('#agents').querySelectorAll('.dg').forEach(el => {
     el.querySelectorAll('[data-file]').forEach(a => a.onclick = () => openFile(a.dataset.file));
-    el.querySelectorAll('[data-do]').forEach(b => b.onclick = () => dgAct(el.dataset.id, b.dataset.do, el));
+    el.querySelectorAll('[data-do]').forEach(b => b.onclick = () => dgAct(el.dataset.id, b.dataset.do));
   });
 }
-async function dgAct(id, what, el) {
-  const d = dgItems.find(x => x.id === id);
+async function dgAct(id, what) {
   if (what === 'open') return dgOpen(id);
-  if (what === 'again') {
-    if (el.querySelector('.again')) return;
-    const row = document.createElement('div');
-    row.className = 'again';
-    row.innerHTML = `<textarea rows="3" placeholder="${d?.statut === 'bloque' ? 'Ta réponse à sa question' : d?.statut === 'pret' ? 'Précisions, corrections, brouillons à modifier… L\'agent reprend avec tout son contexte.' : 'Consigne (facultatif)'}"></textarea><button class="btn sm acc" title="Entrée pour envoyer, Maj+Entrée pour aller à la ligne">Envoyer</button>`;
-    el.appendChild(row);
-    const input = row.querySelector('textarea');
-    input.focus();
-    const go = async () => {
-      const r = await dgPost(`/${encodeURIComponent(id)}/reply`, { texte: input.value.trim() });
-      if (r.error) toast(r.error, true); else toast("L'agent reprend");
-      row.remove();
-      loadDelegations();
-    };
-    row.querySelector('button').onclick = go;
-    input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); go(); } if (e.key === 'Escape') { row.remove(); loadDelegations(); } });
-    return;
-  }
+  if (what === 'reply') return dgOpen(id, true);
   const r = await dgPost(`/${encodeURIComponent(id)}/${what}`);
   if (r.error) toast(r.error, true);
   else if (what === 'close') toast('Délégation close. Pense à cocher la tâche si elle est faite.');
@@ -2799,11 +2782,15 @@ async function dgAct(id, what, el) {
 }
 // the agent's report when there is one, then what it did step by step
 let dgOpenId = null, dgOpenTimer = null;
-async function dgOpen(id) {
+async function dgOpen(id, focusReply) {
   const d = await api('/api/delegations/' + encodeURIComponent(id));
   if (d.error) { toast(d.error, true); return; }
+  // the reply box keeps what was typed when the same agent is redrawn
+  if (dgOpenId !== id) $('#v-reply-text').value = '';
   dgOpenId = id;
-  vCtx = { path: null, run: null, files: d.livrables };
+  vCtx = { path: null, run: null, files: d.livrables, agent: d.enCours ? null : id };
+  $('#v-reply-text').placeholder = d.statut === 'bloque' ? 'Ta réponse à sa question…'
+    : "Précisions, corrections, brouillons à modifier… L'agent reprend avec tout son contexte.";
   $('#v-name').textContent = d.tache;
   $('#v-ext').textContent = DG_ST[d.statut] ?? d.statut;
   $('#v-meta').textContent = `${d.model} · lancé il y a ${rel(d.creeLe)}${d.cout ? ` · ${d.cout.toFixed(2)} $` : ''} · ${d.dossier}`;
@@ -2816,9 +2803,23 @@ async function dgOpen(id) {
     + `<h3>Activité</h3><div class="doc trace">${tr || '<span class="lbl">Rien pour le moment.</span>'}</div>`;
   renderVFiles();
   viewer.hidden = false;
+  if (focusReply && !d.enCours) $('#v-reply-text').focus();
   clearTimeout(dgOpenTimer);
   if (d.statut === 'en_cours') dgOpenTimer = setTimeout(() => { if (!viewer.hidden && dgOpenId === id) dgOpen(id); }, 4000);
 }
+
+async function dgReply() {
+  const id = vCtx?.agent;
+  if (!id) return;
+  const r = await dgPost(`/${encodeURIComponent(id)}/reply`, { texte: $('#v-reply-text').value.trim() });
+  if (r.error) { toast(r.error, true); return; }
+  $('#v-reply-text').value = '';
+  toast("L'agent reprend");
+  loadDelegations();
+  dgOpen(id);
+}
+$('#v-reply-send').onclick = dgReply;
+$('#v-reply-text').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); dgReply(); } });
 
 /* ---------- boot ---------- */
 /* ---------- LinkedIn: the editorial plan (#linkedin[/<plan>/<Jxx>]) ---------- */
