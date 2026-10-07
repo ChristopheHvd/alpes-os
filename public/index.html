@@ -130,6 +130,17 @@ body.resizing { cursor: col-resize; user-select: none; }
 .dg .livs span { font: 400 12px/1.4 var(--font); color: var(--ink-3); }
 .vreply { display: flex; gap: 8px; align-items: flex-end; padding: 12px 18px; border-top: 1px solid var(--line-soft); }
 .vreply[hidden] { display: none; }
+.vreply textarea:disabled { opacity: .6; }
+.doc .conv { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
+.doc .cv { max-width: 85%; padding: 9px 13px; border-radius: 10px; background: var(--sunken); }
+.doc .cv.me { align-self: flex-end; background: var(--accent-soft); }
+.doc .cv small { display: block; font: 500 11px/1.2 var(--font); color: var(--ink-3); margin-bottom: 4px; }
+.doc .cv .cv-t > :first-child { margin-top: 0; }
+.doc .cv .cv-t > :last-child { margin-bottom: 0; }
+.doc .cv.err .cv-t { color: var(--crit); }
+.doc .cv .cv-q { font-weight: 500; color: var(--ink); }
+.doc details.act { margin: 10px 0 14px; }
+.doc details.act summary { cursor: pointer; font: 500 13px/1.4 var(--font); color: var(--ink-3); }
 .vreply textarea { flex: 1; min-width: 0; resize: vertical; min-height: 64px; font: 400 13.5px/1.5 var(--font); padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
 #dg-meta a { color: var(--accent); }
 .doc.trace .tr { font: 400 12.5px/1.5 var(--font); padding: 4px 0; border-bottom: 1px solid var(--line); white-space: pre-wrap; }
@@ -2782,41 +2793,60 @@ async function dgAct(id, what) {
 }
 // the agent's report when there is one, then what it did step by step
 let dgOpenId = null, dgOpenTimer = null;
-async function dgOpen(id, focusReply) {
+async function dgOpen(id, toBottom) {
   const d = await api('/api/delegations/' + encodeURIComponent(id));
   if (d.error) { toast(d.error, true); return; }
   // the reply box keeps what was typed when the same agent is redrawn
   if (dgOpenId !== id) $('#v-reply-text').value = '';
+  const body = $('#v-body');
+  const same = dgOpenId === id && !viewer.hidden;
+  const atBottom = same && body.scrollHeight - body.scrollTop - body.clientHeight < 40;
+  const keep = same ? body.scrollTop : 0;
+  const traceOpen = same && !!body.querySelector('details.act[open]');
   dgOpenId = id;
-  vCtx = { path: null, run: null, files: d.livrables, agent: d.enCours ? null : id };
-  $('#v-reply-text').placeholder = d.statut === 'bloque' ? 'Ta réponse à sa question…'
+  vCtx = { path: null, run: null, files: d.livrables, agent: id };
+  const box = $('#v-reply-text');
+  box.disabled = d.enCours;
+  $('#v-reply-send').disabled = d.enCours;
+  box.placeholder = d.enCours ? "L'agent travaille… tu pourras lui répondre quand il aura fini."
+    : d.statut === 'bloque' ? 'Ta réponse à sa question…'
     : "Précisions, corrections, brouillons à modifier… L'agent reprend avec tout son contexte.";
   $('#v-name').textContent = d.tache;
   $('#v-ext').textContent = DG_ST[d.statut] ?? d.statut;
   $('#v-meta').textContent = `${d.model} · lancé il y a ${rel(d.creeLe)}${d.cout ? ` · ${d.cout.toFixed(2)} $` : ''} · ${d.dossier}`;
-  const body = $('#v-body');
   body.className = 'doc';
-  const tr = d.trace.slice().reverse().map(x => `<div class="tr ${x.kind}"><b>${new Date(x.at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</b>${esc(x.text)}</div>`).join('');
-  body.innerHTML = (d.question ? `<p><b>Question de l'agent :</b> ${esc(d.question)}</p>` : '')
-    + (d.rapport ? md(d.rapport) + '<hr>' : '')
+  const hm = iso => iso ? new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
+  const bubble = (who, html, at, cls = '') => `<div class="cv ${who} ${cls}"><small>${who === 'me' ? 'Toi' : 'Agent'} · ${hm(at)}</small><div class="cv-t">${html}</div></div>`;
+  // one exchange per pass: what was asked, then what the agent answered
+  const conv = d.etapes.map((e, i) => {
+    const asked = i === 0 ? d.tache : e.consigne === 'reprise' ? '(reprendre là où tu t\'étais arrêté)' : e.consigne;
+    const me = bubble('me', esc(asked).replace(/\n/g, '<br>'), e.debut);
+    if (!e.fin) return me + bubble('ag', `<span class="lbl">Travaille… ${esc(d.activite ?? '')}</span>`, null, 'live');
+    const q = e.question ? `<p class="cv-q">${esc(e.question)}</p>` : '';
+    const text = e.reponse ? md(e.reponse) : `<p>${esc(e.resume ?? e.raison ?? '—')}</p>`;
+    return me + bubble('ag', text + q, e.fin, e.raison && !e.reponse ? 'err' : '');
+  }).join('');
+  const tr = d.trace.slice().reverse().map(x => `<div class="tr ${x.kind}"><b>${hm(x.at)}</b>${esc(x.text)}</div>`).join('');
+  body.innerHTML = (d.rapport ? md(d.rapport) + '<hr>' : '')
     + (d.brouillons.length ? `<p><b>Brouillons Gmail :</b> ${d.brouillons.map(b => `${esc(b.to)} « ${esc(b.subject)} »${b.modifie ? ' (modifié)' : ''}`).join(' ; ')}</p>` : '')
-    + `<h3>Activité</h3><div class="doc trace">${tr || '<span class="lbl">Rien pour le moment.</span>'}</div>`;
+    + `<details class="act"${traceOpen ? ' open' : ''}><summary>Activité détaillée</summary><div class="doc trace">${tr || '<span class="lbl">Rien pour le moment.</span>'}</div></details>`
+    + `<h3>Échanges</h3><div class="conv">${conv}</div>`;
   renderVFiles();
   viewer.hidden = false;
-  if (focusReply && !d.enCours) $('#v-reply-text').focus();
+  body.scrollTop = toBottom || atBottom ? body.scrollHeight : keep;
+  if (toBottom && !d.enCours) box.focus();
   clearTimeout(dgOpenTimer);
   if (d.statut === 'en_cours') dgOpenTimer = setTimeout(() => { if (!viewer.hidden && dgOpenId === id) dgOpen(id); }, 4000);
 }
 
 async function dgReply() {
   const id = vCtx?.agent;
-  if (!id) return;
+  if (!id || $('#v-reply-text').disabled) return;
   const r = await dgPost(`/${encodeURIComponent(id)}/reply`, { texte: $('#v-reply-text').value.trim() });
   if (r.error) { toast(r.error, true); return; }
   $('#v-reply-text').value = '';
-  toast("L'agent reprend");
   loadDelegations();
-  dgOpen(id);
+  dgOpen(id, true);
 }
 $('#v-reply-send').onclick = dgReply;
 $('#v-reply-text').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); dgReply(); } });
