@@ -19,6 +19,7 @@
     <span class="client" id="b-client"></span>
     <button id="timer" title="Démarrer ou arrêter le chrono du module (T)">00:00</button>
     <span class="save" id="b-save"></span>
+    <button class="icobtn" id="b-add" title="Nouvelle slide">＋</button>
     <button class="icobtn" id="b-edit" title="Mode édition (E)">✎</button>
     <button class="icobtn" id="b-notes" title="Notes formateur (N)">N</button>
     <button class="icobtn" id="b-toc" title="Épingler le sommaire (S)">☰</button>
@@ -44,6 +45,13 @@
 <div class="tip" id="tip" hidden></div>
 <div class="laserdot" id="laserdot"></div>
 <div class="fmt" id="fmt" hidden></div>
+<div class="insmenu" id="insmenu" hidden></div>
+<div class="tbltools" id="tbltools" hidden>
+  <button data-op="row+" title="Ajouter une ligne sous la cellule">+ ligne</button><button data-op="col+" title="Ajouter une colonne à droite">+ colonne</button><button data-op="row-" title="Retirer la ligne">− ligne</button><button data-op="col-" title="Retirer la colonne">− colonne</button><button data-op="src" title="Modifier le markdown">&lt;/&gt;</button>
+</div>
+<div class="blktools" id="blktools" hidden>
+  <button data-a="up" title="Monter">↑</button><button data-a="down" title="Descendre">↓</button><button data-a="del" title="Retirer">×</button>
+</div>
 
 <aside class="notes" id="notes">
   <h3>Notes formateur <button class="icobtn" id="n-close" title="Fermer">×</button></h3>

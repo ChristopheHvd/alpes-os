@@ -171,6 +171,31 @@ app.put('/api/cours/:deck/:file', (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Une image ajoutée en mode édition rejoint <deck>/img/. Même garde-fou que
+// ci-dessus (le support doit avoir son manifest), un nom nettoyé, et jamais
+// d'écrasement : un nom déjà pris reçoit un suffixe -2, -3…
+const COURS_IMG = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp', 'image/svg+xml': 'svg' };
+app.post('/api/cours/:deck/img', express.raw({ type: 'image/*', limit: '15mb' }), (req, res) => {
+  try {
+    const { deck } = req.params;
+    if (!/^[a-z0-9-]+$/.test(deck)) return res.status(400).json({ error: 'nom invalide' });
+    const dir = path.join(coursDir, deck);
+    if (!fs.existsSync(path.join(dir, 'manifest.json'))) return res.status(404).json({ error: 'support inconnu' });
+    const ext = COURS_IMG[String(req.headers['content-type']).split(';')[0].trim()];
+    if (!ext || !Buffer.isBuffer(req.body) || !req.body.length) return res.status(400).json({ error: 'image png, jpg, gif, webp ou svg attendue' });
+
+    const base = String(req.query.name ?? '').replace(/\.[^.]*$/, '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'image';
+    fs.mkdirSync(path.join(dir, 'img'), { recursive: true });
+    let name = `${base}.${ext}`;
+    for (let n = 2; fs.existsSync(path.join(dir, 'img', name)); n++) name = `${base}-${n}.${ext}`;
+    const target = path.join(dir, 'img', name), tmp = `${target}.tmp`;
+    fs.writeFileSync(tmp, req.body);
+    fs.renameSync(tmp, target);
+    res.json({ src: `img/${name}` });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/config', (req, res) => res.json({ testQueue: sbQueue !== CURATOR_QUEUE, apps: cfg.apps, gmail: { label: cfg.gmail.label, ...gmail.status() }, brand: { company: branding.company, owner: branding.owner }, secondBrain: cfg.secondBrain }));
 
 // Memory — the visual second brain
