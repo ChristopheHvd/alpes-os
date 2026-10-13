@@ -25,8 +25,21 @@
      type: atelier
      livrable: Un prompt maître enregistré
 
-   Les slides sont séparées par `---` seul sur sa ligne. `{{client.prenom}}`
-   est remplacé par le profil client passé en ?client=<id>.
+     ---
+
+     ## Slide en colonnes
+     colonnes: 2
+
+     Colonne de gauche.
+
+     ::: colonne
+
+     Colonne de droite.
+
+   Les slides sont séparées par `---` seul sur sa ligne. `colonnes: 2` ou `3`
+   répartit le corps entre les séparateurs `::: colonne` ; sans la clé, la
+   slide est sur une seule colonne. `{{client.prenom}}` est remplacé par le
+   profil client passé en ?client=<id>.
    ============================================================ */
 'use strict';
 
@@ -103,6 +116,9 @@ function blocks(src) {
   return out;
 }
 
+// Les cellules d'une ligne de tableau ; un `\\|` reste dans sa cellule.
+const cellsOf = line => line.trim().split(/(?<!\\)\|/).slice(1, -1).map(c => c.trim());
+
 function md1(b) {
   const lines = () => esc(b.md).split('\n');
   switch (b.kind) {
@@ -115,7 +131,7 @@ function md1(b) {
     }
     case 'table': {
       const rows = lines().map(r => r.trim());
-      const cells = r => r.split('|').slice(1, -1).map(c => c.trim());
+      const cells = r => cellsOf(r).map(c => c.replace(/\\\|/g, '|'));
       return `<table><tr>${cells(rows[0]).map(c => `<th>${inline(c)}</th>`).join('')}</tr>`
         + rows.slice(2).map(r => `<tr>${cells(r).map(c => `<td>${inline(c)}</td>`).join('')}</tr>`).join('')
         + '</table>';
@@ -149,10 +165,36 @@ function md1(b) {
 // Recompose une source à partir de ses blocs, en gardant les séparations d'origine.
 const unblock = bs => bs.map((b, i) => b.md + (i < bs.length - 1 ? b.gap : '')).join('');
 
-function md(src, wrap = false) {
+function md(src, wrap = false, c = 0) {
   return blocks(src).map((b, i) => wrap
-    ? `<div class="blk" data-i="${i}" data-kind="${b.kind}">${md1(b)}</div>`
+    ? `<div class="blk" data-c="${c}" data-i="${i}" data-kind="${b.kind}">${md1(b)}</div>`
     : md1(b)).join('');
+}
+
+/* ---------------------------------------------------------- colonnes */
+
+const COL_SEP = /^[ \t]*:::[ \t]*colonne[ \t]*$/m;
+
+// Le corps découpé en autant de colonnes que la slide en déclare : ce qui
+// dépasse retombe dans la dernière, ce qui manque reste vide.
+function columns(slide) {
+  const n = slide.colonnes > 1 ? slide.colonnes : 1;
+  const cs = slide.body.split(COL_SEP).map(p => p.trim());
+  if (cs.length > n) cs.splice(n - 1, cs.length, cs.slice(n - 1).filter(Boolean).join('\n\n'));
+  while (cs.length < n) cs.push('');
+  return cs;
+}
+
+function setColumns(slide, cs) {
+  slide.body = cs.map((p, i) => (i ? '::: colonne' + (p ? `\n\n${p}` : '') : p)).join('\n\n').trim();
+}
+
+// En édition, chaque colonne finit par le bouton qui y ajoute un bloc.
+function bodyHtml(slide, wrap = false, tx = disp) {
+  const cs = columns(slide);
+  const col = (p, c) => md(tx(p), wrap, c) + (wrap ? `<button class="addblk" data-c="${c}" title="Ajouter un bloc">＋</button>` : '');
+  if (cs.length === 1) return `<div class="md">${col(cs[0], 0)}</div>`;
+  return `<div class="md cols n${cs.length}">${cs.map((p, c) => `<div class="col" data-c="${c}">${col(p, c)}</div>`).join('')}</div>`;
 }
 
 /* ---------------------------------------------------------- parsing */
@@ -183,7 +225,7 @@ function parseModule(id, src) {
   }
 
   meta.slides = src.split(/\n---\n/).map(chunk => {
-    const slide = { type: 'concept', titre: '', body: '', notes: '', livrable: '' };
+    const slide = { type: 'concept', titre: '', body: '', notes: '', livrable: '', colonnes: 0 };
 
     // les notes formateur sortent avant tout le reste
     slide.notes = (chunk.match(/^:::\s*notes\n([\s\S]*?)\n:::\s*$/m) || [, ''])[1].trim();
@@ -193,9 +235,9 @@ function parseModule(id, src) {
     if (/^##\s+/.test(lines[0] || '')) slide.titre = lines.shift().replace(/^##\s+/, '').trim();
     // les clés éventuelles suivent immédiatement le titre
     while (lines.length) {
-      const kv = lines[0].match(/^(type|livrable)\s*:\s*(.*)$/);
+      const kv = lines[0].match(/^(type|livrable|colonnes)\s*:\s*(.*)$/);
       if (!kv) break;
-      slide[kv[1]] = kv[2].trim();
+      slide[kv[1]] = kv[1] === 'colonnes' ? parseInt(kv[2], 10) || 0 : kv[2].trim();
       lines.shift();
     }
     slide.body = lines.join('\n').trim();
@@ -209,7 +251,8 @@ function parseModule(id, src) {
 function serializeModule(mod) {
   const fm = mod._fm.map(k => `${k}: ${mod[k]}`).join('\n');
   const chunks = mod.slides.map(s => {
-    const head = [`## ${s.titre}`, s.type && `type: ${s.type}`, s.livrable && `livrable: ${s.livrable}`];
+    const head = [s.titre && `## ${s.titre}`, s.type && `type: ${s.type}`, s.livrable && `livrable: ${s.livrable}`,
+      s.colonnes > 1 && `colonnes: ${s.colonnes}`];
     const parts = [head.filter(Boolean).join('\n'), s.body, s.notes && `::: notes\n${s.notes}\n:::`];
     return parts.filter(Boolean).join('\n\n');
   });
@@ -223,6 +266,8 @@ const KICKER = {
   atelier: 'Atelier', recap: 'À retenir', piege: 'Piège',
 };
 
+const LAYOUTS = [[1, 'Central'], [2, '2 colonnes'], [3, '3 colonnes']];
+
 function render() {
   const mod = modules[mi], slide = mod.slides[si];
   document.title = `${disp(mod.titre)} — ${disp(slide.titre) || 'Support'}`;
@@ -230,7 +275,8 @@ function render() {
 
   const kicker = slide.type === 'titre' ? `Module ${mi + 1} · ${KICKER.titre}` : KICKER[slide.type] || KICKER.concept;
   const parts = [editing
-    ? `<p class="kicker"><select class="typesel">${Object.keys(KICKER).map(k => `<option value="${k}"${k === slide.type ? ' selected' : ''}>${esc(KICKER[k])}</option>`).join('')}</select></p>`
+    ? `<p class="kicker"><select class="typesel">${Object.keys(KICKER).map(k => `<option value="${k}"${k === slide.type ? ' selected' : ''}>${esc(KICKER[k])}</option>`).join('')}</select>
+      <select class="laysel" title="Disposition">${LAYOUTS.map(([n, label]) => `<option value="${n}"${n === columns(slide).length ? ' selected' : ''}>${label}</option>`).join('')}</select></p>`
     : `<p class="kicker">${esc(kicker)}</p>`];
   if (slide.type === 'titre' && mod.gif) {
     parts.push(`<div class="titre-row">
@@ -240,12 +286,15 @@ function render() {
   } else if (slide.titre || editing) {
     parts.push(`<h2 data-edit="titre">${inline(esc(disp(slide.titre)))}</h2>`);
   }
-  if (slide.body) parts.push(`<div class="md">${md(disp(slide.body), editing)}</div>`);
+  if (slide.body || editing) parts.push(bodyHtml(slide, editing));
   if (slide.type === 'titre' && (mod.objectif || editing)) {
     parts.push(`<div class="obj"><b>Objectif</b> <span data-edit="objectif">${esc(disp(mod.objectif))}</span>${mod.duree || editing ? ` · <span data-edit="duree">${mod.duree}</span> min` : ''}</div>`);
   }
   if (slide.livrable || editing) parts.push(`<div class="livrable"><b>Livrable</b><br><span data-edit="livrable">${inline(esc(disp(slide.livrable)))}</span></div>`);
 
+  hideTools();
+  insEl.hidden = true;
+  tblEl.hidden = true;
   stage.innerHTML = `<article class="slide t-${slide.type}">${parts.join('')}</article>`;
 
   const idx = flat.findIndex(f => f.m === mi && f.s === si);
@@ -321,6 +370,8 @@ function renderNotes() {
 
 /* ---------------------------------------------------------- navigation */
 
+const reflat = () => { flat = modules.flatMap((mod, m) => mod.slides.map((slide, s) => ({ m, s, mod, slide }))); };
+
 function goto(m, s) {
   if (m < 0 || m >= modules.length) return;
   const mod = modules[m];
@@ -380,11 +431,14 @@ function openSheet(mode) {
             <span class="ty">${esc(KICKER[s.type] || s.type)}</span>
           </button>
           ${editing ? `<button class="del" data-del="${i}" title="Supprimer cette slide">×</button>` : ''}
-        </div>`).join('')}</div>`;
+        </div>`).join('')}
+        ${editing ? '<div class="cell add"><button class="new">＋ Nouvelle slide</button></div>' : ''}</div>`;
     sheetBox.querySelectorAll('.grid button[data-s]').forEach(b => b.onclick = () => { goto(mi, +b.dataset.s); closeSheet(); });
     sheetBox.querySelectorAll('.grid button.del').forEach(b => b.onclick = e => { e.stopPropagation(); deleteSlide(+b.dataset.del); });
+    const add = sheetBox.querySelector('.grid button.new');
+    if (add) add.onclick = () => openSheet('new');
     if (editing) {
-      sheetBox.querySelectorAll('.grid .cell').forEach((cell, i) => {
+      sheetBox.querySelectorAll('.grid .cell:not(.add)').forEach((cell, i) => {
         cell.draggable = true;
         cell.ondragstart = e => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', i); cell.classList.add('dragging'); };
         cell.ondragend = () => cell.classList.remove('dragging');
@@ -397,6 +451,14 @@ function openSheet(mode) {
         };
       });
     }
+  } else if (mode === 'new') {
+    const cur = modules[mi].slides[si];
+    sheetBox.innerHTML = `<h3>Nouvelle slide</h3>
+      <p class="sub">Insérée après « ${esc(disp(cur.titre) || KICKER[cur.type] || `slide ${si + 1}`)} »</p>
+      <div class="layouts">${LAYOUTS.map(([n, label]) => `<button data-n="${n}">
+        <span class="lay n${n}">${'<i></i>'.repeat(n)}</span>${label}
+      </button>`).join('')}</div>`;
+    sheetBox.querySelectorAll('.layouts button').forEach(b => b.onclick = () => addSlide(+b.dataset.n));
   }
   sheet.classList.add('on');
 }
@@ -415,9 +477,26 @@ function deleteSlide(i) {
   mod.slides.splice(i, 1);
   if (i <= si) si--;
   si = Math.max(0, Math.min(si, mod.slides.length - 1));
-  flat = modules.flatMap((m, mm) => m.slides.map((slide, s) => ({ m: mm, s, mod: m, slide })));
+  reflat();
   touch(mi);
   render(); // remet la slide et le rail à jour, et rouvre la grille puisque sheet reste .on
+}
+
+// Nouvelle slide, insérée après la courante, dans la disposition choisie. Elle
+// porte un titre d'emblée : une slide sans titre ni corps ne se relit pas.
+function addSlide(n) {
+  if (!editing) return;
+  const mod = modules[mi];
+  const slide = { type: 'concept', titre: 'Nouvelle slide', body: '', notes: '', livrable: '', colonnes: n > 1 ? n : 0 };
+  setColumns(slide, columns(slide));
+  mod.slides.splice(si + 1, 0, slide);
+  reflat();
+  touch(mi);
+  closeSheet();
+  goto(mi, si + 1);
+  const h = stage.querySelector('h2[data-edit="titre"]');
+  h.focus();
+  getSelection().selectAllChildren(h);
 }
 
 // Réordonner une slide depuis la vue d'ensemble (glisser-déposer, mode édition
@@ -430,7 +509,7 @@ function reorderSlide(from, to) {
   const [moved] = mod.slides.splice(from, 1);
   mod.slides.splice(to, 0, moved);
   si = mod.slides.indexOf(current);
-  flat = modules.flatMap((m, mm) => m.slides.map((slide, s) => ({ m: mm, s, mod: m, slide })));
+  reflat();
   touch(mi);
   render();
 }
@@ -444,7 +523,7 @@ function buildPrint() {
         <p class="mo">${esc(interpolate(m.objectif))}${m.duree ? ` — ${m.duree} min` : ''}</p>
         ${m.slides.filter(s => s.type !== 'titre').map(s => `<div class="ps">
           <h4>${esc(interpolate(s.titre))}</h4>
-          <div class="md">${md(interpolate(s.body))}</div>
+          ${bodyHtml(s, false, interpolate)}
           ${s.livrable ? `<div class="nt">Livrable : ${esc(interpolate(s.livrable))}</div>` : ''}
           ${s.notes ? `<div class="nt">${md(interpolate(s.notes))}</div>` : ''}
         </div>`).join('')}
@@ -691,45 +770,304 @@ function bindEdit() {
   const sel = stage.querySelector('.typesel');
   if (sel) sel.onchange = () => write(slide, 'type', sel.value);
 
+  // moins de colonnes : columns() replie celles qu'on retire dans la dernière gardée
+  const lay = stage.querySelector('.laysel');
+  if (lay) lay.onchange = () => {
+    slide.colonnes = +lay.value;
+    setColumns(slide, columns(slide));
+    touch(mi);
+    render();
+  };
+
   for (const el of stage.querySelectorAll('.blk')) {
+    if (el.dataset.kind === 'table') { bindTable(el, slide); continue; }
     if (!EDITABLE[el.dataset.kind]) { el.classList.add('src'); el.onclick = () => srcEdit(el, slide); continue; }
     el.contentEditable = 'true';
     el.addEventListener('blur', () => commit(el, slide));
   }
+
+  // mousedown : le bloc en cours d'écriture garde le focus, sinon il se réenregistre et le clic se perd
+  for (const b of stage.querySelectorAll('.addblk')) b.onmousedown = e => { e.preventDefault(); openIns(b); };
 }
 
 // Un paragraphe écrit sur deux lignes est rendu sur une seule : le quitter sans
 // l'avoir touché ne doit pas replier la source pour autant.
 const same = a => a.replace(/\s+/g, ' ').trim();
 
-function commit(el, slide) {
-  const i = +el.dataset.i, bs = blocks(slide.body), now = editedMd(el);
-  if (!bs[i] || same(now) === same(bs[i].md)) return;
-  if (now) bs[i] = { ...bs[i], md: now }; else bs.splice(i, 1);
-  slide.body = unblock(bs);
+// Réécrit une colonne de la slide à travers ses blocs. `fn` modifie le tableau
+// sur place ; s'il renvoie false, rien n'a changé.
+function editBlocks(slide, c, fn) {
+  const cs = columns(slide), bs = blocks(cs[c]);
+  if (fn(bs) === false) return false;
+  cs[c] = unblock(bs);
+  setColumns(slide, cs);
   touch(mi);
-  render();
+  return true;
+}
+
+// Deux paragraphes séparés d'un simple retour se relisent comme un seul : un
+// bloc retiré laisse une ligne vide entre ses voisins.
+function drop(bs, i) {
+  bs.splice(i, 1);
+  if (bs[i - 1]) bs[i - 1].gap = '\n\n';
+}
+
+function commit(el, slide) {
+  const i = +el.dataset.i, now = editedMd(el);
+  const changed = editBlocks(slide, +el.dataset.c, bs => {
+    if (!bs[i] || same(now) === same(bs[i].md)) return false;
+    if (now) bs[i] = { ...bs[i], md: now }; else drop(bs, i);
+  });
+  if (changed) render();
 }
 
 // Tableaux, schémas ```svg, blocs de code : leur markdown se corrige mieux à la
 // main que dans un contenteditable.
 function srcEdit(el, slide) {
-  const i = +el.dataset.i, bs = blocks(slide.body);
+  const c = +el.dataset.c, i = +el.dataset.i, was = blocks(columns(slide)[c])[i].md;
   const ta = document.createElement('textarea');
   ta.className = 'srcbox';
-  ta.value = bs[i].md;
-  ta.rows = Math.min(24, bs[i].md.split('\n').length + 1);
+  ta.value = was;
+  ta.rows = Math.min(24, was.split('\n').length + 1);
   el.replaceWith(ta);
   ta.focus();
   ta.onblur = () => {
     const v = ta.value.trim();
-    if (v !== bs[i].md) {
-      if (v) bs[i] = { ...bs[i], md: v }; else bs.splice(i, 1);
-      slide.body = unblock(bs);
-      touch(mi);
-    }
+    if (v !== was) editBlocks(slide, c, bs => { if (v) bs[i] = { ...bs[i], md: v }; else drop(bs, i); });
     render();
   };
+}
+
+/* --- ajouter un bloc --- */
+
+const insEl = $('insmenu');
+
+const NEW_BLOCKS = [
+  ['Sous-titre', c => insertBlock(c, '### Sous-titre')],
+  ['Texte', c => insertBlock(c, 'Texte')],
+  ['Liste', c => insertBlock(c, '- Premier point\n- Deuxième point')],
+  ['Tableau', c => insertBlock(c, '| Colonne 1 | Colonne 2 |\n| --- | --- |\n| … | … |')],
+  ['Image', c => pickImage(c)],
+];
+
+function openIns(btn) {
+  const c = +btn.dataset.c, r = btn.getBoundingClientRect();
+  insEl.innerHTML = NEW_BLOCKS.map(([label], j) => `<button data-j="${j}">${label}</button>`).join('');
+  insEl.hidden = false;
+  insEl.style.left = `${r.left}px`;
+  // près du bas de l'écran, le menu s'ouvre vers le haut
+  insEl.style.top = `${r.bottom + 4 + insEl.offsetHeight > innerHeight ? r.top - 4 - insEl.offsetHeight : r.bottom + 4}px`;
+  insEl.onmousedown = e => {
+    e.preventDefault();
+    const b = e.target.closest('button');
+    if (!b) return;
+    insEl.hidden = true;
+    NEW_BLOCKS[+b.dataset.j][1](c);
+  };
+}
+
+addEventListener('mousedown', e => { if (!e.target.closest?.('.insmenu, .addblk')) insEl.hidden = true; }, true);
+
+// Le bloc arrive en fin de colonne (ou en position `at`), son texte sélectionné :
+// on tape pour le remplacer.
+function insertBlock(c, src, at) {
+  const slide = modules[mi].slides[si];
+  if (stage.contains(document.activeElement)) document.activeElement.blur();
+  editBlocks(slide, c, bs => {
+    at = Math.min(at ?? bs.length, bs.length);
+    if (bs[at - 1]) bs[at - 1].gap = '\n\n';
+    bs.splice(at, 0, { kind: '', md: src, gap: '\n\n' });
+  });
+  render();
+  const el = stage.querySelector(`.blk[data-c="${c}"][data-i="${at}"]`);
+  const cell = el?.querySelector('th[contenteditable="true"]');
+  if (cell) return focusCell(cell);
+  if (!el?.isContentEditable) return;
+  el.focus();
+  getSelection().selectAllChildren(el.querySelector('li, h3, p') || el);
+}
+
+/* --- images --- */
+
+// L'image est déposée dans <deck>/img/ par le serveur, qui renvoie son chemin.
+async function uploadImage(file, name) {
+  say("envoi de l'image…");
+  const r = await fetch(`/api/cours/${DECK}/img?name=${encodeURIComponent(name)}`, {
+    method: 'POST', headers: { 'content-type': file.type }, body: file,
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || `erreur ${r.status}`);
+  return j.src;
+}
+
+async function addImage(file, name, c, at) {
+  try { insertBlock(c, `![](${await uploadImage(file, name)})`, at); }
+  catch (e) { say(e.message, true); }
+}
+
+function pickImage(c) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/png,image/jpeg,image/gif,image/webp,image/svg+xml';
+  input.onchange = () => { if (input.files[0]) addImage(input.files[0], input.files[0].name, c); };
+  input.click();
+}
+
+// Une capture collée arrive sous le bloc en cours d'écriture, sinon en fin de
+// première colonne. Elle prend le nom du module : une capture n'en a pas.
+document.addEventListener('paste', e => {
+  if (!editing || e.target.tagName === 'TEXTAREA') return;
+  const file = [...(e.clipboardData?.files || [])].find(f => f.type.startsWith('image/'));
+  if (!file) return;
+  e.preventDefault();
+  const blk = e.target.closest?.('.blk');
+  addImage(file, modules[mi].id, blk ? +blk.dataset.c : 0, blk ? +blk.dataset.i + 1 : undefined);
+});
+
+/* --- monter, descendre, retirer un bloc --- */
+
+// Une seule barre, posée sur le bloc (ou le titre) survolé.
+const toolsEl = $('blktools');
+let toolsFor = null;
+
+function showTools(el) {
+  toolsFor = el;
+  toolsEl.classList.toggle('title', !!el.dataset.edit);
+  toolsEl.hidden = false;
+  const r = el.getBoundingClientRect();
+  toolsEl.style.left = `${r.right}px`;
+  toolsEl.style.top = `${r.top}px`;
+}
+function hideTools() { toolsEl.hidden = true; toolsFor = null; }
+
+stage.addEventListener('mouseover', e => {
+  if (!editing) return;
+  const el = e.target.closest('.blk, h2[data-edit]');
+  if (!el) hideTools();
+  else if (el !== toolsFor) showTools(el);
+});
+stage.addEventListener('scroll', hideTools, true);
+
+toolsEl.onmousedown = e => {
+  e.preventDefault();
+  const b = e.target.closest('button');
+  if (b && toolsFor) blockAction(toolsFor, b.dataset.a);
+};
+
+function blockAction(el, act) {
+  const slide = modules[mi].slides[si];
+  // un bloc en cours d'écriture s'enregistre d'abord, tant que ses index sont justes
+  if (el.contains(document.activeElement)) document.activeElement.blur();
+  if (el.dataset.edit) { slide.titre = ''; touch(mi); render(); return; }
+  const c = +el.dataset.c, i = +el.dataset.i, to = act === 'up' ? i - 1 : i + 1;
+  const done = editBlocks(slide, c, bs => {
+    if (!bs[i]) return false;
+    if (act === 'del') return drop(bs, i);
+    if (!bs[to]) return false;
+    bs.splice(to, 0, bs.splice(i, 1)[0]);
+    const lo = Math.min(i, to);
+    for (const x of [bs[lo - 1], bs[lo], bs[lo + 1]]) if (x) x.gap = '\n\n';
+  });
+  if (!done) return;
+  render();
+  const moved = act !== 'del' && stage.querySelector(`.blk[data-c="${c}"][data-i="${to}"]`);
+  if (moved) showTools(moved);
+}
+
+/* --- tableaux --- */
+
+// Les cellules s'éditent en place. Une cellule qu'on n'a pas touchée garde son
+// markdown d'origine, et le tableau n'est réécrit que si l'une a changé.
+const tblEl = $('tbltools');
+
+function tableMd(rows, sep) {
+  const n = Math.max(...rows.map(r => r.length));
+  const line = cs => `| ${[...cs, ...Array(n - cs.length).fill('')].join(' | ')} |`;
+  if (!sep || cellsOf(sep).length !== n) sep = line(Array(n).fill('---'));
+  return [line(rows[0]), sep, ...rows.slice(1).map(line)].join('\n');
+}
+
+function tableRows(el, src) {
+  const lines = src.split('\n');
+  const orig = [lines[0], ...lines.slice(2)].map(cellsOf);
+  return [...el.querySelectorAll('tr')].map((tr, r) => [...tr.children].map((td, k) =>
+    td.innerHTML === td._html ? orig[r]?.[k] ?? '' : clean(walk(td)).replace(/(?<!\\)\|/g, '\\|')));
+}
+
+const tableSrc = (slide, el) => blocks(columns(slide)[+el.dataset.c])[+el.dataset.i].md;
+
+function focusCell(td) {
+  td.focus();
+  getSelection().selectAllChildren(td);
+}
+
+function bindTable(el, slide) {
+  const cells = [...el.querySelectorAll('th, td')];
+  for (const td of cells) {
+    td.contentEditable = 'true';
+    td._html = td.innerHTML;
+    // Entrée et Tab passent à la cellule suivante, son contenu sélectionné ; Maj+Tab revient
+    td.onkeydown = e => {
+      if (e.key !== 'Enter' && e.key !== 'Tab') return;
+      const next = cells[cells.indexOf(td) + (e.key === 'Tab' && e.shiftKey ? -1 : 1)];
+      if (!next && e.key === 'Tab') return;
+      e.preventDefault();
+      next ? focusCell(next) : td.blur();
+    };
+  }
+  el.addEventListener('focusin', () => {
+    const r = el.getBoundingClientRect();
+    tblEl.hidden = false;
+    tblEl.style.left = `${r.left}px`;
+    tblEl.style.top = `${r.top}px`;
+  });
+  el.addEventListener('focusout', e => {
+    if (el.contains(e.relatedTarget) || el._done) return;
+    tblEl.hidden = true;
+    if (cells.some(td => td.innerHTML !== td._html)) writeTable(el, slide, tableRows(el, tableSrc(slide, el)));
+  });
+}
+
+// `at` : la cellule [ligne, colonne] où remettre le curseur une fois le tableau redessiné.
+function writeTable(el, slide, rows, at) {
+  const c = +el.dataset.c, i = +el.dataset.i;
+  el._done = true; // le redessin retire la cellule active : son focusout n'a plus rien à écrire
+  editBlocks(slide, c, bs => {
+    const md = tableMd(rows, bs[i].md.split('\n')[1]);
+    if (md === bs[i].md) return false;
+    bs[i] = { ...bs[i], md };
+  });
+  render();
+  const t = stage.querySelector(`.blk[data-c="${c}"][data-i="${i}"]`);
+  const td = at && t?.querySelectorAll('tr')[at[0]]?.children[at[1]];
+  if (td) focusCell(td);
+  return t;
+}
+
+tblEl.onmousedown = e => {
+  e.preventDefault();
+  const b = e.target.closest('button'), td = document.activeElement?.closest?.('th, td');
+  const el = td?.closest('.blk');
+  if (b && el) tableOp(el, td, b.dataset.op);
+};
+
+function tableOp(el, td, op) {
+  const slide = modules[mi].slides[si], rows = tableRows(el, tableSrc(slide, el));
+  const r = [...el.querySelectorAll('tr')].indexOf(td.parentElement), k = [...td.parentElement.children].indexOf(td);
+  const n = rows[0].length;
+  let at = [r, k];
+  if (op === 'row+') { rows.splice(r + 1, 0, Array(n).fill('')); at = [r + 1, k]; }
+  else if (op === 'col+') { rows.forEach(row => row.splice(k + 1, 0, '')); at = [r, k + 1]; }
+  else if (op === 'row-') {
+    if (r === 0) return say("la ligne d'en-tête ne se retire pas", true);
+    rows.splice(r, 1);
+    at = [Math.min(r, rows.length - 1), k];
+  } else if (op === 'col-') {
+    if (n === 1) return say('un tableau garde au moins une colonne', true);
+    rows.forEach(row => row.splice(k, 1));
+    at = [r, Math.min(k, n - 2)];
+  } else if (op === 'src') return srcEdit(writeTable(el, slide, rows), slide);
+  writeTable(el, slide, rows, at);
 }
 
 /* --- barre de mise en forme --- */
@@ -789,6 +1127,7 @@ addEventListener('beforeunload', e => {
 });
 
 $('b-edit').onclick = () => setEdit(!editing);
+$('b-add').onclick = () => openSheet('new');
 buildFmt();
 
 /* ---------------------------------------------------------- démarrage */
@@ -820,7 +1159,7 @@ const fetchModule = async file => {
     const sources = await Promise.all(deck.modules.map(fetchModule));
     modules = deck.modules.map((f, i) => Object.assign(
       parseModule(f.replace(/\.md$/, ''), sources[i].src), { _file: f, _lm: sources[i].lm }));
-    flat = modules.flatMap((mod, m) => mod.slides.map((slide, s) => ({ m, s, mod, slide })));
+    reflat();
     if (!flat.length) throw new Error('Aucune slide trouvée.');
 
     buildPrint();
