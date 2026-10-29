@@ -1,4 +1,4 @@
-# Alpes IA — Agentic OS
+# AlpesOS
 
 Command centre local bâti sur le cadre ARMS : Applications, Routines, Memory, Skills.
 Une page, une adresse, qui montre le travail sans jamais devenir l'endroit où il est stocké.

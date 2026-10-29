@@ -1,4 +1,4 @@
-// Alpes IA Agentic OS — local command centre.
+// AlpesOS — local command centre.
 // One page, one address (http://localhost:4545), a window onto the second brain,
 // Gmail, the day's todo and headless micro-apps. It shows, it never stores truth.
 import express from 'express';
@@ -52,7 +52,7 @@ const branding = loadConfig('branding');
 const driveRoot = cfg.drive;
 const devisApp = cfg.apps.find(a => a.id === 'devis');
 if (devisApp) { devisApp.driveOutput = true; devisApp.addDirs = [cfg.drive]; }
-// Alpes OS never edits the second brain: its curator does (second-brain/AGENTS.md).
+// AlpesOS never edits the second brain: its curator does (second-brain/AGENTS.md).
 // Every write below becomes an event in the curator's queue, shown at once through
 // a local overlay until the curator has archived it. Env overrides let a test
 // instance use its own queue.
@@ -84,7 +84,7 @@ setInterval(() => chat.sweep(), 5 * 60e3).unref();
 const DELEG_HEADER = `---
 type: Journal
 title: Délégations
-description: Tâches de la todo confiées à un agent depuis Alpes OS — résultat et rapport de chaque passage.
+description: Tâches de la todo confiées à un agent depuis AlpesOS — résultat et rapport de chaque passage.
 tags: [journal, delegation, alpes-os]
 status: draft
 ---
@@ -519,7 +519,7 @@ app.post('/api/delegations/:id/:act', (req, res) => {
 app.post('/api/mail/draft', async (req, res) => {
   const { id, to, cc, subject, body, delegation } = req.body ?? {};
   if (!to || !subject || !body) return res.status(400).json({ error: 'destinataire, objet et corps sont requis' });
-  if (!gmail.status().hasDrafts) return res.status(403).json({ error: "les brouillons Gmail ne sont pas autorisés : Christophe doit cliquer « Reconnecter Google » dans Alpes OS. Note le texte du mail dans RAPPORT.md en attendant." });
+  if (!gmail.status().hasDrafts) return res.status(403).json({ error: "les brouillons Gmail ne sont pas autorisés : Christophe doit cliquer « Reconnecter Google » dans AlpesOS. Note le texte du mail dans RAPPORT.md en attendant." });
   if (id && delegation && !delegations.ownsDraft(String(delegation), String(id))) return res.status(403).json({ error: "ce brouillon n'a pas été créé par cette tâche : tu ne peux modifier que les tiens" });
   try {
     const d = id ? await gmail.updateDraft(String(id), { to, cc, subject, body }) : await gmail.createDraft({ to, cc, subject, body });
@@ -599,7 +599,7 @@ app.patch('/api/linkedin/:plan/:id', (req, res) => {
   // published by hand (fallback button), or an uncertain API answer checked on the profile
   if (b.statut === 'publie') { patch.statut = 'publie'; patch.publie_le = localToday(); if (/^https:\/\/www\.linkedin\.com\//.test(b.url ?? '')) patch.url = b.url; }
   try {
-    updatePost(cfg.secondBrain, req.params.plan, req.params.id, patch, `post ${req.params.id} modifié dans Alpes OS${patch.statut ? ` (statut ${patch.statut})` : ''}`);
+    updatePost(cfg.secondBrain, req.params.plan, req.params.id, patch, `post ${req.params.id} modifié dans AlpesOS${patch.statut ? ` (statut ${patch.statut})` : ''}`);
     res.json(loadLinkedin(cfg.secondBrain, liOpts()).posts.find(p => p.plan === req.params.plan && p.id === req.params.id));
   } catch (e) { res.status(400).json({ error: e.message }); }
 });

@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Alpes IA Agentic OS</title>
+<title>AlpesOS</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* ============================================================
-   Alpes IA Agentic OS — two themes, "Papier" (light) and "Ardoise" (dark).
+   AlpesOS — two themes, "Papier" (light) and "Ardoise" (dark).
    Light is the default; the toggle stamps data-theme on <html>.
    ============================================================ */
 :root {
@@ -902,7 +902,7 @@ a.pf-card.res-cours p { color: var(--accent); }
     </div>
     <div class="sbsync" id="sbsync" hidden></div>
     <header class="brand">
-      <h1><svg><use href="#i-hex"/></svg>Alpes IA <span>Agentic OS</span></h1>
+      <h1><svg><use href="#i-hex"/></svg>Alpes<span>OS</span></h1>
       <p>Second brain · <span id="stats">—</span></p>
     </header>
     <div class="hud"><b>Glisser</b> pour déplacer, <b>molette</b> pour zoomer, <b>clic</b> pour ouvrir une fiche</div>
@@ -2636,7 +2636,7 @@ function chatPing(text, systemNotif = true) {
   if (document.hidden) document.title = '● ' + CHAT_TITLE;
   try {
     if (systemNotif && document.hidden && Notification.permission === 'granted') {
-      const n = new Notification('Alpes OS', { body: text, tag: 'alpes-os-chat' });
+      const n = new Notification('AlpesOS', { body: text, tag: 'alpes-os-chat' });
       n.onclick = () => { window.focus(); chatShow(true); n.close(); };
     }
   } catch (e) { /* notifications unavailable */ }
