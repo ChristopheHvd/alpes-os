@@ -13,7 +13,7 @@ import { makeRunner } from './lib/runs.js';
 import { listProjects, updateProject, createProject } from './lib/projects.js';
 import { listClients, createClient } from './lib/clients.js';
 import { portfolio } from './lib/portfolio.js';
-import { listFinance, addEcheance, updateEcheance } from './lib/finance.js';
+import { listFinance, addEcheance, updateEcheance, removeEcheance } from './lib/finance.js';
 import { makeCalendar } from './lib/calendar.js';
 import { makeMailState } from './lib/mailstate.js';
 import { makeCalendarState } from './lib/calendarstate.js';
@@ -284,6 +284,10 @@ app.post('/api/finance/:slug/echeances', (req, res) => {
 });
 app.patch('/api/finance/:slug/echeances/:idx', (req, res) => {
   try { res.json(updateEcheance(cfg.secondBrain, req.params.slug, Number(req.params.idx), req.body ?? {})); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+app.delete('/api/finance/:slug/echeances/:idx', (req, res) => {
+  try { res.json(removeEcheance(cfg.secondBrain, req.params.slug, Number(req.params.idx))); }
   catch (e) { res.status(400).json({ error: e.message }); }
 });
 
