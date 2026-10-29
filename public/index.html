@@ -46,26 +46,50 @@
 }
 
 * { box-sizing: border-box; }
-html, body { height: 100%; }
 body {
   margin: 0; background: var(--bg); color: var(--ink);
   font-family: var(--font); font-size: 14px; line-height: 1.5;
-  overflow: hidden; -webkit-font-smoothing: antialiased;
+  -webkit-font-smoothing: antialiased;
 }
 ::selection { background: var(--accent-soft); color: var(--ink); }
 button, input, textarea, select { font-family: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 
-/* ---------- shell ---------- */
-.os {
-  display: grid; grid-template-columns: var(--left, 340px) 14px 1fr 14px var(--right, 340px);
-  height: 100vh; gap: 0; padding: 14px; position: relative;
+/* ---------- shell: top bar, tabs, views ---------- */
+.top { position: sticky; top: 0; z-index: 23; }
+.bar { display: flex; align-items: center; gap: 18px; padding: 12px 28px; border-bottom: 1px solid var(--line-soft); background: var(--surface); }
+.bar .sp { flex: 1; }
+.logo { display: flex; align-items: center; gap: 9px; text-decoration: none; color: var(--ink); flex-shrink: 0; }
+.logo svg { width: 22px; height: 22px; stroke: var(--accent); fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.logo > span { font: 600 22px/1 var(--display); letter-spacing: -.015em; }
+.logo > span span { color: var(--accent); }
+.nav { display: flex; gap: 2px; min-width: 0; }
+.nav a { color: var(--ink-2); text-decoration: none; padding: 0 12px; min-height: 36px; display: inline-flex; align-items: center; border-radius: 7px; font: 500 13.5px/1 var(--font); white-space: nowrap; }
+.nav a:hover, .nav a.on { color: var(--ink); background: var(--sunken); }
+.bar .btn { min-height: 36px; display: inline-flex; align-items: center; gap: 7px; font-size: 13px; border-radius: 7px; padding: 0 14px; white-space: nowrap; }
+.bar .btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.askbtn { min-width: 260px; color: var(--ink-3); background: var(--bg); }
+.askbtn svg { stroke: var(--accent) !important; }
+.askbtn span { flex: 1; text-align: left; }
+.askbtn kbd { font: 400 11px/1 var(--mono); border: 1px solid var(--line); border-radius: 4px; padding: 2px 5px; }
+.btn.on { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.demobar { display: flex; align-items: center; gap: 12px; padding: 8px 28px; background: var(--accent-soft); color: var(--accent); font: 500 13px/1.4 var(--font); }
+.demobar[hidden] { display: none; }
+.demobar span { flex: 1; }
+.view[hidden] { display: none; }
+.chatdock { position: fixed; left: 0; right: 0; bottom: 24px; z-index: 26; display: flex; justify-content: center; pointer-events: none; }
+@media (max-width: 1180px) { .askbtn { min-width: 0; } .askbtn span { display: none; } }
+@media (max-width: 860px) {
+  .bar { flex-wrap: wrap; gap: 10px; padding: 10px 16px; }
+  .nav { order: 3; flex-basis: 100%; overflow-x: auto; }
+  .demobar { padding: 8px 16px; }
 }
 
-.grip { width: 14px; cursor: col-resize; position: relative; flex-shrink: 0; }
-.grip::after { content: ""; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 3px; height: 34px; border-radius: 2px; background: var(--line); opacity: 0; transition: opacity .15s; }
-.grip:hover::after, .grip.on::after { opacity: 1; background: var(--accent); }
-body.resizing { cursor: col-resize; user-select: none; }
+.os { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; height: calc(100vh - var(--bar-h, 61px)); padding: 14px; }
+[data-view="brain"] { height: calc(100vh - var(--bar-h, 61px)); padding: 14px; }
+[data-view="brain"] .core { height: 100%; }
+.tools { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; padding: 14px; align-items: start; }
+
 .col { display: flex; flex-direction: column; gap: 14px; min-height: 0; min-width: 0; }
 
 .w {
@@ -525,9 +549,10 @@ a.mail, .mail {
 .pf-go { width: 24px; height: 24px; padding: 0; display: grid; place-items: center; flex-shrink: 0; border: 0; border-radius: 50%; background: var(--accent-soft); color: var(--accent); cursor: pointer; }
 .pf-go svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.2; }
 .pf-go:hover { background: var(--accent); color: var(--accent-ink); }
-.portfolio { position: fixed; inset: 0; z-index: 22; background: var(--bg); display: grid; grid-template-rows: auto 1fr; }
+.portfolio { position: fixed; inset: var(--bar-h, 61px) 0 0; z-index: 22; background: var(--bg); display: grid; grid-template-rows: auto 1fr; }
 .portfolio[hidden] { display: none; }
 .pf-top { display: flex; align-items: center; gap: 12px; padding: 14px 24px; border-bottom: 1px solid var(--line-soft); background: var(--surface); flex-wrap: wrap; }
+#pf-close { display: none; }
 .pf-top h1 { margin: 0; font: 600 19px/1.2 var(--display); color: var(--ink); }
 .pf-top .sp { flex: 1; }
 .pf-top input { width: min(260px, 100%); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; color: var(--ink); font: 400 13px var(--font); outline: none; }
@@ -802,7 +827,6 @@ a.pf-card.res-cours p { color: var(--accent); }
 .toast { position: fixed; bottom: 22px; right: 22px; z-index: 40; background: var(--ink); color: var(--bg); border-radius: 8px; padding: 12px 16px; font: 500 13px var(--font); box-shadow: var(--shadow-lg); }
 .toast.bad { background: var(--crit); color: #fff; }
 
-@media (max-width: 1240px) { .os { --left: 300px; --right: 300px; } }
 </style>
 </head>
 <body>
@@ -818,6 +842,9 @@ a.pf-card.res-cours p { color: var(--accent); }
     <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></symbol>
     <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
     <symbol id="i-chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+    <symbol id="i-logo" viewBox="0 0 24 24"><path d="M12 2.5l8.2 4.75v9.5L12 21.5l-8.2-4.75v-9.5z"/><path d="M12 8v8M8.5 10l3.5-2 3.5 2"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/></symbol>
+    <symbol id="i-screen" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="12" rx="2"/><path d="M8.5 20.5h7M12 17v3.5"/></symbol>
     <symbol id="i-hex" viewBox="0 0 24 24"><path d="M12 2l8 4.6v9.2L12 20.5 4 15.8V6.6z"/><path d="M12 7l4 2.3v4.6L12 16l-4-2.1V9.3z"/></symbol>
     <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></symbol>
     <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/></symbol>
@@ -830,6 +857,25 @@ a.pf-card.res-cours p { color: var(--accent); }
   </defs>
 </svg>
 
+<div class="top" id="top">
+  <header class="bar">
+    <a class="logo" href="#" aria-label="AlpesOS, aujourd'hui"><svg><use href="#i-logo"/></svg><span>Alpes<span>OS</span></span></a>
+    <nav class="nav" id="nav" aria-label="Sections">
+      <a href="#" data-tab="today">Aujourd'hui</a>
+      <a href="#projets" data-tab="projets">Projets</a>
+      <a href="#finances" data-tab="finances">Finances</a>
+      <a href="#linkedin" data-tab="linkedin">LinkedIn</a>
+      <a href="#second-brain" data-tab="brain">Second brain</a>
+      <a href="#outils" data-tab="outils">Outils</a>
+    </nav>
+    <span class="sp"></span>
+    <button class="btn askbtn" id="ask-open"><svg><use href="#i-spark"/></svg><span>Demander à l'assistant</span><kbd>⌘K</kbd></button>
+    <button class="btn" id="demo-toggle" aria-pressed="false" title="Remplace les finances par des données fictives, sur tous les écrans"><svg><use href="#i-screen"/></svg>Démo</button>
+  </header>
+  <div class="demobar" id="demobar" hidden><span>Mode démo : les finances affichent des données fictives.</span><button class="btn sm" id="demo-quit">Quitter la démo</button></div>
+</div>
+
+<main class="view" data-view="today">
 <div class="os">
   <aside class="col left">
     <section class="w" data-widget="inbox">
@@ -858,30 +904,6 @@ a.pf-card.res-cours p { color: var(--accent); }
       </div>
     </section>
   </aside>
-
-  <div class="grip" data-side="left" title="Redimensionner"></div>
-
-  <main class="core">
-    <canvas id="g"></canvas>
-    <div class="sbsync" id="sbsync" hidden></div>
-    <header class="brand">
-      <h1><svg><use href="#i-hex"/></svg>Alpes<span>OS</span></h1>
-      <p>Second brain · <span id="stats">—</span></p>
-    </header>
-    <div class="hud"><b>Glisser</b> pour déplacer, <b>molette</b> pour zoomer, <b>clic</b> pour ouvrir une fiche</div>
-    <div class="zoom"><button id="z+">+</button><button id="z-">−</button><button id="z0" title="Recentrer">◎</button></div>
-    <div class="panel" id="panel"></div>
-    <div class="legend">
-      <div class="doms" id="doms"></div>
-      <div class="chat" id="chat"></div>
-      <div class="omni">
-        <label class="search"><svg><use href="#i-search"/></svg><input id="q" type="search" placeholder="Filtre le graphe — Entrée pour une nouvelle question"><span class="mode" id="q-mode">⏎ demander</span></label>
-        <button class="icobtn histbtn" id="q-hist" title="Historique des conversations"><svg><use href="#i-clock"/></svg></button>
-      </div>
-    </div>
-  </main>
-
-  <div class="grip" data-side="right" title="Redimensionner"></div>
 
   <aside class="col right">
     <section class="w" id="w-projects" data-widget="projects">
@@ -922,6 +944,41 @@ a.pf-card.res-cours p { color: var(--accent); }
       <div class="w-body" id="finw"></div>
     </section>
 
+    <section class="w" data-widget="artifacts">
+      <div class="w-head">
+        <h2><svg><use href="#i-file"/></svg>Fichiers produits</h2>
+        <span class="meta" id="runs-meta"></span>
+        <button class="wtoggle" aria-label="Réduire ou déplier" data-w="artifacts" title="Réduire"><svg><use href="#i-chev"/></svg></button>
+      </div>
+      <div class="arts w-body" id="artifacts"></div>
+    </section>
+  </aside>
+</div>
+</main>
+
+<main class="view" data-view="brain">
+  <div class="core">
+    <canvas id="g"></canvas>
+    <div class="sbsync" id="sbsync" hidden></div>
+    <header class="brand">
+      <h1><svg><use href="#i-hex"/></svg>Alpes<span>OS</span></h1>
+      <p>Second brain · <span id="stats">—</span></p>
+    </header>
+    <div class="hud"><b>Glisser</b> pour déplacer, <b>molette</b> pour zoomer, <b>clic</b> pour ouvrir une fiche</div>
+    <div class="zoom"><button id="z+">+</button><button id="z-">−</button><button id="z0" title="Recentrer">◎</button></div>
+    <div class="panel" id="panel"></div>
+    <div class="legend">
+      <div class="doms" id="doms"></div>
+      <div class="omni">
+        <label class="search"><svg><use href="#i-search"/></svg><input id="q" type="search" placeholder="Filtre le graphe — Entrée pour une nouvelle question"><span class="mode" id="q-mode">⏎ demander</span></label>
+        <button class="icobtn histbtn" id="q-hist" title="Historique des conversations"><svg><use href="#i-clock"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<main class="view tools" data-view="outils">
     <section class="w" data-widget="apps">
       <div class="w-head">
         <h2><svg><use href="#i-grid"/></svg>Micro apps</h2>
@@ -936,16 +993,9 @@ a.pf-card.res-cours p { color: var(--accent); }
       </div>
       <div class="w-body" id="decks"></div>
     </section>
-    <section class="w" data-widget="artifacts">
-      <div class="w-head">
-        <h2><svg><use href="#i-file"/></svg>Fichiers produits</h2>
-        <span class="meta" id="runs-meta"></span>
-        <button class="wtoggle" aria-label="Réduire ou déplier" data-w="artifacts" title="Réduire"><svg><use href="#i-chev"/></svg></button>
-      </div>
-      <div class="arts w-body" id="artifacts"></div>
-    </section>
-  </aside>
-</div>
+</main>
+
+<div class="chatdock"><div class="chat" id="chat"></div></div>
 
 <div class="standup" id="standup" hidden>
   <div class="su">
@@ -1001,7 +1051,6 @@ a.pf-card.res-cours p { color: var(--accent); }
 
 <div class="portfolio finview" id="finview" hidden>
   <div class="pf-top">
-    <button class="btn" id="fin-close" title="Retour au dashboard (Échap)">← Dashboard</button>
     <h1>Suivi financier</h1>
   </div>
   <section class="pf-detail" id="fin-detail"></section>
@@ -1009,7 +1058,6 @@ a.pf-card.res-cours p { color: var(--accent); }
 
 <div class="portfolio liview" id="liview" hidden>
   <div class="pf-top">
-    <button class="btn" id="li-close" title="Retour au dashboard (Échap)">← Dashboard</button>
     <h1>LinkedIn</h1>
     <span class="sp"></span>
     <span class="li-auth" id="li-auth"></span>
@@ -1379,7 +1427,7 @@ function resize() {
 // stretches that buffer to fit, squashing every circle into an oval. A
 // ResizeObserver on the canvas itself catches every box change instead of only
 // the window resize event: font swaps, the initial layout settling, and the
-// column grips being dragged all go through the same, always-correct path.
+// Second brain tab being opened all go through the same, always-correct path.
 new ResizeObserver(resize).observe(cv);
 resize();
 const toWorld = (sx, sy) => [(sx - W / 2) / cam.k - cam.x, (sy - H / 2) / cam.k - cam.y];
@@ -1565,8 +1613,8 @@ const md = src => {
 };
 // a markdown link's target, resolved against the note that contains it
 const brainLinkId = (fromId, link) => new URL(link, 'file:///' + fromId).pathname.slice(1);
-// opens whatever a second-brain link points to: a graph note (closes the portfolio
-// first, if it was open, so the panel behind it is visible), or a plain file
+// opens whatever a second-brain link points to: a graph note (on the Second brain
+// tab, which select() switches to), or a plain file
 // (PDF, docx…) served read-only in a new tab. Used from the graph panel and from
 // the portfolio, so a devis or a cahier des charges link always goes somewhere.
 function openBrainLink(fromId, link) {
@@ -1574,8 +1622,6 @@ function openBrainLink(fromId, link) {
   if (!id.endsWith('.md')) { window.open('/api/sb-file?path=' + encodeURIComponent(id), '_blank', 'noopener'); return; }
   const m = byId[id];
   if (!m) return toast('Fiche absente du graphe, rafraîchis dans 30 s', true);
-  if (!$('#portfolio').hidden) closePortfolio();
-  if (!$('#liview').hidden) closeLiview();
   select(m); center(m);
 }
 
@@ -1590,6 +1636,7 @@ async function select(n, fromNav) {
   if (!fromNav && selected && n && n !== selected) history.push(selected);
   if (!n) history.length = 0;
   selected = n; if (!n) { panel.classList.remove('on'); return; }
+  if (shellTab() !== 'brain') location.hash = 'second-brain';
   const c = domOf(n.d).c, links = [...n.nb].sort((a, b) => b.deg - a.deg);
 const pf1 = pvFiche(n, links);
   panel.innerHTML = `<div class="hd"><button class="icobtn" id="pv-back" title="Précédent" ${history.length ? '' : 'disabled'}>‹</button><span class="dm" style="color:${c}">${domOf(n.d).label}${n.type ? ' · ' + esc(n.type) : ''}</span><button class="icobtn" id="pv-close" title="Fermer">×</button></div>
@@ -1623,32 +1670,7 @@ q.addEventListener('keydown', e => {
   chatAsk(text);                     // the bottom bar always starts a new thread
 });
 $('#q-hist').onclick = () => { chatShow(true); chatEl.querySelector('.histpane') ? chatBack() : chatHistory(); };
-addEventListener('keydown', e => { if (!$('#focus').hidden) { if (e.key === 'Escape') focusClose(); return; } if (!$('#credo').hidden) { if (e.key === 'Escape') credoClose(); else if (e.key === 'ArrowRight') credoStep(1); else if (e.key === 'ArrowLeft') credoStep(-1); return; } if (e.key === 'Escape' && !su.hidden) { suClose(); return; } if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); q.focus(); } if (e.key === 'Escape') { if (!viewer.hidden) { viewer.hidden = true; return; } if (!appview.hidden) { appview.hidden = true; return; } if (chatOpen) { chatShow(false); return; } q.value = ''; query = ''; q.blur(); select(null); $('#modal').hidden = true; } });
-
-/* ---------- resizable side columns ---------- */
-(() => {
-  const LIMITS = { left: [240, 620], right: [240, 620] };
-  const apply = (side, px) => {
-    const [min, max] = LIMITS[side];
-    const v = Math.max(min, Math.min(max, px));
-    document.documentElement.style.setProperty('--' + side, v + 'px');
-    try { localStorage.setItem('w-' + side, v); } catch (e) {}
-    resize();                       // the canvas needs its new box
-  };
-  for (const side of ['left', 'right']) {
-    try { const v = localStorage.getItem('w-' + side); if (v) document.documentElement.style.setProperty('--' + side, v + 'px'); } catch (e) {}
-  }
-  document.querySelectorAll('.grip').forEach(grip => {
-    grip.addEventListener('pointerdown', e => {
-      e.preventDefault(); grip.setPointerCapture(e.pointerId); grip.classList.add('on'); document.body.classList.add('resizing');
-      const side = grip.dataset.side;
-      const move = ev => apply(side, side === 'left' ? ev.clientX - 14 : innerWidth - ev.clientX - 14);
-      const up = () => { grip.classList.remove('on'); document.body.classList.remove('resizing'); grip.removeEventListener('pointermove', move); grip.removeEventListener('pointerup', up); };
-      grip.addEventListener('pointermove', move); grip.addEventListener('pointerup', up);
-    });
-    grip.addEventListener('dblclick', () => apply(grip.dataset.side, 340));
-  });
-})();
+addEventListener('keydown', e => { if (!$('#focus').hidden) { if (e.key === 'Escape') focusClose(); return; } if (!$('#credo').hidden) { if (e.key === 'Escape') credoClose(); else if (e.key === 'ArrowRight') credoStep(1); else if (e.key === 'ArrowLeft') credoStep(-1); return; } if (e.key === 'Escape' && !su.hidden) { suClose(); return; } if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); askOpen(); } if (e.key === 'Escape') { if (!viewer.hidden) { viewer.hidden = true; return; } if (!appview.hidden) { appview.hidden = true; return; } if (chatOpen) { chatShow(false); return; } q.value = ''; query = ''; q.blur(); select(null); $('#modal').hidden = true; } });
 
 /* ---------- projects: long-running work, stored in the second brain ---------- */
 const STAGES = ['actif', 'incubation', 'pause', 'terminé'];
@@ -1736,7 +1758,7 @@ function onPortfolioHash() {
   if (!r) { el.hidden = true; return; }
   if (el.hidden) { el.hidden = false; loadPortfolio(); } else if (pf) renderPortfolio();
 }
-function closePortfolio() { window.history.pushState('', '', location.pathname + location.search); onPortfolioHash(); }
+function closePortfolio() { window.history.pushState('', '', location.pathname + location.search); onPortfolioHash(); onShellHash(); }
 $('#pf-open').onclick = $('#pf-go').onclick = () => { location.hash = 'portefeuille'; };
 $('#pf-close').onclick = closePortfolio;
 addEventListener('hashchange', onPortfolioHash);
@@ -2014,9 +2036,8 @@ function onFinHash() {
   renderFinview();
   loadFinance();
 }
-const closeFinview = () => { window.history.pushState('', '', location.pathname + location.search); onFinHash(); };
+const closeFinview = () => { window.history.pushState('', '', location.pathname + location.search); onFinHash(); onShellHash(); };
 $('#fin-open').onclick = $('#fin-go').onclick = () => { location.hash = 'finances'; };
-$('#fin-close').onclick = closeFinview;
 addEventListener('hashchange', onFinHash);
 addEventListener('keydown', e => {
   if (e.key !== 'Escape' || $('#finview').hidden || document.activeElement?.matches('input, select')) return;
@@ -3066,9 +3087,8 @@ function onLiHash() {
   if (el.hidden) { el.hidden = false; liDirty = null; }
   if (li) renderLiview(); else loadLinkedin();
 }
-function closeLiview() { window.history.pushState('', '', location.pathname + location.search); onLiHash(); }
+function closeLiview() { window.history.pushState('', '', location.pathname + location.search); onLiHash(); onShellHash(); }
 $('#li-open').onclick = $('#li-go').onclick = () => { location.hash = 'linkedin'; };
-$('#li-close').onclick = closeLiview;
 addEventListener('hashchange', onLiHash);
 $('#li-seg').onclick = e => { const b = e.target.closest('button'); if (!b) return; liFilter = b.dataset.f; renderLiview(); };
 addEventListener('keydown', e => {
@@ -3077,6 +3097,22 @@ addEventListener('keydown', e => {
   if (!$('#standup').hidden || !$('#appview').hidden || !$('#viewer').hidden) return;
   closeLiview();
 }, true);
+
+/* ---------- shell: tabs routed by the hash, the assistant one keystroke away ---------- */
+const TAB_OF = { projets: 'projets', portefeuille: 'projets', finances: 'finances', linkedin: 'linkedin', 'second-brain': 'brain', outils: 'outils' };
+const shellTab = () => TAB_OF[location.hash.slice(1).split('/')[0]] ?? 'today';
+function onShellHash() {
+  const tab = shellTab();
+  document.querySelectorAll('#nav a').forEach(a => {
+    a.classList.toggle('on', a.dataset.tab === tab);
+    if (a.dataset.tab === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+  document.querySelectorAll('.view').forEach(v => { v.hidden = v.dataset.view !== tab; });
+}
+addEventListener('hashchange', onShellHash);
+new ResizeObserver(() => document.documentElement.style.setProperty('--bar-h', $('#top').offsetHeight + 'px')).observe($('#top'));
+function askOpen() { chatShow(true); $('#chat textarea')?.focus(); }
+$('#ask-open').onclick = askOpen;
 
 (async () => {
   cfg = await api('/api/config');
@@ -3093,6 +3129,7 @@ addEventListener('keydown', e => {
   setInterval(loadFinance, 60e3);
   // a test instance (own event queue) must not start a real stand-up on its own
   if (!cfg.testQueue) standupOnOpen();
+  onShellHash();
   onPortfolioHash();
   onFinHash();
   loadFinance();
