@@ -24,7 +24,7 @@
   --accent: #c4501d;      /* Alpes IA orange, deepened to hold on paper */
   --accent-ink: #ffffff;
   --accent-soft: #fbeade;
-  --c-signed: #cf5520; --c-pipe: #2f7cb0;   /* finance chart, validated with dataviz/validate_palette */
+  --c-signed: #c4501d; --c-pipe: #2f6fa0;   /* finance chart, validated with dataviz/validate_palette */
   --good: #3f8a5c;
   --warn: #b07d1c;
   --crit: #c0392b;
@@ -85,38 +85,64 @@ button, input, textarea, select { font-family: inherit; }
   .demobar { padding: 8px 16px; }
 }
 
-.os { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; height: calc(100vh - var(--bar-h, 61px)); padding: 14px; }
+.page { max-width: 1380px; margin: 0 auto; padding: 24px 28px 48px; }
+.ptitle { margin: 0 0 20px; font: 600 34px/1.1 var(--display); letter-spacing: -.015em; color: var(--ink); }
 [data-view="brain"] { height: calc(100vh - var(--bar-h, 61px)); padding: 14px; }
 [data-view="brain"] .core { height: 100%; }
-.tools { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; padding: 14px; align-items: start; }
+.pane { background: var(--surface); border: 1px solid var(--line-soft); border-radius: 10px; box-shadow: var(--shadow); min-width: 0; }
+.more { font: 500 12.5px/1.2 var(--font); color: var(--accent); text-decoration: none; white-space: nowrap; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.pane svg, .add svg { width: 16px; height: 16px; stroke: var(--accent); fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.tools { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; align-items: start; }
+#apps, #decks { display: flex; flex-direction: column; gap: 10px; }
 
-.col { display: flex; flex-direction: column; gap: 14px; min-height: 0; min-width: 0; }
+/* ---------- today: money band, the day's tasks, a glance column ---------- */
+.finband { padding: 16px 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 36px; }
+.fb-title { display: flex; align-items: center; gap: 9px; }
+.fb-title h2, .gl-head h2 { margin: 0; font: 600 15px/1.2 var(--font); color: var(--ink); }
+.fb-kpis { flex: 1 1 560px; display: flex; flex-wrap: wrap; gap: 12px 36px; }
+.kpi { flex: 1 1 180px; min-width: 0; }
+.kpi small { display: block; font-size: 12px; color: var(--ink-3); }
+.kpi b { display: block; font: 600 26px/1.2 var(--display); letter-spacing: -.015em; color: var(--ink); font-variant-numeric: tabular-nums; }
+.kpi b.enc { color: var(--accent); } .kpi b.att { color: var(--c-pipe); }
+.kpi span { display: block; font-size: 12px; color: var(--ink-3); }
+.today-grid { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; margin-top: 24px; }
+.tasks { flex: 999 1 600px; min-width: 0; }
+.glance { flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.t-head { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; padding: 0 10px; }
+.t-head > div { flex: 1; min-width: 240px; }
+.t-head p { margin: 0 0 2px; font-size: 13px; color: var(--ink-3); }
+.t-head h1 { margin: 0; font: 600 34px/1.1 var(--display); letter-spacing: -.015em; color: var(--ink); }
+.t-head .btn, .dg-new .btn { min-height: 36px; font-size: 13px; padding: 0 14px; border-radius: 7px; }
+#propositions { margin-top: 16px; }
+#propositions:empty { display: none; }
+.gl { padding: 16px 18px; }
+.gl-head { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
+.gl-head .meta { font: 400 12px/1.2 var(--font); color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gl-head .meta a { color: var(--accent); }
+.gl .sp { flex: 1; }
+#w-projects .projects { max-height: 360px; }
+#agents { display: grid; }
+.ag { display: flex; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line-soft); }
+.ag:first-child { border-top: 0; }
+.ag-t { flex: 1; min-width: 0; }
+.ag-t b { display: block; font: 400 13px/1.4 var(--font); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.ag-t b:hover { color: var(--accent); }
+.ag-t small { display: block; font-size: 12px; color: var(--ink-3); }
+.ag-act { display: flex; gap: 5px; flex-shrink: 0; }
+.dot.en_cours { background: var(--warn); } .dot.pret { background: var(--good); } .dot.bloque { background: var(--accent); } .dot.echec { background: var(--crit); }
+.dot.live { animation: pulse 1.4s ease-in-out infinite; }
+.dg-new { display: flex; gap: 8px; margin-top: 10px; }
+.dg-new input { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); color: var(--ink); font: 400 13px var(--font); padding: 0 10px; min-height: 36px; outline: none; }
+.dg-new input:focus { border-color: var(--accent); }
+.li-card { padding: 14px 18px; display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+.li-card:hover { border-color: var(--line); }
+.li-txt { flex: 1; min-width: 0; }
+.li-txt b { display: block; font: 600 15px/1.3 var(--font); }
+.li-txt span { display: block; font-size: 13px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.li-card .more { font-weight: 600; }
+@media (max-width: 860px) { .page { padding: 18px 16px 40px; } }
 
-.w {
-  min-width: 0;
-  background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--r);
-  padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 12px; min-height: 0;
-  box-shadow: var(--shadow);
-}
-.w:last-child { flex: 1; }
-.col.left > .w:first-child { flex: 1 1 44%; overflow: hidden; }
-.col.left > .w:last-child { flex: 1 1 56%; overflow: hidden; }
-.todo { flex: 1 1 auto; min-height: 96px; }
-#w-projects { flex: 1 1 34%; overflow: hidden; }
-[data-widget="apps"] { flex: 1 1 40%; overflow: hidden; }
-#w-finance { flex: 0 0 auto; }
-#w-agents { flex: 0 1 auto; max-height: 34%; overflow: hidden; }
-/* the right column holds more widgets than fit: give the agents room to be read, and let
-   the training decks scroll inside their card instead of spilling over the next one */
-#w-agents:not(.collapsed) { min-height: 110px; }
-#w-agents:not(.collapsed):has(.dg) { min-height: 150px; }
-#w-linkedin, [data-widget="decks"] { overflow: hidden; }
-#decks { overflow-y: auto; min-height: 0; }
-#agents { overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
-.dg .st { margin-left: auto; flex-shrink: 0; font: 500 11px/1 var(--font); padding: 3px 7px; border-radius: 4px; color: var(--ink-2); background: var(--sunken); }
-.dg .st.pret { color: var(--good); }
-.dg .st.bloque, .dg .st.echec { color: var(--crit); }
-.dg .st.en_cours { color: var(--warn); }
 .vreply { display: flex; gap: 8px; align-items: flex-end; padding: 12px 18px; border-top: 1px solid var(--line-soft); }
 .vreply[hidden] { display: none; }
 .vreply textarea:disabled { opacity: .6; }
@@ -131,13 +157,10 @@ button, input, textarea, select { font-family: inherit; }
 .doc details.act { margin: 10px 0 14px; }
 .doc details.act summary { cursor: pointer; font: 500 13px/1.4 var(--font); color: var(--ink-3); }
 .vreply textarea { flex: 1; min-width: 0; resize: vertical; min-height: 64px; font: 400 13.5px/1.5 var(--font); padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
-#dg-meta a { color: var(--accent); }
 .doc.trace .tr { font: 400 12.5px/1.5 var(--font); padding: 4px 0; border-bottom: 1px solid var(--line); white-space: pre-wrap; }
 .doc.trace .tr b { font: 500 11px/1 var(--mono); color: var(--ink-3); margin-right: 8px; text-transform: uppercase; }
 .doc.trace .tr.outil { color: var(--ink-3); font-family: var(--mono); font-size: 12px; }
 .doc.trace .tr.consigne, .doc.trace .tr.fin { color: var(--ink); font-weight: 500; }
-#apps { overflow-y: auto; min-height: 0; flex: 1; display: flex; flex-direction: column; gap: 10px; }
-.col.right > .w:last-child { flex: 1 1 26%; overflow: hidden; }
 .w-head { display: flex; align-items: center; gap: 10px; }
 .w-head h2 {
   margin: 0; font: 600 15px/1.2 var(--font); letter-spacing: -.01em; white-space: nowrap;
@@ -146,7 +169,6 @@ button, input, textarea, select { font-family: inherit; }
 .w-head h2 svg { width: 16px; height: 16px; stroke: var(--accent); fill: none; stroke-width: 1.7; flex-shrink: 0; }
 .w-head .meta { margin-left: auto; font: 400 11.5px/1 var(--font); color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .w-head .tag { flex-shrink: 0; }
-.syncdot { flex-shrink: 0; margin-left: auto; width: 7px; height: 7px; border-radius: 50%; background: var(--good); cursor: default; }
 .lbl { font: 500 11.5px/1.4 var(--font); color: var(--ink-3); }
 .num { font: 600 34px/1 var(--display); color: var(--accent); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
 .tag {
@@ -172,27 +194,6 @@ button, input, textarea, select { font-family: inherit; }
 .icobtn:disabled { opacity: .35; cursor: default; }
 
 
-/* ---------- mail ---------- */
-#gmail { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
-.mails { display: grid; gap: 2px; overflow-y: auto; flex: 1 1 0; min-height: 0; align-content: start; margin: 0 -8px; }
-a.mail, .mail {
-  display: grid; grid-template-columns: 7px 1fr auto; gap: 10px; align-items: start;
-  padding: 9px 8px; border-radius: 6px; text-decoration: none; color: inherit;
-}
-.mail:hover { background: var(--sunken); }
-.mail .dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 7px; background: transparent; }
-.mail.unread .dot { background: var(--accent); }
-.mail .from { font: 500 11.5px/1.3 var(--font); color: var(--ink-3); margin-bottom: 2px; }
-.mail b { display: block; font: 500 13.5px/1.35 var(--font); color: var(--ink-2); }
-.mail.unread b { font-weight: 600; color: var(--ink); }
-.mail small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--ink-3); font-size: 12.5px; line-height: 1.4; margin-top: 2px; }
-.mail .when { font: 400 11.5px/1 var(--font); color: var(--ink-3); margin-top: 4px; white-space: nowrap; }
-.mail.muted { opacity: .55; }
-.mail.muted:hover { opacity: 1; }
-.mail .from b.kn { display: inline-block; font: 500 10px/1 var(--font); color: var(--accent); background: var(--accent-soft); border-radius: 3px; padding: 2px 5px; margin-left: 5px; vertical-align: baseline; }
-.mails .more { margin: 8px; text-align: left; font: 500 12px/1.4 var(--font); color: var(--ink-3); background: transparent; border: 1px dashed var(--line); border-radius: 6px; padding: 9px 10px; cursor: pointer; }
-.mails .more:hover { border-color: var(--ink-3); color: var(--ink-2); }
-#gm-others[hidden] { display: none; }
 .projects { display: grid; gap: 2px; overflow-y: auto; overflow-x: hidden; min-height: 0; margin: 0 -8px; }
 /* Two lines per project: title + stage + last review, then the next step with
    the push button revealed on hover. */
@@ -223,47 +224,6 @@ a.mail, .mail {
 .stagebtn.terminé { color: var(--ink-3); }
 .pj .push { display: none; flex-shrink: 0; white-space: nowrap; font: 500 11px/1 var(--font); color: var(--accent); background: var(--accent-soft); border: 0; border-radius: 20px; padding: 5px 9px; cursor: pointer; }
 .pj:hover .push { display: inline-block; }
-.agenda { display: grid; gap: 1px; }
-.ev { display: grid; grid-template-columns: 54px 1fr; gap: 10px; padding: 6px 8px; border-radius: 6px; font-size: 12.5px; color: var(--ink-2); margin: 0 -8px; }
-.ev:hover { background: var(--sunken); }
-.ev .h { font: 500 12px/1.4 var(--font); color: var(--accent); font-variant-numeric: tabular-nums; padding-top: 1px; }
-.ev .h small { display: block; color: var(--ink-3); font-weight: 400; font-size: 11px; }
-.ev a { text-decoration: none; }
-.ev .t { color: var(--ink); font-weight: 500; }
-.ev .t small { display: block; color: var(--ink-3); font-weight: 400; }
-.ev .acts { display: none; gap: 5px; margin-top: 5px; }
-.ev:hover .acts { display: flex; }
-.ev .acts button { font: 500 10.5px/1 var(--font); color: var(--ink-3); background: var(--bg); border: 1px solid var(--line); border-radius: 20px; padding: 4px 8px; cursor: pointer; }
-.ev .acts button:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
-.agenda .none { font: 400 12px/1.4 var(--font); color: var(--ink-3); padding: 4px 0; }
-.agenda .more { margin: 4px -8px 0; width: calc(100% + 16px); text-align: left; font: 500 11.5px/1.4 var(--font); color: var(--ink-3); background: transparent; border: 1px dashed var(--line); border-radius: 6px; padding: 7px 8px; cursor: pointer; }
-.agenda .more:hover { border-color: var(--ink-3); color: var(--ink-2); }
-.agenda .scope { font: 400 12px/1.5 var(--font); color: var(--ink-3); border: 1px dashed var(--line); border-radius: 6px; padding: 9px 10px; }
-.agenda .scope a { color: var(--accent); }
-.cal-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
-.cal-foot button { border: 0; background: transparent; color: var(--ink-3); cursor: pointer; font: 500 11.5px/1 var(--font); padding: 0; }
-.cal-foot button:hover { color: var(--accent); }
-.cal-foot .btn { font-size: 11.5px; padding: 5px 9px; }
-.mail a { text-decoration: none; color: inherit; display: block; }
-.mail .acts { display: none; gap: 5px; margin-top: 7px; }
-.mail:hover .acts { display: flex; }
-.mail .acts button { font: 500 11px/1 var(--font); color: var(--ink-3); background: var(--bg); border: 1px solid var(--line); border-radius: 20px; padding: 5px 9px; cursor: pointer; }
-.mail .acts button:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
-.mail .from b.kn.rule { background: var(--sunken); color: var(--ink-3); }
-.hiddenbar { display: flex; align-items: center; gap: 10px; font: 400 12px/1.4 var(--font); color: var(--ink-3); border-top: 1px solid var(--line-soft); padding-top: 10px; }
-.hiddenbar button { margin-left: auto; font: 500 12px/1 var(--font); color: var(--accent); background: transparent; border: 0; cursor: pointer; padding: 0; }
-.rules summary { font: 500 12px/1.4 var(--font); color: var(--ink-3); cursor: pointer; list-style: none; }
-.rules summary::-webkit-details-marker { display: none; }
-.rules summary::before { content: "›"; display: inline-block; margin-right: 6px; transition: transform .15s; }
-.rules[open] summary::before { transform: rotate(90deg); }
-.rules textarea { width: 100%; margin-top: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; color: var(--ink); font: 400 12.5px/1.5 var(--font); padding: 9px; resize: vertical; outline: none; }
-.rules textarea:focus { border-color: var(--accent); }
-.wtoggle { margin-left: 6px; width: 24px; height: 24px; padding: 0; border: 0; background: transparent; color: var(--ink-3); cursor: pointer; border-radius: 6px; display: grid; place-items: center; transition: transform .15s; flex-shrink: 0; }
-.wtoggle svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; display: block; }
-.wtoggle:hover { background: var(--sunken); color: var(--ink); }
-.w.collapsed { flex: 0 0 auto !important; gap: 0; }
-.w.collapsed .w-body { display: none !important; }
-.w.collapsed .wtoggle { transform: rotate(-90deg); }
 /* ---- stand-up: a short spoken conversation, twice a day ---- */
 .standup { position: fixed; inset: 0; background: var(--scrim); display: grid; place-items: center; z-index: 28; backdrop-filter: blur(3px); }
 .standup[hidden] { display: none; }
@@ -385,52 +345,50 @@ a.mail, .mail {
 .auth code { font: 400 12px var(--mono); color: var(--ink-3); background: var(--sunken); padding: 6px 8px; border-radius: 4px; word-break: break-all; }
 
 /* ---------- todo ---------- */
-.prog { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; }
-.prog .bar { height: 5px; background: var(--sunken); border-radius: 3px; overflow: hidden; }
-.prog .bar i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .4s ease; }
-.prog span { font: 500 12px/1 var(--font); color: var(--ink-3); font-variant-numeric: tabular-nums; }
-.todo { display: grid; gap: 1px; overflow-y: auto; min-height: 0; margin: 0 -8px; }
-.todo .it { display: grid; grid-template-columns: 18px 1fr auto auto; gap: 11px; align-items: start; padding: 8px; border-radius: 6px; }
+.todo { display: grid; gap: 1px; align-content: start; }
+.grp { font: 600 11.5px/1.4 var(--font); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); margin: 20px 10px 4px; display: flex; gap: 8px; align-items: center; }
+.grp.now { color: var(--accent); }
+.grp i { font-style: normal; font-weight: 500; letter-spacing: 0; }
+.todo .empty { padding: 12px 10px; }
+.todo .it { display: flex; align-items: flex-start; gap: 12px; padding: 9px 10px; border-radius: 8px; }
 .todo .it:hover { background: var(--sunken); }
+.todo .rk { width: 22px; text-align: center; font: 600 17px/22px var(--display); color: var(--accent); flex-shrink: 0; }
+.todo .grp:not(.now) ~ .it .rk { color: var(--ink-3); font-size: 15px; }
 .todo input { position: absolute; opacity: 0; width: 0; height: 0; }
-.todo label.box { width: 17px; height: 17px; border: 1.5px solid var(--line); border-radius: 5px; cursor: pointer; display: grid; place-items: center; margin-top: 1px; background: var(--surface); }
-.todo label.box:hover { border-color: var(--accent); }
-.todo label.box svg { width: 11px; height: 11px; stroke: var(--accent-ink); stroke-width: 3; fill: none; opacity: 0; }
-.todo input:checked + label.box { background: var(--accent); border-color: var(--accent); }
+.todo label.box { width: 22px; height: 22px; border: 1.5px solid var(--line); border-radius: 6px; background: var(--surface); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; margin-top: 1px; }
+.todo label.box:hover { border-color: var(--ink-3); }
+.todo label.box svg { width: 14px; height: 14px; stroke: #fff; stroke-width: 2.4; fill: none; opacity: 0; }
+.todo input:checked + label.box { background: var(--good); border-color: var(--good); }
 .todo input:checked + label.box svg { opacity: 1; }
-.todo .tx { font: 500 13.5px/1.4 var(--font); color: var(--ink); }
-.todo .tx small { display: block; font: 400 12px/1.4 var(--font); color: var(--ink-3); margin-top: 1px; }
-.todo input:checked ~ .tx { color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--ink-3); }
-.todo .it.carried .tx small { color: var(--warn); }
-.todo .pr { width: 3px; height: 16px; border-radius: 2px; background: transparent; margin-top: 3px; }
-.todo .pr.h { background: var(--crit); } .todo .pr.m { background: var(--warn); }
-.todo .del { opacity: 0; font: 400 15px/1 var(--font); color: var(--ink-3); cursor: pointer; border: 0; background: transparent; padding: 0 2px; }
-.todo .it:hover .del { opacity: 1; }
-.todo .fo, .todo .ai, .todo .dgb { opacity: .55; width: 24px; height: 22px; display: grid; place-items: center; color: var(--ink-3); cursor: pointer; border: 1px solid transparent; border-radius: 5px; background: transparent; padding: 0; }
-.todo :is(.fo, .ai, .dgb) svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; pointer-events: none; }
-.todo .it:hover :is(.fo, .ai, .dgb), .todo :is(.fo, .ai, .dgb):focus-visible, .todo .dgb.on { opacity: 1; border-color: var(--line); }
-.todo .dgb.on { color: var(--accent); }
-.todo :is(.fo, .ai, .dgb):hover { color: var(--accent); border-color: var(--accent); }
-.todo .del:hover { color: var(--crit); }
-[data-widget="today"] > .w-body { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
-[data-widget="today"] > .w-body > :not(.todo) { flex-shrink: 0; }
-.todo { align-content: start; }
+.todo input:focus-visible + label.box { outline: 2px solid var(--accent); outline-offset: 2px; }
+.todo .tx { flex: 1; min-width: 0; }
+.todo .tt { display: block; font: 500 14.5px/1.45 var(--font); color: var(--ink); }
+.todo .grp:not(.now) ~ .it .tt, .folds .tt { font-weight: 400; font-size: 14px; }
+.todo .tx small { display: block; font: 400 12px/1.4 var(--font); color: var(--ink-3); margin-top: 2px; }
+.todo .tx small b { font-weight: 600; color: var(--accent); }
+.todo .it.done .tt { color: var(--ink-3); text-decoration: line-through; }
+.todo .acts { display: flex; gap: 2px; opacity: 0; transition: opacity .15s; }
+.todo .it:hover .acts, .todo .it:focus-within .acts { opacity: 1; }
+.ib { width: 32px; height: 32px; border-radius: 7px; border: 1px solid transparent; background: transparent; color: var(--ink-3); display: grid; place-items: center; padding: 0; cursor: pointer; flex-shrink: 0; font: 400 18px/1 var(--font); }
+.ib:hover { border-color: var(--line); color: var(--ink); background: var(--surface); }
+.ib svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.ib.dgb.on { color: var(--accent); }
+.ib.del:hover { color: var(--crit); }
 .todo .it[draggable="true"] { cursor: grab; }
 .todo .it.dragging { opacity: .4; }
 .todo .it.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
 .todo .it.drop-after { box-shadow: inset 0 -2px 0 var(--accent); }
-.todo .later-head { display: flex; align-items: center; gap: 8px; margin: 8px 8px 2px; padding: 6px 0 2px; border: 0; border-top: 1px solid var(--line-soft); background: transparent; color: var(--ink-3); font: 500 12px/1.4 var(--font); cursor: pointer; text-align: left; }
-.todo .later-head::before { content: "›"; display: inline-block; transition: transform .15s; }
-.todo .later-head.open::before { transform: rotate(90deg); }
-.todo .later-head.drop-before, .todo .later-head.drop-after { color: var(--accent); border-top-color: var(--accent); }
-.todo .it.later { grid-template-columns: 1fr auto auto; }
-.todo .acts { grid-column: 2; grid-row: 2; display: flex; gap: 4px; margin-top: -4px; }
-.todo .it.later .acts { grid-column: 1; }
-.todo .it.later .tx { color: var(--ink-2); font-weight: 400; }
-.prog span.full { color: var(--warn); }
-.add { display: flex; gap: 10px; align-items: center; border: 1px dashed var(--line); border-radius: 6px; padding: 9px 11px; }
-.add input { flex: 1; background: transparent; border: 0; color: var(--ink); font: 400 13px var(--font); outline: none; }
+.add { margin-top: 14px; display: flex; align-items: center; gap: 10px; padding: 0 12px; min-height: 46px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); cursor: text; }
+.add:focus-within { border-color: var(--accent); }
+.add svg { stroke: var(--ink-3); }
+.add input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; color: var(--ink); font: 400 14px var(--font); min-height: 44px; }
 .add input::placeholder { color: var(--ink-3); }
+.folds { margin-top: 14px; border-top: 1px solid var(--line-soft); padding-top: 8px; }
+.folds:empty { display: none; }
+.fold { justify-self: start; border: 0; background: transparent; color: var(--ink-2); font: 500 13px/1 var(--font); display: inline-flex; align-items: center; gap: 9px; padding: 0 10px; min-height: 36px; border-radius: 7px; cursor: pointer; }
+.fold::before { content: ""; width: 6px; height: 6px; border-right: 1.7px solid currentColor; border-bottom: 1.7px solid currentColor; transform: rotate(-45deg); transition: transform .2s; }
+.fold.open::before { transform: rotate(45deg); }
+.fold:hover, .fold.drop-before, .fold.drop-after { background: var(--sunken); color: var(--ink); }
 
 /* ---------- micro apps ---------- */
 .mapp { flex-shrink: 0; padding: 8px 4px; border-radius: 6px; min-width: 0; }
@@ -442,7 +400,6 @@ a.mail, .mail {
 .mapp .head-link:hover { color: var(--accent); }
 .mapp .head-link .live { width: 6px; height: 6px; border-radius: 50%; background: var(--warn); flex-shrink: 0; animation: pulse 1.2s ease-in-out infinite; }
 .mapp .act { display: flex; gap: 5px; flex-wrap: wrap; padding-left: 33px; }
-#apps.w-body { overflow-y: auto; min-height: 0; display: flex; flex-direction: column; }
 .btn.sm { font-size: 11.5px; padding: 5px 8px; }
 .run { display: grid; grid-template-columns: 7px 1fr auto; gap: 9px; align-items: center; font-size: 12.5px; padding: 6px 7px; cursor: pointer; border-radius: 6px; color: var(--ink-2); }
 .run:hover { background: var(--sunken); color: var(--ink); }
@@ -454,13 +411,6 @@ a.mail, .mail {
 .run { align-items: start; }
 .run i { margin-top: 5px; }
 @keyframes pulse { 50% { opacity: .3; } }
-
-/* ---------- produced files ---------- */
-.arts { display: grid; gap: 1px; margin: 0 -8px; overflow-y: auto; min-height: 0; }
-.art { min-width: 0; overflow-wrap: anywhere; display: grid; grid-template-columns: 16px 1fr auto; gap: 10px; align-items: center; padding: 8px; border-radius: 6px; font-size: 13px; color: var(--ink-2); cursor: pointer; }
-.art:hover { background: var(--sunken); color: var(--ink); }
-.art svg { width: 14px; height: 14px; stroke: var(--ink-3); fill: none; stroke-width: 1.6; }
-.art span { font: 400 11.5px/1 var(--font); color: var(--ink-3); white-space: nowrap; }
 
 /* ---------- centre / graph ---------- */
 .core { position: relative; min-width: 0; overflow: hidden; background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow); }
@@ -544,11 +494,6 @@ a.mail, .mail {
 .modal[hidden], .viewer[hidden], .appview[hidden] { display: none; }
 .appview { z-index: 24; }
 /* ---- portfolio: clients and their projects, full screen ---- */
-#w-projects h2, #fin-open { cursor: pointer; }
-#w-projects h2:hover, #fin-open:hover { color: var(--accent); }
-.pf-go { width: 24px; height: 24px; padding: 0; display: grid; place-items: center; flex-shrink: 0; border: 0; border-radius: 50%; background: var(--accent-soft); color: var(--accent); cursor: pointer; }
-.pf-go svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.2; }
-.pf-go:hover { background: var(--accent); color: var(--accent-ink); }
 .portfolio { position: fixed; inset: var(--bar-h, 61px) 0 0; z-index: 22; background: var(--bg); display: grid; grid-template-rows: auto 1fr; }
 .portfolio[hidden] { display: none; }
 .pf-top { display: flex; align-items: center; gap: 12px; padding: 14px 24px; border-bottom: 1px solid var(--line-soft); background: var(--surface); flex-wrap: wrap; }
@@ -652,10 +597,6 @@ a.pf-card.res-cours p { color: var(--accent); }
 .res-fmt a { font: 500 10.5px/1 var(--font); color: var(--ink-2); border: 1px solid var(--line); border-radius: 4px; padding: 4px 6px; text-decoration: none; }
 .res-fmt a:hover { color: var(--accent); border-color: var(--accent); }
 /* ---- LinkedIn: editorial plan, full screen ---- */
-#w-linkedin h2 { cursor: pointer; }
-#w-linkedin h2:hover { color: var(--accent); }
-.liw-next { display: block; font: 500 13.5px/1.4 var(--font); color: var(--ink); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.liw-next:hover { color: var(--accent); }
 .li-chip { font: 500 11px/1 var(--font); padding: 4px 7px; border-radius: 10px; background: var(--sunken); color: var(--ink-2); white-space: nowrap; }
 .li-chip.prepare { background: var(--accent-soft); color: var(--accent); }
 .li-chip.publie { color: var(--good); }
@@ -745,10 +686,6 @@ a.pf-card.res-cours p { color: var(--accent); }
 .fin-add input, .fin-add select { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px; color: var(--ink); font: 400 13px var(--font); min-width: 0; }
 .finview { grid-template-rows: auto 1fr; }
 .finview .pf-detail .inner { margin: 0 auto; }
-.finw { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.finw div { display: grid; gap: 3px; min-width: 0; }
-.finw small { color: var(--ink-3); font-size: 11.5px; }
-.finw b { font: 600 15px/1.2 var(--font); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 800px) {
   .pf-top { padding: 12px 16px; }
   .pf-main { grid-template-columns: 1fr; }
@@ -845,6 +782,8 @@ a.pf-card.res-cours p { color: var(--accent); }
     <symbol id="i-logo" viewBox="0 0 24 24"><path d="M12 2.5l8.2 4.75v9.5L12 21.5l-8.2-4.75v-9.5z"/><path d="M12 8v8M8.5 10l3.5-2 3.5 2"/></symbol>
     <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/></symbol>
     <symbol id="i-screen" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="12" rx="2"/><path d="M8.5 20.5h7M12 17v3.5"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
     <symbol id="i-hex" viewBox="0 0 24 24"><path d="M12 2l8 4.6v9.2L12 20.5 4 15.8V6.6z"/><path d="M12 7l4 2.3v4.6L12 16l-4-2.1V9.3z"/></symbol>
     <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/></symbol>
     <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/></symbol>
@@ -875,85 +814,39 @@ a.pf-card.res-cours p { color: var(--accent); }
   <div class="demobar" id="demobar" hidden><span>Mode démo : les finances affichent des données fictives.</span><button class="btn sm" id="demo-quit">Quitter la démo</button></div>
 </div>
 
-<main class="view" data-view="today">
-<div class="os">
-  <aside class="col left">
-    <section class="w" data-widget="inbox">
-      <div class="w-head">
-        <h2><svg><use href="#i-mail"/></svg>Boîte de réception</h2>
-        <span class="tag acc" id="gm-label">ALPES-IA</span>
-        <i class="syncdot" id="gm-sync" title="Synchronisation"></i>
-        <button class="wtoggle" aria-label="Réduire ou déplier" data-w="inbox" title="Réduire"><svg><use href="#i-chev"/></svg></button>
+<main class="view page" data-view="today">
+  <section class="pane finband" aria-labelledby="fb-h">
+    <div class="fb-title"><svg><use href="#i-euro"/></svg><h2 id="fb-h">Finances</h2><span class="tag acc" id="fb-demo" hidden>fictives</span></div>
+    <div class="fb-kpis" id="finw"><span class="lbl">Chargement…</span></div>
+    <a class="more" href="#finances">Voir la projection →</a>
+  </section>
+  <div class="today-grid">
+    <section class="tasks" aria-labelledby="h-today">
+      <div class="t-head">
+        <div><p id="today"></p><h1 id="h-today">Aujourd'hui</h1></div>
+        <button class="btn" id="brief-run" title="Composer la journée sans passer par les questions">Sans questions</button>
+        <button class="btn" id="su-run">Faire le point</button>
       </div>
-      <div class="w-body" id="gmail"><span class="lbl">Chargement…</span></div>
-    </section>
-
-    <section class="w" data-widget="today">
-      <div class="w-head">
-        <h2><svg><use href="#i-list"/></svg>Aujourd'hui</h2>
-        <span class="meta" id="today"></span>
-        <button class="wtoggle" aria-label="Réduire ou déplier" data-w="today" title="Réduire"><svg><use href="#i-chev"/></svg></button>
-      </div>
-      <div class="w-body">
-        <div class="prog"><div class="bar"><i id="pbar"></i></div><span id="pcount">0/0</span></div>
+      <div id="propositions"></div>
+      <div id="tasks-list">
         <div class="todo" id="todo"></div>
-        <div class="add"><span class="lbl">+</span><input id="newtodo" placeholder="Ajouter une tâche, Entrée pour valider · !! = urgent"></div>
-        <div class="agenda" id="agenda"></div>
-        <div class="su-launch"><button class="btn acc" id="su-run" style="flex:1">Faire le point</button><button class="btn" id="brief-run" title="Composer sans passer par les questions">Sans questions</button></div>
-        <span class="lbl" id="todo-src"></span>
+        <label class="add"><svg><use href="#i-plus"/></svg><span class="sr">Nouvelle tâche</span><input id="newtodo" placeholder="Ajouter une tâche · Entrée pour valider, !! pour urgent" autocomplete="off"></label>
+        <div class="todo folds" id="todo-more"></div>
       </div>
     </section>
-  </aside>
-
-  <aside class="col right">
-    <section class="w" id="w-projects" data-widget="projects">
-      <div class="w-head">
-        <h2 id="pf-open" title="Ouvrir la vue clients & projets"><svg><use href="#i-flow"/></svg>Projets en cours</h2>
-        <span class="meta" id="pj-meta"></span>
-        <button class="pf-go" id="pf-go" title="Ouvrir la vue clients & projets" aria-label="Ouvrir la vue clients et projets"><svg><use href="#i-arrow"/></svg></button>
-        <button class="wtoggle" aria-label="Réduire ou déplier" data-w="projects" title="Réduire"><svg><use href="#i-chev"/></svg></button>
-      </div>
-      <div class="projects w-body" id="projects"></div>
-    </section>
-
-    <section class="w" id="w-agents" data-widget="agents">
-      <div class="w-head">
-        <h2><svg><use href="#i-agent"/></svg>Agents</h2>
-        <span class="meta" id="dg-meta"></span>
-        <button class="wtoggle" aria-label="Réduire ou déplier" data-w="agents" title="Réduire"><svg><use href="#i-chev"/></svg></button>
-      </div>
-      <div class="w-body" id="agents"><span class="lbl">Chargement…</span></div>
-    </section>
-
-    <section class="w" id="w-linkedin" data-widget="linkedin">
-      <div class="w-head">
-        <h2 id="li-open" title="Ouvrir la page LinkedIn"><svg><use href="#i-post"/></svg>LinkedIn</h2>
-        <button class="pf-go" id="li-go" title="Ouvrir la page LinkedIn" aria-label="Ouvrir la page LinkedIn"><svg><use href="#i-arrow"/></svg></button>
-        <button class="wtoggle" aria-label="Réduire ou déplier" data-w="linkedin" title="Réduire"><svg><use href="#i-chev"/></svg></button>
-      </div>
-      <div class="w-body" id="liw"><span class="lbl">Chargement…</span></div>
-    </section>
-
-    <section class="w" id="w-finance" data-widget="finance">
-      <div class="w-head">
-        <h2 id="fin-open" title="Ouvrir le suivi financier"><svg><use href="#i-euro"/></svg>Suivi financier</h2>
-        <span class="meta late" id="finw-meta"></span>
-        <button class="pf-go" id="fin-go" title="Ouvrir le suivi financier" aria-label="Ouvrir le suivi financier"><svg><use href="#i-arrow"/></svg></button>
-        <button class="wtoggle" aria-label="Réduire ou déplier" data-w="finance" title="Réduire"><svg><use href="#i-chev"/></svg></button>
-      </div>
-      <div class="w-body" id="finw"></div>
-    </section>
-
-    <section class="w" data-widget="artifacts">
-      <div class="w-head">
-        <h2><svg><use href="#i-file"/></svg>Fichiers produits</h2>
-        <span class="meta" id="runs-meta"></span>
-        <button class="wtoggle" aria-label="Réduire ou déplier" data-w="artifacts" title="Réduire"><svg><use href="#i-chev"/></svg></button>
-      </div>
-      <div class="arts w-body" id="artifacts"></div>
-    </section>
-  </aside>
-</div>
+    <aside class="glance" aria-label="En un coup d'œil">
+      <section class="pane gl" id="w-projects" aria-labelledby="h-pj">
+        <div class="gl-head"><svg><use href="#i-flow"/></svg><h2 id="h-pj">Projets en cours</h2><span class="meta" id="pj-meta"></span><span class="sp"></span><a class="more" href="#projets">Tous →</a></div>
+        <div class="projects" id="projects"></div>
+      </section>
+      <section class="pane gl" id="w-agents" aria-labelledby="h-ag">
+        <div class="gl-head"><svg><use href="#i-agent"/></svg><h2 id="h-ag">Agents</h2><span class="sp"></span><span class="meta" id="dg-meta"></span></div>
+        <div id="agents"><span class="lbl">Chargement…</span></div>
+        <form class="dg-new" id="dg-new"><label class="sr" for="dg-task">Tâche pour un nouvel agent</label><input id="dg-task" placeholder="Confier une tâche à un agent…" autocomplete="off"><button class="btn acc" type="submit">Lancer</button></form>
+      </section>
+      <a class="pane gl li-card" id="li-card" href="#linkedin"><svg><use href="#i-post"/></svg><span class="li-txt"><b>LinkedIn</b><span id="liw">Chargement…</span></span><span class="more">Ouvrir →</span></a>
+    </aside>
+  </div>
 </main>
 
 <main class="view" data-view="brain">
@@ -978,21 +871,12 @@ a.pf-card.res-cours p { color: var(--accent); }
 
 </main>
 
-<main class="view tools" data-view="outils">
-    <section class="w" data-widget="apps">
-      <div class="w-head">
-        <h2><svg><use href="#i-grid"/></svg>Micro apps</h2>
-        <button class="wtoggle" aria-label="Réduire ou déplier" data-w="apps" title="Réduire"><svg><use href="#i-chev"/></svg></button>
-      </div>
-      <div class="w-body" id="apps"></div>
-    </section>
-    <section class="w" data-widget="decks">
-      <div class="w-head">
-        <h2><svg><use href="#i-course"/></svg>Supports de formation</h2>
-        <button class="wtoggle" aria-label="Réduire ou déplier" data-w="decks" title="Réduire"><svg><use href="#i-chev"/></svg></button>
-      </div>
-      <div class="w-body" id="decks"></div>
-    </section>
+<main class="view page" data-view="outils">
+  <h1 class="ptitle">Outils</h1>
+  <div class="tools">
+    <section class="pane gl" aria-labelledby="h-apps"><div class="gl-head"><svg><use href="#i-grid"/></svg><h2 id="h-apps">Micro apps</h2></div><div id="apps"></div></section>
+    <section class="pane gl" aria-labelledby="h-decks"><div class="gl-head"><svg><use href="#i-course"/></svg><h2 id="h-decks">Supports de formation</h2></div><div id="decks"></div></section>
+  </div>
 </main>
 
 <div class="chatdock"><div class="chat" id="chat"></div></div>
@@ -1103,7 +987,7 @@ const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(
 
 /* ---------- todo (brain/journal/todo.md in the second brain) ---------- */
 let todo = { items: [], carried: [], later: [], max: 5 };
-let laterOpen = false;
+let laterOpen = false, doneOpen = false;
 async function loadTodo() { todo = await api('/api/todo'); renderTodo(); }
 async function saveTodo() {
   todo = await api('/api/todo', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ items: todo.items, later: todo.later }) });
@@ -1113,23 +997,29 @@ async function saveTodo() {
 // what the assistant receives when a task is handed to it from the todo
 const todoBrief = t => `Prends en charge cette tâche de ma todo : « ${t.s ? `${t.s} — ${t.t}` : t.t} »${t.from ? ` (reportée du ${t.from})` : ''}.
 Cherche le contexte dans le second brain (projet, client, décisions, échéances), puis avance dessus : fais ce que tu peux faire avec tes outils et dis-moi ce qu'il reste à faire de mon côté.`;
-const todoTitle = t => t.s ? `${esc(t.s)} — ${esc(t.t)}` : esc(t.t);
+// The open tasks in order: the first three are what to do now, the rest comes next.
+// Done ones and "Plus tard" stay folded under the add field.
 function renderTodo() {
-  const el = $('#todo');
-  const row = (t, i, carried) => `<div class="it${carried ? ' carried' : ''}" draggable="true" data-list="${carried ? 'carried' : 'items'}" data-i="${i}"><input type="checkbox" id="td${carried ? 'c' : ''}${i}" data-i="${i}" data-c="${carried ? 1 : 0}" ${t.done ? 'checked' : ''}><label class="box" for="td${carried ? 'c' : ''}${i}"><svg><use href="#i-check"/></svg></label><div class="tx">${todoTitle(t)}${carried ? `<small>reporté du ${t.from}</small>` : ''}</div>${carried ? '<span></span>' : `<button class="del" data-i="${i}" title="Supprimer">×</button>`}<i class="pr ${t.p}"></i><div class="acts"><button class="dgb${dgActive(t) ? ' on' : ''}" data-list="${carried ? 'carried' : 'items'}" data-i="${i}" title="${dgActive(t) ? 'Un agent travaille déjà sur cette tâche' : 'Déléguer à un agent'}" aria-label="Déléguer à un agent"><svg><use href="#i-agent"/></svg></button><button class="ai" data-list="${carried ? 'carried' : 'items'}" data-i="${i}" title="Confier cette tâche à l'assistant" aria-label="Confier à l'assistant"><svg><use href="#i-play"/></svg></button><button class="fo" data-list="${carried ? 'carried' : 'items'}" data-i="${i}" title="Focus sur cette tâche" aria-label="Focus"><svg><use href="#i-focus"/></svg></button></div></div>`;
-  const later = (t, i) => `<div class="it later" draggable="true" data-list="later" data-i="${i}"><div class="tx">${todoTitle(t)}</div><button class="del" data-i="${i}" data-later="1" title="Supprimer">×</button><i class="pr ${t.p}"></i><div class="acts"><button class="dgb${dgActive(t) ? ' on' : ''}" data-list="later" data-i="${i}" title="${dgActive(t) ? 'Un agent travaille déjà sur cette tâche' : 'Déléguer à un agent'}" aria-label="Déléguer à un agent"><svg><use href="#i-agent"/></svg></button><button class="ai" data-list="later" data-i="${i}" title="Confier cette tâche à l'assistant" aria-label="Confier à l'assistant"><svg><use href="#i-play"/></svg></button><button class="fo" data-list="later" data-i="${i}" title="Focus sur cette tâche" aria-label="Focus"><svg><use href="#i-focus"/></svg></button></div></div>`;
-  el.innerHTML = todo.items.map((t, i) => row(t, i, false)).join('') + todo.carried.map((t, i) => row(t, i, true)).join('')
-    + (todo.later.length ? `<button class="later-head${laterOpen ? ' open' : ''}" data-list="later" data-i="0">Plus tard · ${todo.later.length}</button>` + (laterOpen ? todo.later.map(later).join('') : '') : '');
-  const d = todo.items.filter(t => t.done).length;
-  $('#pbar').style.width = todo.items.length ? (d / todo.items.length * 100) + '%' : '0';
-  $('#pcount').textContent = `${d}/${todo.items.length}`;
-  $('#pcount').classList.toggle('full', todo.items.length - d >= todo.max);
-  $('#todo-src').textContent = 'second-brain/brain/journal/todo.md';
+  const why = (t, carried) => [esc(t.s), t.p === 'h' ? '<b>urgent</b>' : t.p === 'm' ? '<b>important</b>' : '', carried ? `reporté du ${esc(t.from)}` : ''].filter(Boolean).join(' · ');
+  const acts = (list, i, t) => `<div class="acts"><button class="ib dgb${dgActive(t) ? ' on' : ''}" data-list="${list}" data-i="${i}" title="${dgActive(t) ? 'Un agent travaille déjà sur cette tâche' : 'Déléguer à un agent'}" aria-label="Déléguer à un agent"><svg><use href="#i-agent"/></svg></button><button class="ib ai" data-list="${list}" data-i="${i}" title="Confier à l'assistant" aria-label="Confier à l'assistant"><svg><use href="#i-spark"/></svg></button><button class="ib fo" data-list="${list}" data-i="${i}" title="Mode focus" aria-label="Mode focus"><svg><use href="#i-target"/></svg></button>${list === 'carried' ? '' : `<button class="ib del" data-i="${i}"${list === 'later' ? ' data-later="1"' : ''} title="Supprimer" aria-label="Supprimer">×</button>`}</div>`;
+  const row = (t, i, list, rank) => {
+    const carried = list === 'carried', id = `td${carried ? 'c' : ''}${i}`, w = why(t, carried);
+    const box = list === 'later' ? '' : `<input type="checkbox" id="${id}" data-i="${i}" data-c="${carried ? 1 : 0}" ${t.done ? 'checked' : ''}><label class="box" for="${id}" title="${t.done ? 'Rouvrir la tâche' : 'Marquer comme faite'}"><svg><use href="#i-check"/></svg></label>`;
+    return `<div class="it${carried ? ' carried' : ''}${t.done ? ' done' : ''}" draggable="true" data-list="${list}" data-i="${i}"><span class="rk" aria-hidden="true">${rank ?? ''}</span>${box}<div class="tx"><span class="tt">${esc(t.t)}</span>${w ? `<small>${w}</small>` : ''}</div>${acts(list, i, t)}</div>`;
+  };
+  const open = [...todo.items.map((t, i) => [t, i, 'items']).filter(([t]) => !t.done), ...todo.carried.map((t, i) => [t, i, 'carried'])];
+  const done = todo.items.map((t, i) => [t, i]).filter(([t]) => t.done);
+  const now = open.slice(0, 3), next = open.slice(3);
+  $('#todo').innerHTML = (open.length ? `<h2 class="grp now">À faire maintenant <i>${now.length}</i></h2>${now.map(([t, i, l], k) => row(t, i, l, k + 1)).join('')}` : '<p class="lbl empty">Rien d\'ouvert pour aujourd\'hui.</p>')
+    + (next.length ? `<h2 class="grp">Ensuite <i>${next.length}</i></h2>${next.map(([t, i, l], k) => row(t, i, l, k + 4)).join('')}` : '');
+  $('#todo-more').innerHTML = (done.length ? `<button class="fold${doneOpen ? ' open' : ''}" data-fold="done" aria-expanded="${doneOpen}">Faites aujourd'hui · ${done.length}</button>${doneOpen ? done.map(([t, i]) => row(t, i, 'items')).join('') : ''}` : '')
+    + (todo.later.length ? `<button class="fold later-head${laterOpen ? ' open' : ''}" data-list="later" data-i="0" aria-expanded="${laterOpen}">Plus tard · ${todo.later.length}</button>${laterOpen ? todo.later.map((t, i) => row(t, i, 'later')).join('') : ''}` : '');
 }
 // drag & drop across today, carried and "Plus tard"; the server re-applies the cap
+const tasksEl = $('#tasks-list');
 let dragSrc = null;
-const clearDrop = () => $('#todo').querySelectorAll('.drop-before,.drop-after').forEach(n => n.classList.remove('drop-before', 'drop-after'));
-$('#todo').addEventListener('dragstart', e => {
+const clearDrop = () => tasksEl.querySelectorAll('.drop-before,.drop-after').forEach(n => n.classList.remove('drop-before', 'drop-after'));
+tasksEl.addEventListener('dragstart', e => {
   const it = e.target.closest('[draggable="true"]');
   if (!it) return;
   dragSrc = { list: it.dataset.list, i: +it.dataset.i };
@@ -1137,8 +1027,8 @@ $('#todo').addEventListener('dragstart', e => {
   e.dataTransfer.effectAllowed = 'move';
   e.dataTransfer.setData('text/plain', '');
 });
-$('#todo').addEventListener('dragend', e => { e.target.classList?.remove('dragging'); clearDrop(); dragSrc = null; });
-$('#todo').addEventListener('dragover', e => {
+tasksEl.addEventListener('dragend', e => { e.target.classList?.remove('dragging'); clearDrop(); dragSrc = null; });
+tasksEl.addEventListener('dragover', e => {
   const tg = dragSrc && e.target.closest('.it, .later-head');
   if (!tg) return;
   e.preventDefault();
@@ -1146,7 +1036,7 @@ $('#todo').addEventListener('dragover', e => {
   const r = tg.getBoundingClientRect();
   tg.classList.add(tg.classList.contains('later-head') || e.clientY < r.top + r.height / 2 ? 'drop-before' : 'drop-after');
 });
-$('#todo').addEventListener('drop', async e => {
+tasksEl.addEventListener('drop', async e => {
   const tg = dragSrc && e.target.closest('.it, .later-head');
   if (!tg) return;
   e.preventDefault();
@@ -1169,7 +1059,8 @@ $('#todo').addEventListener('drop', async e => {
   todo[list].splice(at, 0, t);
   saveTodo();
 });
-$('#todo').addEventListener('change', async e => {
+tasksEl.addEventListener('change', async e => {
+  if (e.target.type !== 'checkbox') return;
   const i = +e.target.dataset.i;
   if (e.target.dataset.c === '1') {
     // close it in the day it came from, rather than copying it into today
@@ -1181,12 +1072,16 @@ $('#todo').addEventListener('change', async e => {
   todo.items[i].done = e.target.checked;
   saveTodo();
 });
-$('#todo').addEventListener('click', e => {
-  if (e.target.classList.contains('later-head')) { laterOpen = !laterOpen; renderTodo(); return; }
-  if (e.target.classList.contains('ai')) { chatAsk(todoBrief(todo[e.target.dataset.list][+e.target.dataset.i])); return; }
-  if (e.target.classList.contains('dgb')) { dgDelegate(todo[e.target.dataset.list][+e.target.dataset.i]); return; }
-  if (e.target.classList.contains('fo')) { focusOpen(todo[e.target.dataset.list][+e.target.dataset.i]); return; }
-  if (e.target.classList.contains('del')) { todo[e.target.dataset.later ? 'later' : 'items'].splice(+e.target.dataset.i, 1); saveTodo(); }
+tasksEl.addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  if (b.dataset.fold === 'done') { doneOpen = !doneOpen; renderTodo(); return; }
+  if (b.classList.contains('later-head')) { laterOpen = !laterOpen; renderTodo(); return; }
+  const t = () => todo[b.dataset.list][+b.dataset.i];
+  if (b.classList.contains('ai')) { chatAsk(todoBrief(t())); return; }
+  if (b.classList.contains('dgb')) { dgDelegate(t()); return; }
+  if (b.classList.contains('fo')) { focusOpen(t()); return; }
+  if (b.classList.contains('del')) { todo[b.dataset.later ? 'later' : 'items'].splice(+b.dataset.i, 1); saveTodo(); }
 });
 $('#newtodo').addEventListener('keydown', e => {
   if (e.key !== 'Enter' || !e.target.value.trim()) return;
@@ -1195,59 +1090,7 @@ $('#newtodo').addEventListener('keydown', e => {
   const [text, s = ''] = t.split(' — ');
   todo.items.push({ t: text, s, p, done: false }); e.target.value = ''; saveTodo();
 });
-$('#today').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-
-/* ---------- gmail ---------- */
-async function loadGmail(refresh) {
-  const el = $('#gmail');
-  const g = await api('/api/gmail' + (refresh ? '?refresh=1' : ''));
-  if (g.error) { el.innerHTML = `<div class="auth"><p style="color:var(--crit)">${esc(g.error)}</p><a class="btn" href="/auth/google">Ré-autoriser</a></div>`; return; }
-  if (g.needsAuth) {
-    el.innerHTML = `<div class="auth">${g.hasSecret ? `<p>Autorise l'accès en lecture à ta boîte Gmail (label ${esc(cfg.gmail.label)}).</p><a class="btn acc" href="/auth/google">Connecter Gmail</a>` : `<p>Dépose le client OAuth Google (type « Desktop app ») dans :</p><code>credentials/client_secret.json</code><p>puis relance le serveur.</p>`}</div>`;
-    return;
-  }
-  $('#gm-sync').title = 'Synchronisé ' + rel(g.syncedAt);
-  const senderRule = a => g.senders?.[a]?.rule;
-  const row = t => `<div class="mail${t.unread ? ' unread' : ''}${t.bucket !== 'personne' ? ' muted' : ''}" title="${esc(t.why.join(' · '))}">
-      <i class="dot"></i>
-      <div>
-        <div class="from">${esc(t.from)}${t.count > 1 ? ' · ' + t.count : ''}${t.known ? ' <b class="kn">connu</b>' : ''}${senderRule(t.addr) ? ` <b class="kn rule">${senderRule(t.addr) === 'allow' ? 'toujours' : 'jamais'}</b>` : ''}</div>
-        <a href="${t.url}" target="_blank" rel="noopener"><b>${esc(t.subject)}</b></a>
-        <small>${esc(t.snippet.slice(0, 110))}</small>
-        <div class="acts">
-          <button data-hide="${esc(t.id)}" data-subject="${esc(t.subject)}" data-from="${esc(t.from)}" title="Masquer ce fil, rien à répondre">Traité</button>
-          <button data-sender="${esc(t.addr)}" data-rule="${senderRule(t.addr) === 'allow' ? 'none' : 'allow'}" title="Toujours afficher cet expéditeur">${senderRule(t.addr) === 'allow' ? 'Ne plus prioriser' : 'Toujours'}</button>
-          <button data-sender="${esc(t.addr)}" data-rule="${senderRule(t.addr) === 'deny' ? 'none' : 'deny'}" title="Ne plus jamais afficher cet expéditeur">${senderRule(t.addr) === 'deny' ? 'Réautoriser' : 'Jamais'}</button>
-        </div>
-      </div>
-      <span class="when">${rel(t.date)}</span>
-    </div>`;
-  const noise = g.counts.auto + g.counts.bulk;
-  const noiseLabel = `Voir les ${noise} messages écartés · ${g.counts.auto} automatiques, ${g.counts.bulk} newsletters`;
-  el.innerHTML = `<div style="display:flex;gap:12px;align-items:center"><span class="num">${g.total}</span><div class="lbl" style="line-height:1.5">à traiter${g.unreadKept ? `<br>dont ${g.unreadKept} non lu${g.unreadKept > 1 ? 's' : ''}` : '<br>tous lus'}</div></div>
-    <div class="mails">${g.threads.length ? g.threads.map(row).join('') : '<span class="lbl" style="padding:8px">Rien qui demande une réponse.</span>'}
-      ${noise ? `<button class="more" id="gm-more">${noiseLabel}</button><div id="gm-others" hidden>${g.others.map(row).join('')}</div>` : ''}</div>
-    ${g.hidden?.length ? `<div class="hiddenbar"><span>${g.hidden.length} fil${g.hidden.length > 1 ? 's' : ''} marqué${g.hidden.length > 1 ? 's' : ''} traité${g.hidden.length > 1 ? 's' : ''}</span><button id="gm-unhide">Tout réafficher</button></div>` : ''}
-    <details class="rules"><summary>Consignes de tri</summary><textarea id="gm-notes" rows="3" placeholder="Ce que tu veux que je retienne. Ex : les rappels Noota ne demandent jamais de réponse, la compta IONOS part au classement.">${esc(g.notes ?? '')}</textarea><span class="lbl">Lu par le point du jour. Les boutons, eux, agissent tout de suite.</span></details>
-    <div style="display:flex;gap:6px"><a class="btn acc" href="https://mail.google.com/mail/u/0/#label/${encodeURIComponent(g.label)}" target="_blank" rel="noopener">Ouvrir Gmail</a><button class="btn" id="gm-refresh">Rafraîchir</button></div>`;
-  $('#gm-refresh').onclick = () => loadGmail(true);
-  const post = (url, body) => api(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
-  el.querySelectorAll('[data-hide]').forEach(b => b.onclick = async () => {
-    await post('/api/mail/hide', { id: b.dataset.hide, subject: b.dataset.subject, from: b.dataset.from });
-    toast('Fil marqué traité'); loadGmail(true);
-  });
-  el.querySelectorAll('[data-sender]').forEach(b => b.onclick = async () => {
-    await post('/api/mail/sender', { addr: b.dataset.sender, rule: b.dataset.rule === 'none' ? null : b.dataset.rule });
-    toast(b.dataset.rule === 'allow' ? 'Expéditeur toujours prioritaire' : b.dataset.rule === 'deny' ? 'Expéditeur écarté' : 'Règle retirée');
-    loadGmail(true);
-  });
-  const unhide = $('#gm-unhide');
-  if (unhide) unhide.onclick = async () => { await post('/api/mail/unhide', { all: true }); toast('Fils réaffichés'); loadGmail(true); };
-  const notes = $('#gm-notes');
-  if (notes) notes.onblur = () => post('/api/mail/notes', { notes: notes.value }).then(() => toast('Consignes enregistrées'));
-  const more = $('#gm-more');
-  if (more) more.onclick = () => { const o = $('#gm-others'); o.hidden = !o.hidden; more.textContent = o.hidden ? noiseLabel : 'Masquer les messages écartés'; };
-}
+$('#today').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).replace(/^./, c => c.toUpperCase());
 
 /* ---------- micro apps + runs ---------- */
 let cfg = { apps: [], gmail: {} }, runs = [];
@@ -1310,10 +1153,6 @@ $('#m-run').onclick = async () => {
 function toast(msg, bad) { const el = document.createElement('div'); el.className = 'toast' + (bad ? ' bad' : ''); el.textContent = msg; document.body.appendChild(el); setTimeout(() => el.remove(), 4000); }
 async function loadRuns() {
   runs = await api('/api/runs'); renderApps();
-  const arts = await api('/api/artifacts');
-  $('#runs-meta').textContent = runs.some(r => r.status === 'running') ? `${runs.filter(r => r.status === 'running').length} en cours` : `${arts.length} fichiers`;
-  $('#artifacts').innerHTML = arts.length ? arts.map(f => `<div class="art" data-path="${esc(f.path)}"><svg><use href="#i-file"/></svg>${esc(f.name)}<span>${rel(f.mtime)}</span></div>`).join('') : '<span class="lbl">Rien encore. Lance une micro app.</span>';
-  $('#artifacts').querySelectorAll('.art').forEach(el => el.onclick = () => openFile(el.dataset.path));
   if (!appview.hidden && avId) openApp(avId);
   if (runs.some(r => r.status === 'running')) setTimeout(loadRuns, 4000);
 }
@@ -1759,7 +1598,6 @@ function onPortfolioHash() {
   if (el.hidden) { el.hidden = false; loadPortfolio(); } else if (pf) renderPortfolio();
 }
 function closePortfolio() { window.history.pushState('', '', location.pathname + location.search); onPortfolioHash(); onShellHash(); }
-$('#pf-open').onclick = $('#pf-go').onclick = () => { location.hash = 'portefeuille'; };
 $('#pf-close').onclick = closePortfolio;
 addEventListener('hashchange', onPortfolioHash);
 addEventListener('keydown', e => {
@@ -2022,12 +1860,32 @@ function renderFinview(error) {
   el.scrollTop = top;
   pfFinanceWire(el);
 }
+// The three figures both screens show: cashed this year, signed and expected, and
+// what the next three months should bring (expected + quotes counted as likely).
+function finSummary(rows) {
+  const today = isoToday(), now = new Date(), y = now.getFullYear();
+  const end = new Date(y, now.getMonth() + 4, 0).toLocaleDateString('sv-SE');
+  const mon = k => new Date(y, now.getMonth() + k, 1).toLocaleDateString('fr-FR', { month: 'short' });
+  const inWindow = r => r.date && r.date <= end;
+  const cashed = rows.filter(r => r.statut === 'encaisse' && r.date.startsWith(String(y)));
+  const due = rows.filter(r => r.statut === 'a_encaisser');
+  const sure = due.filter(inWindow), leads = rows.filter(r => r.statut === 'devis' && r.compte && inWindow(r));
+  const next = due.filter(r => r.date >= today).sort((a, b) => a.date.localeCompare(b.date))[0];
+  const sum = l => l.reduce((a, r) => a + r.montant, 0);
+  return {
+    year: y, window: `${mon(1)}–${mon(3)}`, cashed: sum(cashed), cashedN: cashed.length,
+    due: sum(due), late: sum(due.filter(r => r.late)), next, sure: sum(sure), leads: sum(leads),
+  };
+}
+const finNextLabel = (f, d = iso => new Date(iso + 'T12:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })) =>
+  f.late ? `<em class="late">! ${EUR(f.late)} en retard</em>` : f.next ? `${esc(pfClientTitle(f.next.client))}, le ${d(f.next.date)}` : 'rien de prévu';
 function renderFinWidget(error) {
   const el = $('#finw');
   if (error || !fin) { el.innerHTML = `<span class="lbl">${esc(error || 'Chargement…')}</span>`; return; }
-  const rows = pfFinRows(), late = rows.filter(r => r.late).reduce((a, r) => a + r.montant, 0);
-  $('#finw-meta').textContent = late ? `${EUR(late)} en retard` : '';
-  el.innerHTML = `<div class="finw"><div><small>Encaissé</small><b>${EUR(pfSum(rows, 'encaisse'))}</b></div><div><small>À encaisser</small><b>${EUR(pfSum(rows, 'a_encaisser'))}</b></div><div><small>Devis</small><b>${EUR(pfSum(rows, 'devis'))}</b></div></div>`;
+  const f = finSummary(pfFinRows());
+  el.innerHTML = `<div class="kpi"><small>Encaissé en ${f.year}</small><b class="enc">${EUR(f.cashed)}</b><span>${f.cashedN} paiement${f.cashedN > 1 ? 's' : ''}</span></div>
+    <div class="kpi"><small>À encaisser</small><b class="att">${EUR(f.due)}</b><span>${finNextLabel(f)}</span></div>
+    <div class="kpi"><small>Projection ${esc(f.window)}</small><b>${EUR(f.sure + f.leads)}</b><span>${EUR(f.sure)} sûrs + ${EUR(f.leads)} de pistes</span></div>`;
 }
 function onFinHash() {
   const on = location.hash === '#finances', el = $('#finview');
@@ -2037,7 +1895,6 @@ function onFinHash() {
   loadFinance();
 }
 const closeFinview = () => { window.history.pushState('', '', location.pathname + location.search); onFinHash(); onShellHash(); };
-$('#fin-open').onclick = $('#fin-go').onclick = () => { location.hash = 'finances'; };
 addEventListener('hashchange', onFinHash);
 addEventListener('keydown', e => {
   if (e.key !== 'Escape' || $('#finview').hidden || document.activeElement?.matches('input, select')) return;
@@ -2199,64 +2056,6 @@ function pfWire(el, item, kind) {
   };
 }
 
-/* ---------- agenda: what is coming, and what the standup reads ---------- */
-// always-visible way out when the agenda looks disconnected: refetch, or redo Google consent
-const calFoot = () => `<div class="cal-foot"><button id="cal-refresh">Actualiser l'agenda</button><a class="btn" href="/auth/google" title="Refaire l'autorisation Google (Gmail + lecture et écriture de l'agenda)">Reconnecter Google</a></div>`;
-function calFootWire() {
-  const b = $('#cal-refresh');
-  if (b) b.onclick = async () => { b.disabled = true; b.textContent = 'Actualisation…'; await loadAgenda(true); };
-}
-async function loadAgenda(refresh) {
-  const c = await api('/api/calendar' + (refresh ? '?refresh=1' : ''));
-  const el = $('#agenda');
-  if (c.needsScope) { el.innerHTML = `<div class="scope">Le calendrier a besoin d'une autorisation supplémentaire. <a href="/auth/google">Autoriser l'agenda</a></div>` + calFoot(); calFootWire(); return; }
-  if (c.needsAuth) { el.innerHTML = calFoot(); calFootWire(); return; }
-  if (c.error) {
-    // the most common cause is the Calendar API simply not being switched on
-    const link = c.error.match(/https:\/\/console\.developers\.google\.com\/apis\S*?(?=["\s\\]|$)/)?.[0];
-    el.innerHTML = (link
-      ? `<div class="scope">L'API Google Calendar n'est pas activée sur ton projet Google Cloud. <a href="${esc(link)}" target="_blank" rel="noopener">L'activer</a>, puis actualise.</div>`
-      : `<div class="none">Agenda indisponible : ${esc(c.error.slice(0, 140))}</div>`) + calFoot();
-    calFootWire();
-    return;
-  }
-  const today = new Date().toDateString();
-  const next = c.events.slice(0, 4);
-  const row = e => {
-    const d = new Date(e.start), isToday = d.toDateString() === today;
-    const hour = e.allDay ? 'journée' : d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-    const day = isToday ? '' : d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
-    const who = [e.calendar, e.organizerName || e.organizer].filter(Boolean).join(' · ');
-    return `<div class="ev" title="${esc(who)}">
-        <span class="h">${hour}${day ? `<small>${day}</small>` : ''}</span>
-        <div><a href="${e.url}" target="_blank" rel="noopener"><span class="t">${esc(e.title)}${e.attendees.length ? `<small>avec ${esc(e.attendees.join(', '))}</small>` : ''}</span></a>
-          <div class="acts">
-            <button data-evhide="${esc(e.id)}" data-title="${esc(e.title)}" data-start="${esc(e.start)}" title="Masquer cet événement">Masquer</button>
-            ${e.organizer ? `<button data-evorg="${esc(e.organizer)}" title="Ne plus jamais afficher les invitations de cette personne">Jamais ${esc(e.organizerName || e.organizer)}</button>` : ''}
-          </div>
-        </div>
-      </div>`;
-  };
-  const hiddenN = c.hidden?.length ?? 0;
-  // the chat agent and the standup can only create events once the write scope is granted
-  const needWrite = cfg.gmail && cfg.gmail.hasCalendar && !cfg.gmail.hasCalendarWrite;
-  el.innerHTML = (next.length ? next.map(row).join('') : '<div class="none">Rien de prévu dans les 7 jours.</div>')
-    + (hiddenN ? `<button class="more" id="cal-more">${hiddenN} événement${hiddenN > 1 ? 's' : ''} masqué${hiddenN > 1 ? 's' : ''} · réafficher</button>` : '')
-    + (needWrite ? `<div class="scope">Pour que l'assistant puisse créer des rendez-vous, <a href="/auth/google">autorise l'écriture de l'agenda</a>.</div>` : '')
-    + calFoot();
-  calFootWire();
-  el.querySelectorAll('[data-evhide]').forEach(b => b.onclick = async () => {
-    await api('/api/calendar/hide', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: b.dataset.evhide, title: b.dataset.title, start: b.dataset.start }) });
-    toast('Événement masqué'); loadAgenda();
-  });
-  el.querySelectorAll('[data-evorg]').forEach(b => b.onclick = async () => {
-    await api('/api/calendar/organizer', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ addr: b.dataset.evorg, rule: 'deny' }) });
-    toast('Invitations de cette personne masquées désormais'); loadAgenda();
-  });
-  const more = $('#cal-more');
-  if (more) more.onclick = async () => { await api('/api/calendar/unhide', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ all: true }) }); toast('Événements réaffichés'); loadAgenda(); };
-}
-
 /* ---------- "sans questions": the standup skill composes the todo alone ---------- */
 $('#brief-run').onclick = async () => {
   const btn = $('#brief-run'); btn.disabled = true; btn.textContent = 'Composition…';
@@ -2274,16 +2073,6 @@ $('#brief-run').onclick = async () => {
   btn.disabled = false; btn.textContent = 'Composer ma journée';
 };
 let briefWatch = null;
-
-/* ---------- widget collapse: remembered per widget, header stays, body hides ---------- */
-(() => {
-  let saved = {}; try { saved = JSON.parse(localStorage.getItem('collapsed') || '{}'); } catch (e) {}
-  document.querySelectorAll('.w[data-widget]').forEach(w => { if (saved[w.dataset.widget]) w.classList.add('collapsed'); });
-  document.querySelectorAll('.wtoggle').forEach(btn => btn.onclick = () => {
-    const w = btn.closest('.w'), key = w.dataset.widget, on = w.classList.toggle('collapsed');
-    saved[key] = on; try { localStorage.setItem('collapsed', JSON.stringify(saved)); } catch (e) {}
-  });
-})();
 
 /* ---------- credo: the day's statements, full screen, while the stand-up thinks ---------- */
 // Opens on a waiting phase and stays after it: only the cross, Escape or "Continuer" close it.
@@ -2669,7 +2458,7 @@ function chatConnect() {
       botEl = null;
       chatPing(m.error ? "L'assistant a rencontré une erreur." : "L'assistant a répondu, il attend ta réponse.");
       // the agent may have changed things behind the scenes
-      loadTodo(); loadProjects(); loadAgenda();
+      loadTodo(); loadProjects();
       return;
     }
     if (m.type === 'closed') { chatStream?.close(); chatStream = null; }
@@ -2728,20 +2517,16 @@ async function loadDelegations() {
   }
   renderTodo();
   const waiting = dgItems.filter(d => d.statut === 'bloque').length;
+  const last = d => d.etapes?.at(-1)?.fin ?? d.etapes?.at(-1)?.debut ?? d.creeLe;
   $('#dg-meta').innerHTML = [running && `${running} en cours`, waiting && `${waiting} question${waiting > 1 ? 's' : ''}`,
     !r.drafts && `<a href="/auth/google" title="Les agents ne peuvent pas encore déposer de brouillons Gmail : reconnecte Google pour l'autoriser">Autoriser les brouillons</a>`].filter(Boolean).join(' · ');
-  $('#agents').innerHTML = (dgItems.length ? dgItems.map(d => {
-    return `<div class="mapp dg" data-id="${esc(d.id)}">
-      <div class="row1">
-        <span class="ic sm"><svg><use href="#i-agent"/></svg></span>
-        <b class="head-link" data-do="reply" title="Ouvrir l'échange avec l'agent">${esc(d.tache)}${d.enCours ? '<i class="live"></i>' : ''}</b>
-        <span class="st ${d.statut}">${DG_ST[d.statut] ?? d.statut}</span>
-      </div>
-      <div class="act">${d.enCours
+  $('#agents').innerHTML = dgItems.length ? dgItems.map(d => `<div class="ag dg" data-id="${esc(d.id)}">
+      <i class="dot ${esc(d.statut)}${d.enCours ? ' live' : ''}"></i>
+      <div class="ag-t"><b data-do="reply" title="Ouvrir l'échange avec l'agent">${esc(d.tache)}</b><small>${esc(DG_ST[d.statut] ?? d.statut)} · il y a ${rel(last(d))}</small></div>
+      <div class="ag-act">${d.enCours
         ? '<button class="btn sm" data-do="stop">Arrêter</button>'
-        : '<button class="btn sm acc" data-do="reply">Répondre</button><button class="btn sm" data-do="close">Clore</button>'}</div>
-    </div>`;
-  }).join('') : '<span class="lbl">Aucun agent. Survole une tâche de la todo et clique sur l\'icône agent pour la déléguer.</span>');
+        : `<button class="btn sm${['pret', 'bloque'].includes(d.statut) ? ' acc' : ''}" data-do="reply">${d.statut === 'pret' ? 'Relire' : 'Répondre'}</button><button class="btn sm" data-do="close">Clore</button>`}</div>
+    </div>`).join('') : '<span class="lbl">Aucun agent en cours. Confie-lui une tâche ci-dessous, ou depuis l\'icône agent d\'une tâche.</span>';
   $('#agents').querySelectorAll('.dg').forEach(el => {
     el.querySelectorAll('[data-do]').forEach(b => b.onclick = () => dgAct(el.dataset.id, b.dataset.do));
   });
@@ -2811,6 +2596,16 @@ async function dgReply() {
   dgOpen(id, true);
 }
 $('#v-reply-send').onclick = dgReply;
+$('#dg-new').onsubmit = async e => {
+  e.preventDefault();
+  const input = $('#dg-task'), tache = input.value.trim();
+  if (!tache) { input.focus(); return; }
+  const r = await dgPost('', { tache });
+  if (r.error) { toast(r.error, true); return; }
+  input.value = '';
+  toast('Tâche confiée à un agent');
+  loadDelegations();
+};
 $('#v-reply-text').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); dgReply(); } });
 
 /* ---------- boot ---------- */
@@ -2853,11 +2648,14 @@ function liStatusChips(p) {
 }
 
 function renderLiWidget(error) {
-  const el = $('#liw');
-  if (error || !li) { el.innerHTML = `<span class="lbl">${esc(error || 'Chargement…')}</span>`; return; }
+  const el = $('#liw'), card = $('#li-card');
+  if (error || !li) { el.textContent = error || 'Chargement…'; return; }
   const p = li.todayPost ?? li.next;
-  if (!p) { el.innerHTML = `<span class="lbl">${li.posts.length ? 'Tout est publié.' : 'Aucun plan LinkedIn.'}</span>`; return; }
-  el.innerHTML = `<a class="liw-next" href="${liHref(p)}" title="${esc(p.id)} · ${esc(p.sujet)}">${esc(p.sujet)}</a>`;
+  card.href = p ? liHref(p) : '#linkedin';
+  if (!p) { el.textContent = li.posts.length ? 'Tout est publié.' : 'Aucun plan LinkedIn.'; return; }
+  const state = liRun(p)?.status === 'running' ? 'en préparation' : { prepare: 'prêt à relire', a_produire: 'à produire', publie: 'publié', a_verifier: 'à vérifier' }[p.statut] ?? '';
+  el.textContent = `${p.effective === li.today ? `Post du jour ${state}` : `Prochain post le ${liDate(p.effective)}`} · ${p.sujet}`;
+  card.title = `${p.id} · ${p.sujet}`;
 }
 
 function liCurrent() {
@@ -3088,7 +2886,6 @@ function onLiHash() {
   if (li) renderLiview(); else loadLinkedin();
 }
 function closeLiview() { window.history.pushState('', '', location.pathname + location.search); onLiHash(); onShellHash(); }
-$('#li-open').onclick = $('#li-go').onclick = () => { location.hash = 'linkedin'; };
 addEventListener('hashchange', onLiHash);
 $('#li-seg').onclick = e => { const b = e.target.closest('button'); if (!b) return; liFilter = b.dataset.f; renderLiview(); };
 addEventListener('keydown', e => {
@@ -3117,12 +2914,9 @@ $('#ask-open').onclick = askOpen;
 (async () => {
   cfg = await api('/api/config');
   chatReplay();   // a reload should not wipe what was already said
-  $('#gm-label').textContent = cfg.gmail.label;
   draw();
-  await Promise.all([loadGraph(), loadTodo(), loadGmail(), loadRuns(), loadProjects(), loadAgenda(), loadDecks(), loadDelegations()]);
+  await Promise.all([loadGraph(), loadTodo(), loadRuns(), loadProjects(), loadDecks(), loadDelegations()]);
   setInterval(loadGraph, 30e3);      // second brain edits show up within 30 s
-  setInterval(() => loadGmail(), 5 * 60e3);
-  setInterval(loadAgenda, 10 * 60e3);
   setInterval(loadProjects, 60e3);
   loadSb();
   setInterval(loadSb, 10e3);
