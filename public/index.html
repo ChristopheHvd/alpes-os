@@ -244,6 +244,16 @@ button, input, textarea, select { font-family: inherit; }
 .stagebtn.terminé { color: var(--ink-3); }
 .pj .push { display: none; flex-shrink: 0; white-space: nowrap; font: 500 11px/1 var(--font); color: var(--accent); background: var(--accent-soft); border: 0; border-radius: 20px; padding: 5px 9px; cursor: pointer; }
 .pj:hover .push { display: inline-block; }
+.pj-grip { display: grid; place-items: center; width: 12px; height: 18px; margin-left: -4px; color: var(--ink-3); cursor: grab; opacity: 0; flex-shrink: 0; }
+.pj-grip svg { width: 12px; height: 12px; fill: currentColor; stroke: none; }
+.pj:hover .pj-grip { opacity: .8; }
+.pj-hide { width: 22px; height: 22px; padding: 0; border: 0; border-radius: 5px; background: transparent; color: var(--ink-3); display: grid; place-items: center; cursor: pointer; opacity: 0; flex-shrink: 0; }
+.pj:hover .pj-hide, .pj-hide:focus-visible { opacity: 1; }
+.pj-hide:hover { color: var(--ink); background: var(--surface); }
+.pj-hide svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.pj.over-top { box-shadow: inset 0 2px 0 var(--accent); }
+.pj.over-bot { box-shadow: inset 0 -2px 0 var(--accent); }
+.pj.dragging { opacity: .45; }
 /* ---- #projets: every project in three foldable groups ---- */
 #pjview .ptitle { margin-bottom: 6px; }
 .pjv-sum { margin: 0; font-size: 13.5px; color: var(--ink-2); }
@@ -1686,13 +1696,22 @@ const STAGE_HELP = {
 let projects = [];
 async function loadProjects() {
   projects = await api('/api/projects?all=1');
+  renderProjects();
+  if (!$('#pjview').hidden) renderPjview();
+}
+// home widget: active projects only, in the same order as the Projets view
+function renderProjects() {
+  if (pjvBusy($('#projects'))) return;
   const actifs = projects.filter(p => p.stage === 'actif');
   if ($('#pj-meta')) $('#pj-meta').textContent = actifs.length || '';
   $('#projects').innerHTML = actifs.map(p => `
-    <div class="pj" data-slug="${esc(p.slug)}">
+    <div class="pj" data-slug="${esc(p.slug)}" draggable="true">
       <div class="name">
-        <a href="${pfHref('projet', p.slug)}">${esc(p.title)}</a>
+        <span class="pj-grip" aria-hidden="true" title="Glisser pour réordonner">${PJV_GRIP}</span>
+        <a href="${pfHref('projet', p.slug)}" draggable="false">${esc(p.title)}</a>
+        <button class="stagebtn ${esc(p.stage)}" data-stage="${esc(p.slug)}" aria-haspopup="true">${esc(p.stage)}<svg><use href="#i-chev"/></svg></button>
         <span class="age">${p.updated ? 'revu ' + relDate(p.updated) : ''}</span>
+        <button class="pj-hide" data-hide="${esc(p.slug)}" aria-label="Masquer ce projet" title="Masquer">${PJV_EYE}</button>
       </div>
       <div class="line2">
         <div class="next ${p.next ? '' : 'empty'}" data-next="${esc(p.slug)}" title="Cliquer pour modifier la prochaine étape">${esc(p.next || 'Pas de prochaine étape')}</div>
@@ -1701,12 +1720,16 @@ async function loadProjects() {
     </div>`).join('') + (actifs.length ? '' : '<div class="pj-none">Aucun projet en cours.</div>') + '<a class="more pj-all" href="#projets">Tous →</a>';
 
   wireNext($('#projects'));
+  $('#projects').querySelectorAll('button[data-stage]').forEach(el => el.onclick = e => { e.stopPropagation(); openStageMenu(el); });
+  $('#projects').querySelectorAll('[data-hide]').forEach(el => el.onclick = () => {
+    const p = projects.find(x => x.slug === el.dataset.hide);
+    patchProject(p.slug, { stage: 'archivé' }, `« ${p.title} » masqué`);
+  });
   $('#projects').querySelectorAll('[data-push]').forEach(el => el.onclick = () => {
     const p = projects.find(x => x.slug === el.dataset.push);
     todo.items.push({ t: p.next, s: p.title, p: '', done: false });
     saveTodo(); toast(`Ajouté à aujourd'hui : ${p.next.slice(0, 40)}`);
   });
-  if (!$('#pjview').hidden) renderPjview();
 }
 // the next step is edited in place wherever a project is listed
 function wireNext(root) {
@@ -1741,7 +1764,9 @@ addEventListener('keydown', e => { if (e.key === 'Escape') closeStageMenu(); });
 async function patchProject(slug, patch, done = 'Projet mis à jour dans le second brain') {
   const r = await api('/api/projects/' + encodeURIComponent(slug), { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(patch) });
   if (r.error) return toast(r.error, true);
-  toast(done);
+  // a server started before a stage existed answers 200 and ignores it
+  if (patch.stage && r.stage !== patch.stage) toast('Stade non enregistré : relance le serveur (npm start)', true);
+  else toast(done);
   loadProjects();
   if (!$('#portfolio').hidden) loadPortfolio();
 }
@@ -1766,7 +1791,7 @@ const pjvStage = (g, current) => pjvGroup(current) === g ? current : { actif: 'a
 let pjvOpen = { actif: true, veille: true, fini: false };
 try { Object.assign(pjvOpen, JSON.parse(localStorage.getItem('pjv-open') || '{}')); } catch {}
 let pjvShowHidden = false, pjvDrag = null, pjvClients = null;
-const pjvBusy = () => pjvDrag || (document.activeElement?.isContentEditable && $('#pjview').contains(document.activeElement));
+const pjvBusy = root => pjvDrag || (document.activeElement?.isContentEditable && root.contains(document.activeElement));
 
 function pjvRow(p) {
   const g = pjvGroup(p.stage), hidden = p.stage === 'archivé', slug = esc(p.slug);
@@ -1786,7 +1811,7 @@ function pjvRow(p) {
   </div>`;
 }
 function renderPjview() {
-  if (pjvBusy()) return;
+  if (pjvBusy($('#pjview'))) return;
   const el = $('#pjv-body');
   const shown = projects.filter(p => p.stage !== 'archivé'), hidden = projects.filter(p => p.stage === 'archivé');
   const n = k => shown.filter(p => pjvGroup(p.stage) === k).length, s = hidden.length > 1 ? 's' : '';
@@ -1808,13 +1833,14 @@ function renderPjview() {
 async function pjvMove(src, target, after, g) {
   pjvDrag = null;
   const list = projects.slice(), i = list.findIndex(p => p.slug === src);
-  if (i < 0 || src === target) return renderPjview();
+  if (i < 0 || src === target) return;
   const [moved] = list.splice(i, 1), stage = pjvStage(g, moved.stage);
   let at = target ? list.findIndex(p => p.slug === target) : -1;
   if (at < 0) at = list.findLastIndex(p => p.stage !== 'archivé' && pjvGroup(p.stage) === g) + 1 || list.length;
   else if (after) at++;
   list.splice(at, 0, { ...moved, stage });
   projects = list;
+  renderProjects();
   renderPjview();
   const r = await api('/api/projects/order', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ order: list.map(p => p.slug) }) }).catch(() => ({ error: "Ordre non enregistré : relance le serveur (npm start)" }));
   if (r.error) toast(r.error, true);
@@ -1835,31 +1861,43 @@ pjvBody.onclick = e => {
   else if (b.dataset.unhide) patchProject(p.slug, { stage: p.hiddenFrom || 'pause' }, `« ${p.title} » réaffiché`);
   else if (b.dataset.to && p) { const stage = pjvStage(b.dataset.to, p.stage); if (stage !== p.stage) patchProject(p.slug, { stage }); }
 };
-const pjvClear = () => pjvBody.querySelectorAll('.over, .over-top, .over-bot').forEach(x => x.classList.remove('over', 'over-top', 'over-bot'));
-const pjvTarget = e => {
-  const zone = e.target.closest?.('[data-drop]'), row = zone && e.target.closest('.pjv-row');
-  return zone && { zone, row, after: !!row && e.clientY > row.getBoundingClientRect().top + row.offsetHeight / 2 };
-};
-pjvBody.ondragstart = e => {
-  const row = e.target.closest?.('.pjv-row[draggable="true"]'); if (!row) return;
-  pjvDrag = row.dataset.slug;
-  e.dataTransfer.effectAllowed = 'move';
-  e.dataTransfer.setData('text/plain', pjvDrag);
-  row.classList.add('dragging');
-};
-pjvBody.ondragover = e => {
-  const t = pjvDrag && pjvTarget(e); if (!t) return;
-  e.preventDefault();
-  pjvClear();
-  if (t.row) { if (t.row.dataset.slug !== pjvDrag) t.row.classList.add(t.after ? 'over-bot' : 'over-top'); }
-  else t.zone.classList.add('over');
-};
-pjvBody.ondrop = e => {
-  const t = pjvDrag && pjvTarget(e); if (!t) return;
-  e.preventDefault();
-  pjvMove(pjvDrag, t.row?.dataset.slug, t.after, t.zone.dataset.drop);
-};
-pjvBody.ondragend = () => { if (pjvDrag) { pjvDrag = null; renderPjview(); } };
+// drag to reorder, in the Projets view and in the home widget: one order for both.
+// Rows carry data-slug, drop zones data-drop (the group a project lands in).
+function pjvDnd(root) {
+  const clear = () => root.querySelectorAll('.over, .over-top, .over-bot').forEach(x => x.classList.remove('over', 'over-top', 'over-bot'));
+  const target = e => {
+    const zone = e.target.closest?.('[data-drop]'), row = zone && e.target.closest('[data-slug]');
+    return zone && { zone, row, after: !!row && e.clientY > row.getBoundingClientRect().top + row.offsetHeight / 2 };
+  };
+  root.ondragstart = e => {
+    const row = e.target.closest?.('[data-slug][draggable="true"]'); if (!row) return;
+    pjvDrag = row.dataset.slug;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', pjvDrag);
+    row.classList.add('dragging');
+  };
+  root.ondragover = e => {
+    const t = pjvDrag && target(e); if (!t) return;
+    e.preventDefault();
+    clear();
+    if (t.row) { if (t.row.dataset.slug !== pjvDrag) t.row.classList.add(t.after ? 'over-bot' : 'over-top'); }
+    else t.zone.classList.add('over');
+  };
+  root.ondrop = e => {
+    const t = pjvDrag && target(e); if (!t) return;
+    e.preventDefault();
+    clear();
+    pjvMove(pjvDrag, t.row?.dataset.slug, t.after, t.zone.dataset.drop);
+  };
+  root.ondragend = () => {
+    pjvDrag = null;
+    clear();
+    root.querySelectorAll('.dragging').forEach(x => x.classList.remove('dragging'));
+  };
+}
+$('#projects').dataset.drop = 'actif';
+pjvDnd($('#projects'));
+pjvDnd(pjvBody);
 
 async function loadPjview() {
   if (!pjvClients) {
