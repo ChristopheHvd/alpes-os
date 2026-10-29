@@ -87,8 +87,6 @@ button, input, textarea, select { font-family: inherit; }
 
 .page { max-width: 1380px; margin: 0 auto; padding: 24px 28px 48px; }
 .ptitle { margin: 0 0 20px; font: 600 34px/1.1 var(--display); letter-spacing: -.015em; color: var(--ink); }
-[data-view="brain"] { height: calc(100vh - var(--bar-h, 61px)); padding: 14px; }
-[data-view="brain"] .core { height: 100%; }
 .pane { background: var(--surface); border: 1px solid var(--line-soft); border-radius: 10px; box-shadow: var(--shadow); min-width: 0; }
 .more { font: 500 12.5px/1.2 var(--font); color: var(--accent); text-decoration: none; white-space: nowrap; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -413,16 +411,21 @@ button, input, textarea, select { font-family: inherit; }
 @keyframes pulse { 50% { opacity: .3; } }
 
 /* ---------- centre / graph ---------- */
-.core { position: relative; min-width: 0; overflow: hidden; background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow); }
+.sb-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.sb-head .ptitle { margin: 0; }
+.sb-grid { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; margin-top: 18px; }
+.sb-graph { flex: 999 1 640px; padding: 14px 16px; }
+.sb-ask { flex: 1 1 320px; }
+.ask-form { display: flex; gap: 8px; align-items: flex-end; margin-top: 12px; }
+.ask-form textarea { flex: 1; min-width: 0; resize: vertical; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); color: var(--ink); font: 400 14px/1.5 var(--font); padding: 10px 12px; min-height: 44px; outline: none; }
+.ask-form textarea:focus { border-color: var(--accent); }
+.ask-form .btn { width: 44px; height: 44px; padding: 0; display: grid; place-items: center; border-radius: 9px; }
+.ask-form .btn svg { stroke: var(--accent-ink); }
+.core { position: relative; min-width: 0; height: max(480px, calc(100vh - var(--bar-h, 61px) - 200px)); margin-top: 10px; background: var(--bg); border-radius: 8px; overflow: hidden; }
 .core canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
-.brand { position: absolute; top: 22px; left: 0; right: 0; text-align: center; pointer-events: none; z-index: 2; }
-.brand h1 { margin: 0; font: 600 26px/1.1 var(--display); letter-spacing: -.01em; display: inline-flex; gap: 11px; align-items: center; color: var(--ink); }
-.brand h1 svg { width: 20px; height: 20px; stroke: var(--accent); fill: none; stroke-width: 1.8; }
-.brand h1 span { color: var(--accent); }
-.brand p { margin: 5px 0 0; font: 400 12.5px/1 var(--font); color: var(--ink-3); }
-.hud { position: absolute; bottom: 18px; right: 18px; text-align: right; max-width: 190px; font: 400 11.5px/1.6 var(--font); color: var(--ink-3); z-index: 2; pointer-events: none; }
+.hud { position: absolute; bottom: 12px; right: 14px; text-align: right; max-width: 190px; font: 400 11.5px/1.6 var(--font); color: var(--ink-3); z-index: 2; pointer-events: none; }
 .hud b { color: var(--ink-2); font-weight: 500; }
-.sbsync { position: absolute; left: 16px; top: 58px; z-index: 4; max-width: min(360px, calc(100% - 32px)); }
+.sbsync { position: absolute; left: 12px; top: 12px; z-index: 4; max-width: min(360px, calc(100% - 32px)); }
 .sb-pill { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line-soft); background: var(--surface); color: var(--ink-2); border-radius: 20px; padding: 6px 12px; font: 500 11.5px/1 var(--font); cursor: pointer; box-shadow: var(--shadow); }
 .sb-pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--good); flex-shrink: 0; }
 .sb-pill.wait i { background: var(--accent); } .sb-pill.run i { background: var(--accent); animation: sbpulse 1s ease-in-out infinite; }
@@ -438,23 +441,18 @@ button, input, textarea, select { font-family: inherit; }
 .sb-panel pre { margin: 0; white-space: pre-wrap; font: 400 11px/1.4 var(--mono); background: var(--sunken); border-radius: 6px; padding: 8px; max-height: 140px; overflow: auto; }
 .sb-panel .row { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
 @media (prefers-reduced-motion: reduce) { .sb-pill.run i { animation: none; } }
-.zoom { position: absolute; right: 16px; top: 20px; display: grid; gap: 5px; z-index: 2; }
+.zoom { position: absolute; left: 12px; bottom: 12px; display: grid; gap: 5px; z-index: 2; }
 .zoom button { width: 30px; height: 30px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); border-radius: 6px; cursor: pointer; font: 400 15px/1 var(--font); box-shadow: var(--shadow); }
 .zoom button:hover { border-color: var(--accent); color: var(--accent); }
 
-.legend { position: absolute; left: 0; right: 0; bottom: 18px; display: flex; flex-direction: column; align-items: center; gap: 12px; z-index: 2; pointer-events: none; }
-.doms { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; max-width: 96%; pointer-events: auto; }
+.doms { display: flex; gap: 6px; flex-wrap: wrap; }
 .dom { display: inline-flex; align-items: center; gap: 6px; font: 500 11.5px/1 var(--font); color: var(--ink-2); border: 1px solid var(--line-soft); padding: 6px 10px; border-radius: 20px; cursor: pointer; background: var(--surface); box-shadow: var(--shadow); }
 .dom i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
 .dom span { color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .dom:hover { border-color: var(--c); }
 .dom.on { border-color: var(--c); color: var(--ink); box-shadow: inset 0 0 0 1px var(--c), var(--shadow); }
 .dom.off { opacity: .4; }
-.omni { display: flex; align-items: stretch; gap: 8px; max-width: 84%; pointer-events: auto; }
-.search { display: flex; align-items: center; gap: 10px; width: 440px; max-width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 10px 13px; box-shadow: var(--shadow); }
-.histbtn { width: auto; height: auto; padding: 0 11px; box-shadow: var(--shadow); color: var(--ink-3); }
-.histbtn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; }
-.histbtn:hover { color: var(--accent); border-color: var(--accent); }
+.search { position: absolute; right: 12px; top: 12px; z-index: 3; display: flex; align-items: center; gap: 8px; width: min(260px, calc(100% - 24px)); min-height: 38px; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 0 12px; }
 .search:focus-within { border-color: var(--accent); }
 .search svg { width: 15px; height: 15px; stroke: var(--ink-3); fill: none; stroke-width: 1.8; }
 .search input { flex: 1; background: transparent; border: 0; color: var(--ink); font: 400 13.5px var(--font); outline: none; }
@@ -463,8 +461,8 @@ button, input, textarea, select { font-family: inherit; }
 
 /* ---------- note panel ---------- */
 .panel {
-  position: absolute; right: 16px; top: 62px; width: 400px; min-width: 300px; max-width: 70%;
-  max-height: calc(100% - 190px); overflow: auto; resize: horizontal; direction: rtl;
+  position: absolute; right: 12px; top: 62px; width: 400px; min-width: 300px; max-width: 70%;
+  max-height: calc(100% - 110px); overflow: auto; resize: horizontal; direction: rtl;
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
   padding: 16px; display: none; gap: 11px; z-index: 4; box-shadow: var(--shadow-lg);
 }
@@ -485,7 +483,7 @@ button, input, textarea, select { font-family: inherit; }
 .panel .body p { margin: 0 0 8px; } .panel .body ul, .panel .body ol { margin: 0 0 8px; padding-left: 18px; }
 .panel .body a { color: var(--accent); cursor: pointer; }
 .panel .body blockquote { margin: 0 0 8px; padding: 6px 11px; border-left: 2px solid var(--accent); background: var(--sunken); }
-.panel .row { display: flex; gap: 7px; }
+.panel .row { display: flex; gap: 7px; flex-wrap: wrap; }
 .st { font: 600 11px/1 var(--font); }
 .st.v { color: var(--good); } .st.d { color: var(--warn); }
 
@@ -849,26 +847,26 @@ a.pf-card.res-cours p { color: var(--accent); }
   </div>
 </main>
 
-<main class="view" data-view="brain">
-  <div class="core">
-    <canvas id="g"></canvas>
-    <div class="sbsync" id="sbsync" hidden></div>
-    <header class="brand">
-      <h1><svg><use href="#i-hex"/></svg>Alpes<span>OS</span></h1>
-      <p>Second brain · <span id="stats">—</span></p>
-    </header>
-    <div class="hud"><b>Glisser</b> pour déplacer, <b>molette</b> pour zoomer, <b>clic</b> pour ouvrir une fiche</div>
-    <div class="zoom"><button id="z+">+</button><button id="z-">−</button><button id="z0" title="Recentrer">◎</button></div>
-    <div class="panel" id="panel"></div>
-    <div class="legend">
+<main class="view page" data-view="brain">
+  <div class="sb-head"><h1 class="ptitle">Second brain</h1><span class="lbl" id="stats">—</span></div>
+  <div class="sb-grid">
+    <section class="pane sb-graph" aria-label="Graphe du second brain">
       <div class="doms" id="doms"></div>
-      <div class="omni">
-        <label class="search"><svg><use href="#i-search"/></svg><input id="q" type="search" placeholder="Filtre le graphe — Entrée pour une nouvelle question"><span class="mode" id="q-mode">⏎ demander</span></label>
-        <button class="icobtn histbtn" id="q-hist" title="Historique des conversations"><svg><use href="#i-clock"/></svg></button>
+      <div class="core">
+        <canvas id="g"></canvas>
+        <div class="sbsync" id="sbsync" hidden></div>
+        <label class="search"><svg><use href="#i-search"/></svg><span class="sr">Filtrer le graphe</span><input id="q" type="search" placeholder="Filtrer le graphe"></label>
+        <div class="zoom"><button id="z+" aria-label="Zoomer">+</button><button id="z-" aria-label="Dézoomer">−</button><button id="z0" title="Recentrer" aria-label="Recentrer">◎</button></div>
+        <div class="panel" id="panel"></div>
+        <div class="hud"><b>Glisser</b> pour déplacer, <b>molette</b> pour zoomer, <b>clic</b> pour ouvrir une fiche</div>
       </div>
-    </div>
+    </section>
+    <section class="pane gl sb-ask" aria-labelledby="h-ask">
+      <div class="gl-head"><svg><use href="#i-spark"/></svg><h2 id="h-ask">Interroger</h2></div>
+      <p class="lbl">L'assistant cherche dans tes notes et répond, sources à l'appui.</p>
+      <form class="ask-form" id="ask-form"><label class="sr" for="ask-q">Question</label><textarea id="ask-q" rows="3" placeholder="Pose une question…"></textarea><button class="btn acc" type="submit" aria-label="Envoyer"><svg><use href="#i-arrow"/></svg></button></form>
+    </section>
   </div>
-
 </main>
 
 <main class="view page" data-view="outils">
@@ -1341,6 +1339,7 @@ function step() {
 }
 const hex = (h, a) => h + Math.round(Math.max(0, Math.min(1, a)) * 255).toString(16).padStart(2, '0');
 function draw() {
+  if (!W || !H) { requestAnimationFrame(draw); return; }   // Second brain tab not shown
   step();
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.clearRect(0, 0, W, H);
   const accent = cssVar('--accent'), edge = cssVar('--canvas-edge'), labelBg = cssVar('--canvas-label-bg'), labelInk = cssVar('--canvas-label-ink');
@@ -1485,12 +1484,13 @@ const pf1 = pvFiche(n, links);
     <span class="lbl">${links.length} connexion${links.length > 1 ? 's' : ''}</span>
     <div class="links">${links.map(m => `<div data-id="${esc(m.id)}"><i style="background:${domOf(m.d).c}"></i>${esc(m.t)}</div>`).join('')}</div>
     <div class="body" id="pv-body"><span class="lbl">Chargement…</span></div>
-    <div class="row">${pf1 ? `<button class="btn acc" id="pv-fiche">${esc(pf1.label)}</button>` : ''}<button class="btn${pf1 ? '' : ' acc'}" id="pv-copy">Copier le chemin</button><button class="btn" id="pv-center">Centrer</button></div>`;
+    <div class="row">${pf1 ? `<button class="btn acc" id="pv-fiche">${esc(pf1.label)}</button>` : ''}<button class="btn${pf1 ? '' : ' acc'}" id="pv-copy">Copier le chemin</button><button class="btn" id="pv-center">Centrer</button><button class="btn" id="pv-ask">Interroger</button></div>`;
   panel.classList.add('on');
   if (pf1) panel.querySelector('#pv-fiche').onclick = () => { location.hash = pf1.href; };
   panel.querySelectorAll('.links div').forEach(el => el.onclick = () => { const m = byId[el.dataset.id]; select(m); center(m); });
   panel.querySelector('#pv-copy').onclick = e => { navigator.clipboard?.writeText(`${cfg.secondBrain}/${n.id}`); e.target.textContent = 'Copié ✓'; setTimeout(() => e.target.textContent = 'Copier le chemin', 1200); };
   panel.querySelector('#pv-center').onclick = () => center(n);
+  panel.querySelector('#pv-ask').onclick = () => chatAsk(`Que dit mon second brain sur « ${n.t} » (${n.id}) ? Résume l'essentiel, ce qui est décidé et ce qui reste ouvert.`);
   panel.querySelector('#pv-close').onclick = () => select(null);
   panel.querySelector('#pv-back').onclick = () => { const m = history.pop(); if (m) { select(m, true); center(m); } };
   const note = await api('/api/note?id=' + encodeURIComponent(n.id));
@@ -1501,14 +1501,15 @@ const pf1 = pvFiche(n, links);
 function center(n) { const t0 = performance.now(), fx = cam.x, fy = cam.y, fk = cam.k, tk = Math.max(cam.k, 1.8); const off = panel.classList.contains('on') ? (panel.offsetWidth / 2 + 24) / tk : 0; /* keep the node clear of the panel */ (function anim() { const p = Math.min(1, (performance.now() - t0) / 450), e = 1 - Math.pow(1 - p, 3); cam.k = fk + (tk - fk) * e; cam.x = fx + (-n.x - off - fx) * e; cam.y = fy + (-n.y - fy) * e; if (p < 1) requestAnimationFrame(anim); })(); }
 const q = $('#q');
 q.addEventListener('input', () => query = q.value.trim().toLowerCase());
-q.addEventListener('keydown', e => {
-  if (e.key !== 'Enter' || !q.value.trim()) return;
+// "Interroger" starts a new assistant thread; the answer opens in the assistant
+$('#ask-form').onsubmit = e => {
   e.preventDefault();
-  const text = q.value.trim();
-  q.value = ''; query = '';          // hand the phrase to the agent, drop the filter
-  chatAsk(text);                     // the bottom bar always starts a new thread
-});
-$('#q-hist').onclick = () => { chatShow(true); chatEl.querySelector('.histpane') ? chatBack() : chatHistory(); };
+  const ta = $('#ask-q'), text = ta.value.trim();
+  if (!text) { ta.focus(); return; }
+  ta.value = '';
+  chatAsk(text);
+};
+$('#ask-q').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#ask-form').requestSubmit(); } });
 addEventListener('keydown', e => { if (!$('#focus').hidden) { if (e.key === 'Escape') focusClose(); return; } if (!$('#credo').hidden) { if (e.key === 'Escape') credoClose(); else if (e.key === 'ArrowRight') credoStep(1); else if (e.key === 'ArrowLeft') credoStep(-1); return; } if (e.key === 'Escape' && !su.hidden) { suClose(); return; } if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); askOpen(); } if (e.key === 'Escape') { if (!viewer.hidden) { viewer.hidden = true; return; } if (!appview.hidden) { appview.hidden = true; return; } if (chatOpen) { chatShow(false); return; } q.value = ''; query = ''; q.blur(); select(null); $('#modal').hidden = true; } });
 
 /* ---------- projects: long-running work, stored in the second brain ---------- */
