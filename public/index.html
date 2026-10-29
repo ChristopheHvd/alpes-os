@@ -335,26 +335,63 @@ a.mail, .mail {
 .su .recap b { color: var(--ink); }
 .su .err { color: var(--crit); font-size: 13.5px; }
 .su-launch { display: flex; align-items: center; gap: 8px; }
-/* ---- chat: the bottom bar doubles as the agent's input ---- */
+/* ---- chat: the assistant, a drawer on the right edge of the page ---- */
 .legend { pointer-events: none; }
-.chat { width: min(760px, 84%); max-height: 52vh; display: none; flex-direction: column; gap: 10px; overflow-y: auto;
-  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px;
-  box-shadow: var(--shadow-lg); pointer-events: auto; }
-.chat.on { display: flex; }
+.chat { position: fixed; top: 0; right: 0; bottom: 0; z-index: 30; width: min(520px, 100vw); box-sizing: border-box;
+  display: flex; flex-direction: column; background: var(--surface); border-left: 1px solid var(--line); box-shadow: var(--shadow-lg);
+  transform: translateX(100%); visibility: hidden; transition: transform .22s ease, visibility 0s linear .22s; }
+.chat.on { transform: none; visibility: visible; transition: transform .22s ease; }
+@media (prefers-reduced-motion: reduce) { .chat, .chat.on { transition: none; } }
+.chat svg.ico { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.chat .ib { width: 34px; height: 34px; border-radius: 7px; border: 1px solid transparent; background: transparent; color: var(--ink-3); display: grid; place-items: center; padding: 0; cursor: pointer; flex-shrink: 0; }
+.chat .ib:hover { border-color: var(--line); color: var(--ink); }
+.chat .head { display: flex; align-items: center; gap: 10px; padding: 12px 14px 12px 20px; border-bottom: 1px solid var(--line-soft); }
+.chat .head .spark { width: 18px; height: 18px; color: var(--accent); }
+.chat .head .ttl { flex: 1; min-width: 0; }
+.chat .head h2 { margin: 0; font: 600 15px/1.35 var(--font); color: var(--ink); }
+.chat .head small { display: block; font: 400 12px/1.4 var(--font); color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat .thread { flex: 1; min-height: 0; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
 .chat.hist .turn { display: none; }
 .chat .turn { display: grid; gap: 6px; }
-.chat .me { justify-self: end; max-width: 82%; background: var(--accent-soft); color: var(--ink); border-radius: 12px 12px 4px 12px; padding: 9px 13px; font: 400 14px/1.5 var(--font); }
-.chat .bot { font: 400 14.5px/1.65 var(--font); color: var(--ink-2); }
+.chat .me { justify-self: end; max-width: 84%; background: var(--accent-soft); color: var(--ink); border-radius: 12px 12px 4px 12px; padding: 9px 13px; font: 400 14px/1.5 var(--font); white-space: pre-wrap; }
+.chat .bot { font: 400 14.5px/1.6 var(--font); color: var(--ink-2); }
+.chat .bot p { margin: 0 0 6px; }
+.chat .bot > :last-child { margin-bottom: 0; }
 .chat .bot b { color: var(--ink); }
 .chat .bot h1, .chat .bot h2, .chat .bot h3 { font: 600 15px/1.3 var(--font); color: var(--ink); margin: 10px 0 4px; }
-.chat .bot ul, .chat .bot ol { margin: 0 0 8px; padding-left: 20px; }
+.chat .bot ul, .chat .bot ol { margin: 6px 0 0; padding-left: 18px; }
+.chat .bot li { margin: 2px 0; }
 .chat .bot code { font: 400 12.5px var(--mono); background: var(--sunken); border-radius: 4px; padding: 2px 5px; }
 .chat .bot a { color: var(--accent); cursor: pointer; }
+/* A notice the dashboard sent on the user's behalf (a background result) */
 .chat .act { display: flex; align-items: center; gap: 8px; font: 400 12px/1.4 var(--font); color: var(--ink-3); }
 .chat .act i { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-3); flex-shrink: 0; }
-.chat .act.run i { background: var(--warn); animation: pulse 1.2s ease-in-out infinite; }
-.chat .card { border: 1px solid var(--accent); background: var(--accent-soft); border-radius: 10px; padding: 12px 14px; display: grid; gap: 9px; }
-.chat .card b { font: 600 13.5px/1.4 var(--font); color: var(--ink); }
+/* One line for everything the agent looked at: a live status while it works,
+   then a folded summary that unfolds into the list of calls. */
+.chat .actv { justify-self: start; border: 0; background: transparent; display: flex; align-items: center; gap: 8px; padding: 0 8px; margin-left: -8px; min-height: 32px; border-radius: 7px; color: var(--ink-3); font: 400 12.5px/1.4 var(--font); text-align: left; cursor: pointer; }
+.chat .actv:hover { background: var(--sunken); color: var(--ink-2); }
+.chat .actv i { width: 7px; height: 7px; margin: 0 4px; border-radius: 50%; background: var(--accent); animation: pulse 1.2s ease-in-out infinite; flex-shrink: 0; }
+.chat .actv .ok { width: 15px; height: 15px; color: var(--good); }
+.chat .actv .chev { width: 14px; height: 14px; transition: transform .2s; }
+.chat .actv[aria-expanded="true"] .chev { transform: rotate(90deg); }
+.chat .actv.run .ok, .chat .actv.run .chev, .chat .actv:not(.run) i { display: none; }
+.chat .steps { margin: 0; padding: 0 0 0 24px; list-style: none; display: grid; gap: 3px; font: 400 12.5px/1.45 var(--font); color: var(--ink-3); }
+.chat .steps[hidden] { display: none; }
+.chat .steps .mono { font: 400 11.5px var(--mono); overflow-wrap: anywhere; }
+/* A validation card: what changes, before → after, then the decision */
+.chat .ask { border: 1px solid var(--line); border-radius: 12px; background: var(--bg); overflow: hidden; }
+.chat .ask .hd { padding: 12px 16px 10px; border-bottom: 1px solid var(--line-soft); }
+.chat .ask .hd small { display: block; font: 600 11.5px/1.3 var(--font); letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.chat .ask h3 { margin: 2px 0 0; font: 600 15px/1.35 var(--font); color: var(--ink); }
+.chat .ask dl { margin: 0; padding: 6px 16px; }
+.chat .ask .dr { display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: 12px; padding: 8px 0; border-top: 1px solid var(--line-soft); }
+.chat .ask .dr:first-child { border-top: 0; }
+.chat .ask dt { font: 400 12px/1.4 var(--font); color: var(--ink-3); padding-top: 1px; overflow-wrap: anywhere; }
+.chat .ask dd { margin: 0; font: 400 13.5px/1.45 var(--font); color: var(--ink); overflow-wrap: anywhere; }
+.chat .ask .was { color: var(--ink-3); text-decoration: line-through; }
+.chat .ask .row { display: flex; gap: 8px; padding: 4px 16px 14px; }
+.chat .ask .row .btn { font-size: 13px; min-height: 36px; padding: 0 14px; }
+.chat .ask .done { padding: 4px 16px 14px; font: 400 12.5px/1.4 var(--font); color: var(--ink-3); }
 .chat .log { display: grid; gap: 2px; }
 .chat .log button { display: grid; gap: 2px; text-align: left; border: 0; background: transparent; border-radius: 8px; padding: 9px 10px; cursor: pointer; }
 .chat .log button:hover { background: var(--sunken); }
@@ -363,31 +400,15 @@ a.mail, .mail {
 .chat .log .none { font: 400 13px/1.5 var(--font); color: var(--ink-3); padding: 6px 2px; }
 .chat .past { font: 400 14px/1.65 var(--font); color: var(--ink-2); }
 .chat .past b { color: var(--ink); }
-.chat .card .row { display: flex; gap: 7px; }
-/* Three dots rippling while the agent works — it is also the receipt for what
-   was just sent, so it appears the instant the message leaves the field. */
-.chat .thinking { display: flex; align-items: center; gap: 5px; height: 18px; }
-.chat .thinking i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); opacity: .25; animation: think 1.15s ease-in-out infinite; }
-.chat .thinking i:nth-child(2) { animation-delay: .16s; }
-.chat .thinking i:nth-child(3) { animation-delay: .32s; }
-@keyframes think { 30% { opacity: 1; transform: translateY(-3px); } 60%, 100% { opacity: .25; transform: none; } }
-@media (prefers-reduced-motion: reduce) {
-  .chat .thinking i { animation-name: pulse; animation-duration: 1.6s; opacity: 1; }
-}
 .chat .err { color: var(--crit); font-size: 13px; }
-/* Reply to the open thread from inside the window; the bottom bar starts new
-   ones. Sticky so it stays in reach while the turns above it scroll. */
-.chat .composer { position: sticky; bottom: -16px; margin: 2px -18px -16px; padding: 10px 18px 14px;
-  background: var(--surface); border-top: 1px solid var(--line-soft); }
-.chat .composer textarea { width: 100%; resize: none; display: block; box-sizing: border-box;
+.chat .composer { display: flex; gap: 8px; align-items: flex-end; padding: 12px 20px 16px; border-top: 1px solid var(--line-soft); }
+.chat .composer textarea { flex: 1; resize: none; display: block; box-sizing: border-box;
   border: 1px solid var(--line); border-radius: 9px; background: var(--bg); color: var(--ink);
-  font: 400 14px/1.5 var(--font); padding: 9px 12px; min-height: 38px; max-height: 132px; outline: none; }
+  font: 400 14px/1.5 var(--font); padding: 10px 12px; min-height: 44px; max-height: 160px; outline: none; }
 .chat .composer textarea:focus { border-color: var(--accent); }
+.chat .composer .send { width: 44px; height: 44px; background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.chat .composer .send:hover { filter: brightness(1.07); color: var(--accent-ink); }
 .chat.hist .composer { display: none; }
-.chat .head { display: flex; align-items: center; gap: 8px; font: 500 11.5px/1 var(--font); color: var(--ink-3); border-bottom: 1px solid var(--line-soft); padding-bottom: 9px; }
-.chat .head .sp { flex: 1; }
-.chat .head button { border: 0; background: transparent; color: var(--ink-3); cursor: pointer; font: 500 11.5px/1 var(--font); }
-.chat .head button:hover { color: var(--accent); }
 .search .mode { font: 500 10.5px/1 var(--font); color: var(--ink-3); white-space: nowrap; }
 .auth { display: grid; gap: 10px; }
 .auth p { margin: 0; color: var(--ink-2); font-size: 13px; }
@@ -2524,50 +2545,66 @@ async function standupOnOpen() {
   } catch (e) { /* never block the dashboard */ }
 }
 
-/* ---------- chat: typing filters the graph, Enter asks the agent ---------- */
+/* ---------- chat: the assistant, a drawer opened by ⌘K, chatShow or chatAsk ---------- */
 const chatEl = $('#chat');
+document.body.append(chatEl);   // page level, above the columns, wherever the markup puts it
 let chatId = (() => { try { let v = localStorage.getItem('chat-id'); if (!v) { v = String(Date.now()); localStorage.setItem('chat-id', v); } return v; } catch (e) { return 'default'; } })();
 const chatIdSet = v => { chatId = v; localStorage.setItem('chat-id', v); };
-let chatOpen = false, chatStream = null, botEl = null, chatBusy = false;
+let chatOpen = false, chatStream = null, botEl = null, chatBusy = false, chatAct = null;
 
-function chatShow(on) {
+const CHAT_ICO = {
+  spark: '<path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/>',
+  clock: '<circle cx="12" cy="12" r="8"/><path d="M12 8v4.5l3 1.8"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  send: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  check: '<path d="M5 12.5l4.2 4.2L19 7"/>',
+  chev: '<path d="M9 6l6 6-6 6"/>',
+};
+const chatIco = (k, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true">${CHAT_ICO[k]}</svg>`;
+chatEl.setAttribute('role', 'dialog');
+chatEl.setAttribute('aria-label', 'Assistant');
+chatEl.inert = true;
+chatEl.innerHTML = `<header class="head">${chatIco('spark', 'spark')}
+    <div class="ttl"><h2>Assistant</h2><small id="chat-sub">Nouvelle conversation</small></div>
+    <button class="ib" id="chat-log" title="Historique" aria-label="Historique des conversations">${chatIco('clock')}</button>
+    <button class="ib" id="chat-new" title="Nouvelle conversation" aria-label="Nouvelle conversation">${chatIco('plus')}</button>
+    <button class="ib" id="chat-hide" title="Fermer (Échap)" aria-label="Fermer l'assistant">${chatIco('close')}</button>
+  </header>
+  <div class="thread" id="chat-thread"></div>
+  <div class="composer"><textarea rows="1" placeholder="Répondre…" aria-label="Écrire à l'assistant"></textarea><button class="ib send" title="Entrée pour envoyer" aria-label="Envoyer">${chatIco('send')}</button></div>`;
+const chatThread = $('#chat-thread'), chatTa = chatEl.querySelector('.composer textarea');
+
+// `focus` is off when the drawer opens on its own (a card to validate): the
+// user may be typing somewhere else.
+function chatShow(on, focus = true) {
+  const opening = on && !chatOpen;
   chatOpen = on;
   chatEl.classList.toggle('on', on);
-  if (on && !chatEl.querySelector('.head')) {
-    const head = document.createElement('div');
-    head.className = 'head';
-    head.innerHTML = `<span>Assistant · agit sur ton tableau de bord</span><span class="sp"></span><button id="chat-log">Historique</button><button id="chat-hide">Fermer</button>`;
-    chatEl.prepend(head);   // header first, whatever turns chatReplay already dropped in
-    $('#chat-hide').onclick = () => chatShow(false);
-    $('#chat-log').onclick = () => (chatEl.querySelector('.histpane') ? chatBack() : chatHistory());
-
-    // Replying to the thread on screen. The bottom bar (chatAsk) opens new ones.
-    const composer = document.createElement('div');
-    composer.className = 'composer';
-    composer.innerHTML = '<textarea rows="1" placeholder="Répondre…"></textarea>';
-    chatEl.appendChild(composer);
-    const ta = composer.querySelector('textarea');
-    const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 132) + 'px'; };
-    ta.addEventListener('input', grow);
-    ta.addEventListener('keydown', e => {
-      if (e.key !== 'Enter' || e.shiftKey) return;
-      e.preventDefault();
-      const v = ta.value.trim();
-      if (!v) return;
-      ta.value = ''; grow();
-      chatSend(v);
-    });
-  }
+  chatEl.inert = !on;
+  if (opening && focus) chatTa.focus({ preventScroll: true });
 }
 const chatAdd = (cls, html) => {
   const el = document.createElement('div');
   el.className = 'turn ' + cls;
   el.innerHTML = html;
-  // the composer, once built, is pinned last — turns slot in before it
-  chatEl.insertBefore(el, chatEl.querySelector('.composer'));
-  chatEl.scrollTop = chatEl.scrollHeight;
+  chatThread.appendChild(el);
+  chatThread.scrollTop = chatThread.scrollHeight;
   return el;
 };
+const chatHM = d => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+const chatSub = (title, when) => { $('#chat-sub').textContent = title ? `${title.length > 48 ? title.slice(0, 47) + '…' : title} · ${when}` : 'Nouvelle conversation'; };
+
+// The composer replies to the thread on screen; chatAsk and the + button open new ones.
+const chatGrow = () => { chatTa.style.height = 'auto'; chatTa.style.height = Math.min(chatTa.scrollHeight, 160) + 'px'; };
+const chatSubmit = () => { const v = chatTa.value.trim(); if (!v) return; chatTa.value = ''; chatGrow(); chatSend(v); };
+chatTa.addEventListener('input', chatGrow);
+chatTa.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); chatSubmit(); } });
+chatEl.querySelector('.send').onclick = chatSubmit;
+$('#chat-hide').onclick = () => chatShow(false);
+$('#chat-log').onclick = () => (chatEl.querySelector('.histpane') ? chatBack() : chatHistory());
+$('#chat-new').onclick = () => { chatNew(); chatTa.focus(); };
+addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); chatShow(true); chatTa.focus(); } });
 
 /* Conversations are journalled in the second brain (lib/chatlog.js), so past
    ones can be read back — and the current one redrawn after a page reload. */
@@ -2579,7 +2616,8 @@ async function chatHistory() {
   const pane = document.createElement('div');
   pane.className = 'histpane';
   pane.innerHTML = '<div class="log"><div class="none">…</div></div>';
-  chatEl.insertBefore(pane, chatEl.querySelector('.composer'));
+  chatThread.appendChild(pane);
+  chatThread.scrollTop = 0;
   const list = await api('/api/chat/log');
   const log = pane.querySelector('.log');
   if (!list.length) { log.innerHTML = '<div class="none">Aucune conversation journalisée pour l\'instant.</div>'; return; }
@@ -2593,20 +2631,23 @@ async function chatResume(id) {
   if (id !== chatId) {
     fetch('/api/chat?id=' + encodeURIComponent(chatId), { method: 'DELETE' });  // release the previous process
     if (chatStream) { chatStream.close(); chatStream = null; }
-    chatEl.querySelectorAll('.turn').forEach(n => n.remove());
+    chatThread.querySelectorAll('.turn').forEach(n => n.remove());
+    chatAct = null; botEl = null;
     try { chatIdSet(id); } catch (e) { /* private mode: the id still switches for this page */ }
     await chatReplay();
   }
   chatBack();
-  chatEl.querySelector('.composer textarea')?.focus();
+  chatTa.focus();
 }
 
 // After a reload the server may still hold the conversation, but the browser has
 // forgotten what was said. The journal is what puts it back on screen.
 async function chatReplay() {
-  if (chatEl.querySelector('.turn')) return;
+  if (chatThread.querySelector('.turn')) return;
   const conv = await api('/api/chat/log?id=' + encodeURIComponent(chatId)).catch(() => null);
-  if (!conv?.body || chatEl.querySelector('.turn')) return;
+  if (!conv?.body || chatThread.querySelector('.turn')) return;
+  const today = new Date().toISOString().slice(0, 10);
+  chatSub(conv.title, `${conv.date === today ? "aujourd'hui" : conv.date.slice(8, 10) + '/' + conv.date.slice(5, 7)} ${conv.time}`);
   chatAdd('', `<div class="past">${md(conv.body)}</div>`);
 }
 
@@ -2643,6 +2684,94 @@ function chatPing(text, systemNotif = true) {
 }
 addEventListener('visibilitychange', () => { if (!document.hidden) document.title = CHAT_TITLE; });
 
+/* Tool calls never get a line each. One activity line per turn says what the
+   agent is doing right now, then folds into a summary of what it looked at;
+   unfolded, it lists the calls. Per tool: [live status, list entry, what it
+   reads]. Writes read nothing: their card speaks for them. */
+const chatPath = p => `<span class="mono">${esc(String(p ?? '').replace(/^brain\//, ''))}</span>`;
+const CHAT_TOOLS = {
+  chercher_second_brain: ['Consulte le second brain', a => `Recherche « ${esc(a.requete)} »`, 'le second brain'],
+  lire_note: ['Lit une note', a => `Lecture ${chatPath(a.chemin)}`, a => /(^|\/)finance\//.test(a.chemin) ? 'les finances' : /(^|\/)projects\//.test(a.chemin) ? 'les projets' : /(^|\/)clients\//.test(a.chemin) ? 'les clients' : 'le second brain'],
+  lister_projets: ['Regarde les projets', () => 'Liste des projets', 'les projets'],
+  lister_clients: ['Regarde les clients', () => 'Liste des clients', 'les clients'],
+  lire_finances: ['Regarde les finances', () => 'Lecture du suivi financier', 'les finances'],
+  lire_todo: ['Regarde la todo', () => 'Lecture de la todo', 'la todo'],
+  lister_agenda: ["Regarde l'agenda", () => "Lecture de l'agenda", "l'agenda"],
+  lister_mails: ['Regarde la boîte mail', () => 'Lecture de la boîte mail', 'la boîte mail'],
+  lire_journal_standup: ['Relit les stand-ups', () => 'Lecture des stand-ups', 'les stand-ups'],
+  creer_client: ['Prépare une fiche client', a => `Proposition : fiche client ${esc(a.nom)}`],
+  creer_projet: ['Prépare un projet', a => `Proposition : projet ${esc(a.titre)}`],
+  maj_projet: ['Prépare la mise à jour du projet', a => `Proposition : mise à jour de ${esc(a.slug)}`],
+  ajouter_tache: ['Prépare une tâche', a => `Proposition : tâche « ${esc(a.texte)} »`],
+  creer_evenement: ['Prépare un événement', a => `Proposition : événement « ${esc(a.titre)} »`],
+  lancer_micro_app: ['Prépare un lancement', a => `Proposition : micro-app ${esc(a.app)}`],
+  maj_echeance: ['Prépare la mise à jour des finances', a => `Proposition : échéances ${esc(a.ref || a.note)}`],
+  WebSearch: ['Cherche sur le web', a => `Recherche web « ${esc(a.query)} »`, 'le web'],
+  WebFetch: ['Lit une page web', a => `Lecture ${chatPath(a.url)}`, 'le web'],
+  Read: ['Lit un fichier', a => `Lecture ${chatPath(a.file_path)}`, 'des fichiers'],
+  Grep: ['Cherche dans les fichiers', a => `Recherche « ${esc(a.pattern)} »`, 'des fichiers'],
+  Glob: ['Cherche dans les fichiers', a => `Recherche « ${esc(a.pattern)} »`, 'des fichiers'],
+};
+const CHAT_QUIET = new Set(['ToolSearch', 'TodoWrite']);   // the CLI's own plumbing
+
+function chatActStart() {
+  const el = chatAdd('', `<button class="actv run" aria-expanded="false"><i></i>${chatIco('check', 'ok')}<span class="lbl">Réfléchit…</span>${chatIco('chev', 'chev')}</button><ol class="steps" hidden></ol>`);
+  const btn = el.querySelector('.actv'), ol = el.querySelector('.steps');
+  btn.onclick = () => { if (!ol.children.length) return; ol.hidden = !ol.hidden; btn.setAttribute('aria-expanded', String(!ol.hidden)); };
+  chatAct = { el, steps: [] };
+}
+function chatActTool(m) {
+  if (CHAT_QUIET.has(m.name)) return;
+  const [live, step, what] = CHAT_TOOLS[m.name] ?? ['Travaille', () => esc(m.name.replace(/_/g, ' ')), null];
+  const a = m.input ?? {};
+  if (!chatAct) chatActStart();
+  chatAct.steps.push({ what: typeof what === 'function' ? what(a) : what });
+  // a call queued behind an open card isn't running: the agent waits on the user
+  if (!chatThread.querySelector('.ask .row')) {
+    chatAct.el.querySelector('.actv').classList.add('run');
+    chatAct.el.querySelector('.lbl').textContent = live + '…';
+  }
+  const li = document.createElement('li');
+  li.innerHTML = step(a);
+  chatAct.el.querySelector('.steps').appendChild(li);
+}
+// `final` ends the turn's line; otherwise the agent only paused (a card, some
+// text) and its next call brings the live status back.
+function chatActSettle(final) {
+  const a = chatAct;
+  if (!a) return;
+  if (final) chatAct = null;
+  if (!a.steps.length) { a.el.remove(); chatAct = null; return; }
+  const what = [...new Set(a.steps.map(s => s.what).filter(Boolean))];
+  const list = what.length > 1 ? what.slice(0, -1).join(', ') + ' et ' + what.at(-1) : what[0];
+  a.el.querySelector('.actv').classList.remove('run');
+  a.el.querySelector('.lbl').textContent = list ? `A consulté ${list}` : `A préparé ${a.steps.length > 1 ? a.steps.length + ' propositions' : 'une proposition'}`;
+}
+
+function chatCard(m) {
+  if (chatThread.querySelector(`.ask[data-key="${CSS.escape(m.key)}"]`)) return;   // replayed on reconnect
+  const d = m.details ?? {}, rows = Array.isArray(d.rows) ? d.rows : [];
+  const val = r => r.before === undefined ? esc(r.after)
+    : (r.before + r.after).length > 40 ? `<span class="was">${esc(r.before)}</span><br>→ ${esc(r.after)}`
+    : `<span class="was">${esc(r.before)}</span> → <b>${esc(r.after)}</b>`;
+  const card = chatAdd('', `<section class="ask" data-key="${esc(m.key)}">
+    <div class="hd"><small>À valider</small><h3>${esc(d.title || m.summary)}</h3></div>
+    ${rows.length ? `<dl>${rows.map(r => `<div class="dr"><dt>${esc(r.label)}</dt><dd>${val(r)}</dd></div>`).join('')}</dl>` : ''}
+    <div class="row"><button class="btn acc" data-yes>Valider</button><button class="btn" data-no>Annuler</button></div>
+  </section>`).querySelector('.ask');
+  const decide = approved => {
+    fetch('/api/chat/decision', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: chatId, key: m.key, approved }) });
+    chatCardDone(card, approved ? `✓ Validé · ${d.done || "c'est fait"}` : "✕ Annulé · rien n'a changé");
+  };
+  card.querySelector('[data-yes]').onclick = () => decide(true);
+  card.querySelector('[data-no]').onclick = () => decide(false);
+  return d.title || m.summary;
+}
+function chatCardDone(card, text) {
+  card.querySelector('.hd small')?.remove();
+  card.querySelector('.row')?.replaceWith(Object.assign(document.createElement('div'), { className: 'done', textContent: text }));
+}
+
 function chatConnect() {
   if (chatStream) return;
   chatStream = new EventSource('/api/chat/stream?id=' + encodeURIComponent(chatId));
@@ -2650,52 +2779,47 @@ function chatConnect() {
     const m = JSON.parse(e.data);
     if (m.type === 'text') {
       // the agent's prose arrives token by token; keep appending to one block
-      if (!botEl) { botEl = chatAdd('bot', ''); botEl.dataset.raw = ''; chatEl.querySelector('.thinking')?.remove(); }
+      if (!botEl) { chatActSettle(false); botEl = chatAdd('bot', ''); botEl.dataset.raw = ''; }
       botEl.dataset.raw += m.text;
       botEl.innerHTML = md(botEl.dataset.raw);
-      chatEl.scrollTop = chatEl.scrollHeight;
+      chatThread.scrollTop = chatThread.scrollHeight;
       return;
     }
     if (m.type === 'tool') {
-      chatEl.querySelector('.thinking')?.remove();
-      const label = { chercher_second_brain: 'cherche dans le second brain', lire_note: 'lit une note', lister_projets: 'regarde les projets', lister_clients: 'regarde les clients', lire_todo: 'regarde la todo', lister_agenda: "regarde l'agenda", lister_mails: 'regarde la boîte', lire_journal_standup: 'relit les stand-ups' }[m.name] ?? m.name.replace(/_/g, ' ');
-      const arg = m.input?.requete ?? m.input?.chemin ?? m.input?.titre ?? m.input?.texte ?? '';
-      chatAdd('', `<div class="act run"><i></i>${esc(label)}${arg ? ' · ' + esc(String(arg).slice(0, 60)) : ''}</div>`);
+      // a short line right before a call is narration ("je regarde…"): the status line says it already
+      if (botEl && botEl.dataset.raw.trim().length <= 200) botEl.remove();
+      chatActTool(m);
       botEl = null;
       return;
     }
     if (m.type === 'confirm') {
-      const el = chatAdd('', `<div class="card" data-key="${esc(m.key)}">
-        <b>${esc(m.summary)}</b>
-        <div class="row"><button class="btn acc" data-yes>Valider</button><button class="btn" data-no>Annuler</button></div>
-      </div>`);
-      const decide = approved => fetch('/api/chat/decision', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: chatId, key: m.key, approved }) });
-      el.querySelector('[data-yes]').onclick = () => { decide(true); el.querySelector('.row').innerHTML = '<span class="act">validé</span>'; };
-      el.querySelector('[data-no]').onclick = () => { decide(false); el.querySelector('.row').innerHTML = '<span class="act">annulé</span>'; };
+      chatActSettle(false);
+      const title = chatCard(m);
       botEl = null;
-      chatPing('À valider : ' + m.summary);
-      chatShow(true);
+      if (title) chatPing('À valider : ' + title);
+      chatShow(true, false);
       return;
     }
     if (m.type === 'injected') {
+      chatActSettle(true);
       chatAdd('', `<div class="act"><i></i>${esc(m.text.split('\n')[0])}</div>`);
-      chatAdd('', '<div class="thinking" aria-label="l\'assistant réfléchit"><i></i><i></i><i></i></div>');
+      chatActStart();
       botEl = null; chatBusy = true;
       return;
     }
     if (m.type === 'confirm-gone') {
-      const card = chatEl.querySelector(`.card[data-key="${m.key}"] .row`);
-      if (card && card.querySelector('button')) card.innerHTML = '<span class="act">expiré · sans réponse à temps</span>';
+      const card = chatThread.querySelector(`.ask[data-key="${CSS.escape(m.key)}"]`);
+      if (card?.querySelector('.row')) chatCardDone(card, '⏳ Expiré · sans réponse à temps');
       return;
     }
     if (m.type === 'done') {
       chatBusy = false;
-      chatEl.querySelector('.thinking')?.remove();
+      chatActSettle(true);
       if (m.error) chatAdd('', `<div class="err">${esc(m.error)}</div>`);
       botEl = null;
       chatPing(m.error ? "L'assistant a rencontré une erreur." : "L'assistant a répondu, il attend ta réponse.");
       // the agent may have changed things behind the scenes
-      loadTodo(); loadProjects(); loadAgenda();
+      loadTodo(); loadProjects(); loadAgenda(); loadFinance();
       return;
     }
     if (m.type === 'closed') { chatStream?.close(); chatStream = null; }
@@ -2710,20 +2834,31 @@ function chatSend(text) {
   chatShow(true);
   chatBack();
   chatConnect();
+  if (!chatThread.querySelector('.me, .past')) chatSub(text, `aujourd'hui ${chatHM(new Date())}`);
   chatAdd('', `<div class="me">${esc(text)}</div>`);
-  chatAdd('', '<div class="thinking" aria-label="l\'assistant réfléchit"><i></i><i></i><i></i></div>');
+  chatActSettle(true);
+  chatActStart();
   botEl = null; chatBusy = true;
   fetch('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: chatId, text }) })
-    .then(r => r.json()).then(r => { if (r.error) { chatEl.querySelector('.thinking')?.remove(); chatAdd('', `<div class="err">${esc(r.error)}</div>`); chatBusy = false; } });
+    .then(r => r.json()).then(r => { if (r.error) { chatActSettle(true); chatAdd('', `<div class="err">${esc(r.error)}</div>`); chatBusy = false; } });
 }
 
-// The bottom bar opens a fresh thread every time. Replies to the thread on
-// screen go through the composer inside the window (chatSend, current id).
-function chatAsk(text) {
-  fetch('/api/chat?id=' + encodeURIComponent(chatId), { method: 'DELETE' });  // release the previous process
+// A fresh thread: the previous process is released, its journal stays readable
+// from Historique.
+function chatNew() {
+  fetch('/api/chat?id=' + encodeURIComponent(chatId), { method: 'DELETE' });
   if (chatStream) { chatStream.close(); chatStream = null; }
-  chatEl.querySelectorAll('.turn').forEach(n => n.remove());
+  chatThread.querySelectorAll('.turn').forEach(n => n.remove());
+  chatAct = null; botEl = null; chatBusy = false;
   try { chatIdSet(String(Date.now())); } catch (e) { /* private mode: stays on the old id */ }
+  chatSub('');
+  chatBack();
+}
+
+// Asking from elsewhere in the page (bottom bar, a todo item) always opens a new
+// thread. Replies to the thread on screen go through the composer (chatSend).
+function chatAsk(text) {
+  chatNew();
   chatSend(text);
 }
 
