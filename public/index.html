@@ -2664,10 +2664,15 @@ chatEl.innerHTML = `<header class="head">${chatIco('spark', 'spark')}
   <div class="composer"><textarea rows="1" placeholder="Répondre…" aria-label="Écrire à l'assistant"></textarea><button class="ib send" title="Entrée pour envoyer" aria-label="Envoyer">${chatIco('send')}</button></div>`;
 const chatThread = $('#chat-thread'), chatTa = chatEl.querySelector('.composer textarea');
 
+// The drawer opens ready to write. A thread idle for longer than the server keeps
+// its process makes way for a new one; Historique still has it.
+const CHAT_STALE_MS = 30 * 60e3;
+let chatLast = 0;
 // `focus` is off when the drawer opens on its own (a card to validate): the
 // user may be typing somewhere else.
 function chatShow(on, focus = true) {
   const opening = on && !chatOpen;
+  if (opening && chatLast && !chatBusy && Date.now() - chatLast > CHAT_STALE_MS) chatNew();
   chatOpen = on;
   chatEl.classList.toggle('on', on);
   chatEl.inert = !on;
@@ -2694,9 +2699,12 @@ $('#chat-hide').onclick = () => chatShow(false);
 $('#chat-log').onclick = () => (chatEl.querySelector('.histpane') ? chatBack() : chatHistory());
 $('#chat-new').onclick = () => { chatNew(); chatTa.focus(); };
 addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); chatShow(true); chatTa.focus(); } });
+// A click anywhere outside closes it, like Échap. Cards still waiting stay in it,
+// and a new one reopens it with a ping.
+document.addEventListener('pointerdown', e => { if (chatOpen && !chatEl.contains(e.target) && !e.target.closest('#ask-open')) chatShow(false); }, true);
 
 /* Conversations are journalled in the second brain (lib/chatlog.js), so past
-   ones can be read back — and the current one redrawn after a page reload. */
+   ones can be read back from Historique. */
 const chatBack = () => { chatEl.querySelector('.histpane')?.remove(); chatEl.classList.remove('hist'); };
 
 async function chatHistory() {
@@ -2729,8 +2737,19 @@ async function chatResume(id) {
   chatTa.focus();
 }
 
-// After a reload the server may still hold the conversation, but the browser has
-// forgotten what was said. The journal is what puts it back on screen.
+// A reload opens on a blank drawer. Only a conversation still at work comes back:
+// its last question, the live status, and any card still waiting (the server
+// replays those on subscribe).
+async function chatBoot() {
+  const st = await api('/api/chat/state?id=' + encodeURIComponent(chatId)).catch(() => null);
+  if (!st?.busy) { chatNew(); return; }
+  if (st.ask) { chatSub(st.ask, "aujourd'hui"); chatAdd('', `<div class="me">${esc(st.ask)}</div>`); }
+  chatActStart();
+  chatBusy = true;
+  chatConnect();
+}
+
+// A past conversation opened from Historique: the journal puts its text back.
 async function chatReplay() {
   if (chatThread.querySelector('.turn')) return;
   const conv = await api('/api/chat/log?id=' + encodeURIComponent(chatId)).catch(() => null);
@@ -2875,8 +2894,9 @@ function chatConnect() {
       return;
     }
     if (m.type === 'tool') {
-      // a short line right before a call is narration ("je regarde…"): the status line says it already
-      if (botEl && botEl.dataset.raw.trim().length <= 200) botEl.remove();
+      // a short line right before a read is narration ("je regarde…"): the status line says it
+      // already. Before a write it is the answer that leads to the card, and stays.
+      if (botEl && CHAT_TOOLS[m.name]?.[2] && botEl.dataset.raw.trim().length <= 200) botEl.remove();
       chatActTool(m);
       botEl = null;
       return;
@@ -2902,7 +2922,7 @@ function chatConnect() {
       return;
     }
     if (m.type === 'done') {
-      chatBusy = false;
+      chatBusy = false; chatLast = Date.now();
       chatActSettle(true);
       if (m.error) chatAdd('', `<div class="err">${esc(m.error)}</div>`);
       botEl = null;
@@ -2927,7 +2947,7 @@ function chatSend(text) {
   chatAdd('', `<div class="me">${esc(text)}</div>`);
   chatActSettle(true);
   chatActStart();
-  botEl = null; chatBusy = true;
+  botEl = null; chatBusy = true; chatLast = Date.now();
   fetch('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: chatId, text }) })
     .then(r => r.json()).then(r => { if (r.error) { chatActSettle(true); chatAdd('', `<div class="err">${esc(r.error)}</div>`); chatBusy = false; } });
 }
@@ -2938,7 +2958,7 @@ function chatNew() {
   fetch('/api/chat?id=' + encodeURIComponent(chatId), { method: 'DELETE' });
   if (chatStream) { chatStream.close(); chatStream = null; }
   chatThread.querySelectorAll('.turn').forEach(n => n.remove());
-  chatAct = null; botEl = null; chatBusy = false;
+  chatAct = null; botEl = null; chatBusy = false; chatLast = 0;
   try { chatIdSet(String(Date.now())); } catch (e) { /* private mode: stays on the old id */ }
   chatSub('');
   chatBack();
@@ -3396,7 +3416,7 @@ renderDemo();
 
 (async () => {
   cfg = await api('/api/config');
-  chatReplay();   // a reload should not wipe what was already said
+  chatBoot();
   draw();
   await Promise.all([loadGraph(), loadTodo(), loadRuns(), loadProjects(), loadDecks(), loadDelegations(), loadReview()]);
   setInterval(loadGraph, 30e3);      // second brain edits show up within 30 s

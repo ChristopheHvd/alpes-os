@@ -578,6 +578,7 @@ app.get('/api/chat/log', (req, res) => {
   if (id) return res.json(chatLog.one(id) ?? { id, body: '' });
   res.json(chatLog.sessions().map(({ body, ...s }) => s));
 });
+app.get('/api/chat/state', (req, res) => res.json(chat.state(String(req.query.id ?? 'default'))));
 app.post('/api/chat/decision', (req, res) => res.json(chat.decide(String(req.body?.id ?? 'default'), String(req.body?.key ?? ''), !!req.body?.approved)));
 app.delete('/api/chat', (req, res) => { chat.close(String(req.query.id ?? 'default')); res.json({ ok: true }); });
 // called by the MCP server, which blocks until the user decides
