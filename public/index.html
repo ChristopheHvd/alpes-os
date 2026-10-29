@@ -203,13 +203,16 @@ a.mail, .mail {
 .mails .more:hover { border-color: var(--ink-3); color: var(--ink-2); }
 #gm-others[hidden] { display: none; }
 .projects { display: grid; gap: 2px; overflow-y: auto; overflow-x: hidden; min-height: 0; margin: 0 -8px; }
-/* Two lines per project: title + stage + last review, then the next step with
+/* Two lines per active project: title + last review, then the next step with
    the push button revealed on hover. */
 .pj { min-width: 0; padding: 7px 8px; border-radius: 6px; }
 .pj:hover { background: var(--sunken); }
 .pj .name { display: flex; align-items: center; gap: 7px; }
-.pj .name b { min-width: 0; font: 600 13.5px/1.35 var(--font); color: var(--ink); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pj .name b:hover { color: var(--accent); }
+.pj .name a { min-width: 0; font: 600 13.5px/1.35 var(--font); color: var(--ink); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pj .name a:hover { color: var(--accent); }
+.pj-none { padding: 7px 8px; font-size: 12.5px; color: var(--ink-3); }
+.pj-all { justify-self: start; margin: 4px 8px 2px; font: 500 12.5px/1.4 var(--font); color: var(--accent); text-decoration: none; }
+.pj-all:hover { text-decoration: underline; }
 .pj .name .age { margin-left: auto; font: 400 11px/1 var(--font); color: var(--ink-3); white-space: nowrap; }
 .pj .line2 { display: flex; align-items: center; gap: 8px; }
 .pj .next { flex: 1; min-width: 0; font: 400 12.5px/1.5 var(--font); color: var(--ink-2); cursor: text; border-radius: 4px; padding: 1px 4px; margin-left: -4px;
@@ -232,6 +235,58 @@ a.mail, .mail {
 .stagebtn.terminé { color: var(--ink-3); }
 .pj .push { display: none; flex-shrink: 0; white-space: nowrap; font: 500 11px/1 var(--font); color: var(--accent); background: var(--accent-soft); border: 0; border-radius: 20px; padding: 5px 9px; cursor: pointer; }
 .pj:hover .push { display: inline-block; }
+/* ---- #projets: every project in three foldable groups, full screen ---- */
+.pjv-body { overflow-y: auto; min-height: 0; padding: 22px 28px 56px; }
+.pjv-inner { max-width: 1180px; margin: 0 auto; }
+.pjv-sum { margin: 0; font-size: 13.5px; color: var(--ink-2); }
+.pjv-body h2 { margin: 0; }
+.pjv-gh { border: 0; background: transparent; width: 100%; display: flex; align-items: center; gap: 8px; padding: 0 4px; min-height: 40px; margin-top: 18px; border-radius: 7px; font: 600 11.5px/1 var(--font); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); text-align: left; cursor: pointer; }
+.pjv-gh:hover { color: var(--ink); }
+.pjv-gh.over { color: var(--accent); background: var(--accent-soft); }
+.pjv-gh svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.2; transition: transform .2s; }
+.pjv-gh[aria-expanded="false"] svg { transform: rotate(-90deg); }
+.pjv-gh i { font-style: normal; font-weight: 500; letter-spacing: 0; }
+.pjv-list { background: var(--surface); border: 1px solid var(--line-soft); border-radius: 10px; box-shadow: var(--shadow); overflow: hidden; }
+.pjv-list.over { border-color: var(--accent); }
+.pjv-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 12px 14px 12px 8px; border-top: 1px solid var(--line-soft); background: var(--surface); }
+.pjv-row:first-child { border-top: 0; }
+.pjv-row:hover { background: var(--bg); }
+.pjv-row.over-top { box-shadow: inset 0 3px 0 var(--accent); }
+.pjv-row.over-bot { box-shadow: inset 0 -3px 0 var(--accent); }
+.pjv-row.dragging { opacity: .45; }
+.pjv-row.dim .pjv-id a, .pjv-row.dim .pjv-id b, .pjv-row.dim .pjv-next { color: var(--ink-3); }
+.pjv-grip { width: 22px; height: 34px; display: grid; place-items: center; color: var(--ink-3); cursor: grab; flex-shrink: 0; opacity: .55; }
+.pjv-grip svg { width: 14px; height: 14px; fill: currentColor; }
+.pjv-row:hover .pjv-grip { opacity: 1; }
+.pjv-grip.off { visibility: hidden; }
+.pjv-id { flex: 0 1 250px; min-width: 160px; }
+.pjv-id > div { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.pjv-id a, .pjv-id b { min-width: 0; font: 600 14px/1.4 var(--font); color: var(--ink); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pjv-id a:hover { color: var(--accent); }
+.pjv-id small { display: block; font-size: 12px; color: var(--ink-3); }
+.pjv-tag { flex-shrink: 0; font: 500 11px/1.3 var(--font); padding: 2px 7px; border-radius: 20px; border: 1px solid var(--line); color: var(--ink-3); white-space: nowrap; }
+.pjv-next { flex: 1 1 280px; min-width: 0; font-size: 13.5px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: 4px; padding: 1px 4px; }
+.pjv-next[data-next] { cursor: text; }
+.pjv-next[data-next]:hover { background: var(--sunken); }
+.pjv-next.empty { color: var(--ink-3); font-style: italic; }
+.pjv-next[contenteditable="true"] { background: var(--surface); outline: 1px solid var(--accent); white-space: normal; overflow: visible; text-overflow: clip; }
+.pjv-age { flex: 0 0 110px; text-align: right; font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+.pjv-age.stale { color: var(--warn); font-weight: 600; }
+.pjv-st { display: flex; gap: 2px; padding: 3px; border: 1px solid var(--line-soft); border-radius: 20px; background: var(--bg); flex-shrink: 0; }
+.pjv-st button { border: 0; background: transparent; color: var(--ink-3); border-radius: 16px; padding: 0 11px; min-height: 28px; font: 500 12px/1 var(--font); white-space: nowrap; cursor: pointer; }
+.pjv-st button:hover { color: var(--ink); }
+.pjv-st button.on.actif { background: var(--good); color: #fff; }
+.pjv-st button.on.veille { background: var(--sunken); color: var(--ink); }
+.pjv-st button.on.fini { background: var(--sunken); color: var(--ink-2); }
+.pjv-ib { width: 34px; height: 34px; border-radius: 7px; border: 1px solid transparent; background: transparent; color: var(--ink-3); display: grid; place-items: center; padding: 0; flex-shrink: 0; cursor: pointer; }
+.pjv-ib:hover { border-color: var(--line); color: var(--ink); background: var(--surface); }
+.pjv-ib svg, .pjv-hidden svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.pjv-empty { padding: 14px 16px; font-size: 13px; color: var(--ink-3); }
+.pjv-hidden { margin: 22px 0 10px; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-3); }
+@media (max-width: 800px) {
+  .pjv-body { padding: 18px 16px 48px; }
+  .pjv-age { flex-basis: auto; text-align: left; }
+}
 .agenda { display: grid; gap: 1px; }
 .ev { display: grid; grid-template-columns: 54px 1fr; gap: 10px; padding: 6px 8px; border-radius: 6px; font-size: 12.5px; color: var(--ink-2); margin: 0 -8px; }
 .ev:hover { background: var(--sunken); }
@@ -1036,6 +1091,14 @@ a.pf-card.res-cours p { color: var(--accent); }
   </div>
 </div>
 
+<div class="portfolio pjview" id="pjview" hidden>
+  <div class="pf-top">
+    <button class="btn" id="pjv-close" title="Retour au dashboard (Échap)">← Dashboard</button>
+    <h1>Projets</h1>
+  </div>
+  <section class="pjv-body" id="pjv-body"></section>
+</div>
+
 <div class="portfolio finview" id="finview" hidden>
   <div class="pf-top">
     <button class="btn" id="fin-close" title="Retour au dashboard (Échap)">← Dashboard</button>
@@ -1698,45 +1761,50 @@ addEventListener('keydown', e => { if (!$('#focus').hidden) { if (e.key === 'Esc
 })();
 
 /* ---------- projects: long-running work, stored in the second brain ---------- */
-const STAGES = ['actif', 'incubation', 'pause', 'terminé'];
+const STAGES = ['actif', 'incubation', 'pause', 'terminé', 'archivé'];
 const STAGE_HELP = {
   actif: "en cours, j'y travaille",
   incubation: 'idée à valider, pas encore lancée',
   pause: 'mis de côté, à reprendre plus tard',
   'terminé': 'livré, plus rien à faire',
+  'archivé': 'masqué partout, sauf dans la vue Projets',
 };
+// every project, archived ones included, in the order the user dragged them into
 let projects = [];
 async function loadProjects() {
-  projects = await api('/api/projects');
-  const actifs = projects.filter(p => p.stage === 'actif').length;
-  $('#pj-meta').textContent = `${actifs} actif${actifs > 1 ? 's' : ''} sur ${projects.length}`;
-  $('#projects').innerHTML = projects.map(p => `
-    <div class="pj ${p.stage}" data-slug="${esc(p.slug)}">
+  projects = await api('/api/projects?all=1');
+  const actifs = projects.filter(p => p.stage === 'actif');
+  if ($('#pj-meta')) $('#pj-meta').textContent = actifs.length || '';
+  $('#projects').innerHTML = actifs.map(p => `
+    <div class="pj" data-slug="${esc(p.slug)}">
       <div class="name">
-        <b data-open-note="${esc(p.id)}">${esc(p.title)}</b>
-        <button class="stagebtn ${esc(p.stage)}" data-stage="${esc(p.slug)}" aria-haspopup="true">${esc(p.stage)}<svg><use href="#i-chev"/></svg></button>
+        <a href="${pfHref('projet', p.slug)}">${esc(p.title)}</a>
         <span class="age">${p.updated ? 'revu ' + relDate(p.updated) : ''}</span>
       </div>
       <div class="line2">
         <div class="next ${p.next ? '' : 'empty'}" data-next="${esc(p.slug)}" title="Cliquer pour modifier la prochaine étape">${esc(p.next || 'Pas de prochaine étape')}</div>
         ${p.next ? `<button class="push" data-push="${esc(p.slug)}">→ Aujourd'hui</button>` : ''}
       </div>
-    </div>`).join('');
+    </div>`).join('') + (actifs.length ? '' : '<div class="pj-none">Aucun projet en cours.</div>') + '<a class="pj-all" href="#projets">Tous →</a>';
 
-  $('#projects').querySelectorAll('[data-open-note]').forEach(el => el.onclick = () => {
-    const n = byId[el.dataset.openNote];
-    if (n) { select(n); center(n); } else toast('Fiche absente du graphe, rafraîchis dans 30 s');
-  });
-  $('#projects').querySelectorAll('button[data-stage]').forEach(el => el.onclick = e => { e.stopPropagation(); openStageMenu(el); });
-  $('#projects').querySelectorAll('[data-next]').forEach(el => {
-    el.onclick = () => { if (el.isContentEditable) return; el.contentEditable = 'true'; el.classList.remove('empty'); if (el.textContent.startsWith('Pas de')) el.textContent = ''; el.focus(); };
-    el.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } if (e.key === 'Escape') { el.contentEditable = 'false'; loadProjects(); } };
-    el.onblur = () => { if (!el.isContentEditable) return; el.contentEditable = 'false'; patchProject(el.dataset.next, { next: el.textContent.trim() }); };
-  });
+  wireNext($('#projects'));
   $('#projects').querySelectorAll('[data-push]').forEach(el => el.onclick = () => {
     const p = projects.find(x => x.slug === el.dataset.push);
     todo.items.push({ t: p.next, s: p.title, p: '', done: false });
     saveTodo(); toast(`Ajouté à aujourd'hui : ${p.next.slice(0, 40)}`);
+  });
+  if (!$('#pjview').hidden) renderPjview();
+}
+// the next step is edited in place wherever a project is listed
+function wireNext(root) {
+  root.querySelectorAll('[data-next]').forEach(el => {
+    el.onclick = () => {
+      if (el.isContentEditable) return;
+      el.closest('[draggable="true"]')?.setAttribute('draggable', 'false');   // let the mouse select text
+      el.contentEditable = 'true'; el.classList.remove('empty'); if (el.textContent.startsWith('Pas de')) el.textContent = ''; el.focus();
+    };
+    el.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } if (e.key === 'Escape') { el.contentEditable = 'false'; loadProjects(); } };
+    el.onblur = () => { if (!el.isContentEditable) return; el.contentEditable = 'false'; patchProject(el.dataset.next, { next: el.textContent.trim() }); };
   });
 }
 let stageMenu = null;
@@ -1757,14 +1825,151 @@ function openStageMenu(btn) {
 }
 addEventListener('keydown', e => { if (e.key === 'Escape') closeStageMenu(); });
 
-async function patchProject(slug, patch) {
+async function patchProject(slug, patch, done = 'Projet mis à jour dans le second brain') {
   const r = await api('/api/projects/' + encodeURIComponent(slug), { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(patch) });
   if (r.error) return toast(r.error, true);
-  toast('Projet mis à jour dans le second brain');
+  toast(done);
   loadProjects();
   if (!$('#portfolio').hidden) loadPortfolio();
 }
-const relDate = iso => { const d = Math.round((Date.now() - new Date(iso)) / 864e5); return d <= 0 ? "aujourd'hui" : d === 1 ? 'hier' : `il y a ${d} j`; };
+// calendar days, local time: a note reviewed this morning reads "aujourd'hui" all day
+const daysAgo = iso => Math.round((new Date().setHours(0, 0, 0, 0) - new Date(String(iso).slice(0, 10) + 'T00:00:00')) / 864e5);
+const relDate = iso => { const d = daysAgo(iso); return d <= 0 ? "aujourd'hui" : d === 1 ? 'hier' : `il y a ${d} j`; };
+
+/* ---------- #projets: every project in three groups, in the user's order ---------- */
+// The order lives in output/projects-order.json (PUT /api/projects/order): a drag
+// is a display choice, so it never reaches the second brain. Dropping a project in
+// another group changes its stage, and that one does.
+const PJV_GROUPS = [
+  { key: 'actif', label: 'En cours', empty: 'Aucun projet en cours. Glisse un projet ici pour le relancer.' },
+  { key: 'veille', label: 'En veille', empty: 'Rien en veille.' },
+  { key: 'fini', label: 'Terminés', empty: 'Aucun projet terminé.' },
+];
+const PJV_EYE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 6.1A9.8 9.8 0 0 1 12 6c5 0 8.5 4.2 9.5 6-.4.8-1.3 2-2.6 3.2M6.3 7.6C4.4 8.9 3.1 10.7 2.5 12c1 1.8 4.5 6 9.5 6 1.6 0 3-.4 4.3-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+const PJV_GRIP = '<svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.4"/><circle cx="15" cy="6" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="9" cy="18" r="1.4"/><circle cx="15" cy="18" r="1.4"/></svg>';
+const pjvGroup = stage => stage === 'actif' ? 'actif' : stage === 'terminé' ? 'fini' : 'veille';
+// "En veille" means pause, unless the project is already in incubation
+const pjvStage = (g, current) => pjvGroup(current) === g ? current : { actif: 'actif', veille: 'pause', fini: 'terminé' }[g];
+let pjvOpen = { actif: true, veille: true, fini: false };
+try { Object.assign(pjvOpen, JSON.parse(localStorage.getItem('pjv-open') || '{}')); } catch {}
+let pjvShowHidden = false, pjvDrag = null, pjvClients = null;
+const pjvBusy = () => pjvDrag || (document.activeElement?.isContentEditable && $('#pjview').contains(document.activeElement));
+
+function pjvRow(p) {
+  const g = pjvGroup(p.stage), hidden = p.stage === 'archivé', slug = esc(p.slug);
+  const days = p.updated ? daysAgo(p.updated) : 0;
+  const seg = (k, label) => `<button data-to="${k}" aria-pressed="${g === k}"${g === k ? ` class="on ${k}"` : ''}>${label}</button>`;
+  return `<div class="pjv-row${hidden || g !== 'actif' ? ' dim' : ''}" data-slug="${slug}"${hidden ? '' : ' draggable="true"'}>
+    <span class="pjv-grip${hidden ? ' off' : ''}" aria-hidden="true" title="Glisser pour réordonner">${PJV_GRIP}</span>
+    <div class="pjv-id">
+      <div>${hidden ? `<b>${esc(p.title)}</b>` : `<a href="${pfHref('projet', p.slug)}" draggable="false">${esc(p.title)}</a>`}${p.stage === 'incubation' || p.stage === 'pause' ? `<span class="pjv-tag">${p.stage}</span>` : ''}</div>
+      ${pjvClients?.[p.client] ? `<small>${esc(pjvClients[p.client])}</small>` : ''}
+    </div>
+    <div class="pjv-next${p.next ? '' : ' empty'}"${hidden ? '' : ` data-next="${slug}" title="Cliquer pour modifier"`}>${esc(p.next || 'Pas de prochaine étape')}</div>
+    <span class="pjv-age${g === 'actif' && days > 21 ? ' stale' : ''}">${p.updated ? 'revu ' + relDate(p.updated) : ''}</span>
+    ${hidden ? `<button class="btn" data-unhide="${slug}">Réafficher</button>` : `
+    <div class="pjv-st" role="group" aria-label="Stade">${seg('actif', 'En cours')}${seg('veille', 'En veille')}${seg('fini', 'Terminé')}</div>
+    <button class="pjv-ib" data-hide="${slug}" aria-label="Masquer ce projet" title="Masquer">${PJV_EYE}</button>`}
+  </div>`;
+}
+function renderPjview() {
+  if (pjvBusy()) return;
+  const el = $('#pjv-body'), top = el.scrollTop;
+  const shown = projects.filter(p => p.stage !== 'archivé'), hidden = projects.filter(p => p.stage === 'archivé');
+  const n = k => shown.filter(p => pjvGroup(p.stage) === k).length, s = hidden.length > 1 ? 's' : '';
+  el.innerHTML = `<div class="pjv-inner">
+    <p class="pjv-sum">${n('actif')} en cours · ${n('veille')} en veille · ${n('fini')} terminé${n('fini') > 1 ? 's' : ''}. Glisse un projet pour le réordonner ou le changer de groupe.</p>
+    ${PJV_GROUPS.map(g => {
+      const ps = shown.filter(p => pjvGroup(p.stage) === g.key), open = !!pjvOpen[g.key];
+      return `<section>
+        <h2><button class="pjv-gh" data-fold="${g.key}" data-drop="${g.key}" aria-expanded="${open}"><svg><use href="#i-chev"/></svg>${g.label} <i>${ps.length}</i></button></h2>
+        ${open ? `<div class="pjv-list" data-drop="${g.key}">${ps.length ? ps.map(pjvRow).join('') : `<div class="pjv-empty">${g.empty}</div>`}</div>` : ''}
+      </section>`;
+    }).join('')}
+    ${hidden.length ? `<div class="pjv-hidden">${PJV_EYE}<span>${hidden.length} projet${s} masqué${s}</span><button class="btn sm" id="pjv-toggle">${pjvShowHidden ? 'Les cacher' : 'Les voir'}</button></div>
+    ${pjvShowHidden ? `<div class="pjv-list">${hidden.map(pjvRow).join('')}</div>` : ''}` : ''}
+  </div>`;
+  el.scrollTop = top;
+  wireNext(el);
+}
+// drop `src` before or after `target`, or at the end of group `g` when there is no target
+async function pjvMove(src, target, after, g) {
+  pjvDrag = null;
+  const list = projects.slice(), i = list.findIndex(p => p.slug === src);
+  if (i < 0 || src === target) return renderPjview();
+  const [moved] = list.splice(i, 1), stage = pjvStage(g, moved.stage);
+  let at = target ? list.findIndex(p => p.slug === target) : -1;
+  if (at < 0) at = list.findLastIndex(p => p.stage !== 'archivé' && pjvGroup(p.stage) === g) + 1 || list.length;
+  else if (after) at++;
+  list.splice(at, 0, { ...moved, stage });
+  projects = list;
+  renderPjview();
+  const r = await api('/api/projects/order', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ order: list.map(p => p.slug) }) }).catch(() => ({ error: "Ordre non enregistré : relance le serveur (npm start)" }));
+  if (r.error) toast(r.error, true);
+  if (stage !== moved.stage) patchProject(src, { stage });
+  else loadProjects();
+}
+
+const pjvBody = $('#pjv-body');
+pjvBody.onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const p = projects.find(x => x.slug === (b.dataset.hide || b.dataset.unhide || b.closest('[data-slug]')?.dataset.slug));
+  if (b.dataset.fold) {
+    pjvOpen[b.dataset.fold] = !pjvOpen[b.dataset.fold];
+    try { localStorage.setItem('pjv-open', JSON.stringify(pjvOpen)); } catch {}
+    renderPjview();
+  } else if (b.id === 'pjv-toggle') { pjvShowHidden = !pjvShowHidden; renderPjview(); }
+  else if (b.dataset.hide) patchProject(p.slug, { stage: 'archivé' }, `« ${p.title} » masqué`);
+  else if (b.dataset.unhide) patchProject(p.slug, { stage: p.hiddenFrom || 'pause' }, `« ${p.title} » réaffiché`);
+  else if (b.dataset.to && p) { const stage = pjvStage(b.dataset.to, p.stage); if (stage !== p.stage) patchProject(p.slug, { stage }); }
+};
+const pjvClear = () => pjvBody.querySelectorAll('.over, .over-top, .over-bot').forEach(x => x.classList.remove('over', 'over-top', 'over-bot'));
+const pjvTarget = e => {
+  const zone = e.target.closest?.('[data-drop]'), row = zone && e.target.closest('.pjv-row');
+  return zone && { zone, row, after: !!row && e.clientY > row.getBoundingClientRect().top + row.offsetHeight / 2 };
+};
+pjvBody.ondragstart = e => {
+  const row = e.target.closest?.('.pjv-row[draggable="true"]'); if (!row) return;
+  pjvDrag = row.dataset.slug;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', pjvDrag);
+  row.classList.add('dragging');
+};
+pjvBody.ondragover = e => {
+  const t = pjvDrag && pjvTarget(e); if (!t) return;
+  e.preventDefault();
+  pjvClear();
+  if (t.row) { if (t.row.dataset.slug !== pjvDrag) t.row.classList.add(t.after ? 'over-bot' : 'over-top'); }
+  else t.zone.classList.add('over');
+};
+pjvBody.ondrop = e => {
+  const t = pjvDrag && pjvTarget(e); if (!t) return;
+  e.preventDefault();
+  pjvMove(pjvDrag, t.row?.dataset.slug, t.after, t.zone.dataset.drop);
+};
+pjvBody.ondragend = () => { if (pjvDrag) { pjvDrag = null; renderPjview(); } };
+
+async function loadPjview() {
+  if (!pjvClients) {
+    const cs = await api('/api/clients').catch(() => []);
+    pjvClients = Object.fromEntries((Array.isArray(cs) ? cs : []).map(c => [c.slug, c.title]));
+  }
+  await loadProjects();
+}
+function onPjvHash() {
+  const el = $('#pjview');
+  if (location.hash !== '#projets') { el.hidden = true; return; }
+  if (el.hidden) { el.hidden = false; loadPjview(); }
+}
+const closePjview = () => { window.history.pushState('', '', location.pathname + location.search); onPjvHash(); };
+$('#pjv-close').onclick = closePjview;
+addEventListener('hashchange', onPjvHash);
+addEventListener('keydown', e => {
+  if (e.key !== 'Escape' || $('#pjview').hidden || document.activeElement?.isContentEditable) return;
+  if (!$('#standup').hidden || !$('#appview').hidden || !$('#viewer').hidden) return;
+  closePjview();
+}, true);
+onPjvHash();
 
 /* ---------- portfolio: clients and their projects (#portefeuille/client|projet/<slug>) ---------- */
 let pf = null, pfFilter = 'actif', pfQuery = '';
