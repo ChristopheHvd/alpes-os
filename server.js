@@ -30,6 +30,7 @@ import { makeLinkedin, checkPost } from './lib/linkedin.js';
 import { loadLinkedin, updatePost, visualFor, localToday, dueForPreparation, toProduce, planFrame, parsePrepared, planFile } from './lib/linkedin-plan.js';
 import { makePropositions } from './lib/propositions.js';
 import { makeReview } from './lib/review.js';
+import { makePartenaires, trouverFiche, blocDonnee, evenementDonnee, deposerEvenement, libelleDonnee } from './lib/partenaires.js';
 import { claudeActivity } from './lib/activity.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -103,6 +104,8 @@ const delegations = makeDelegations(ROOT, {
   denyRead: [path.join(ROOT, 'credentials'), path.join(ROOT, 'config')],
 }, {
   onChange(d, event) {
+    // a partner's mission run by an agent: its end decides what goes back (lib/partenaires.js)
+    if (d.source?.type === 'mission') partenaires.surDelegation(d, event).catch(e => console.error('partenaires', e.message));
     if (event !== 'pret' && event !== 'bloque') return;
     const report = delegations.report(d.id).trim().slice(0, 12000);
     const block = [`## ${new Date().toISOString().slice(0, 10)} · ${d.tache}`, '',
@@ -846,6 +849,42 @@ if (MEET_AUTO) setTimeout(() => collectMeetings('au démarrage'), 2 * 60e3).unre
 // Propositions — tasks suggested for today (hourly review, SIMATIS missions) waiting
 // on Christophe: accepted they join today's todo, "plus tard" goes to Plus tard
 const propositions = makePropositions(path.join(ROOT, 'output', 'propositions.json'));
+
+// Connexions — partner OSes (SIMATIS OS first) linked through the agents relay. Their
+// missions become propositions or delegations depending on the level set per connection;
+// the facts they push go to the client file when one matches, else to the curator to decide.
+// Off until credentials/relais.json exists (scripts/relais-inscription.js).
+function rangerDonnee(d, { partenaire, quand }) {
+  const fiche = trouverFiche(listClients(cfg.secondBrain), d.champs?.entreprise);
+  if (fiche) bundle.append(path.join(cfg.secondBrain, fiche.id), blocDonnee(d, { partenaire, quand }), { subject: `${libelleDonnee(d)} : ${fiche.title}`, why: `fait transmis par ${partenaire} par le relais d'agents (réf. ${d.ref})` });
+  else deposerEvenement(sbQueue, evenementDonnee(d, { partenaire, quand }));
+}
+const partenaires = makePartenaires({
+  dir: path.join(ROOT, 'output'), credentials: path.join(ROOT, 'credentials', 'relais.json'),
+  propositions, delegations, ranger: rangerDonnee,
+});
+partenaires.demarrer();
+const relaisErr = (res, e) => res.status(e.status >= 400 && e.status < 600 ? e.status : 502).json({ error: e.message });
+app.get('/api/connexions', (req, res) => res.json(partenaires.etat()));
+app.post('/api/connexions/invitations', async (req, res) => {
+  try { res.json(await partenaires.inviter({ email: req.body?.email })); } catch (e) { relaisErr(res, e); }
+});
+app.post('/api/connexions/rejoindre', async (req, res) => {
+  try { res.json(await partenaires.rejoindre(req.body?.lien)); } catch (e) { relaisErr(res, e); }
+});
+app.patch('/api/connexions/:id', (req, res) => {
+  try { res.json(partenaires.regler(req.params.id, req.body ?? {})); } catch (e) { res.status(e.status ?? 400).json({ error: e.message }); }
+});
+app.delete('/api/connexions/:id', async (req, res) => {
+  try { res.json(await partenaires.couper(req.params.id)); } catch (e) { relaisErr(res, e); }
+});
+app.get('/api/connexions/:id/activite', (req, res) => {
+  try { res.json(partenaires.activite(req.params.id)); } catch (e) { res.status(e.status ?? 400).json({ error: e.message }); }
+});
+app.post('/api/connexions/missions/:id/terminer', async (req, res) => {
+  try { res.json(await partenaires.terminer(req.params.id, req.body?.message)); } catch (e) { res.status(e.status ?? 400).json({ error: e.message }); }
+});
+
 app.get('/api/propositions', (req, res) => res.json(propositions.pending()));
 app.post('/api/propositions', (req, res) => {
   try { res.json(propositions.add(req.body ?? {})); }
@@ -856,10 +895,15 @@ app.post('/api/propositions/:id/:act', (req, res) => {
   try {
     const p = propositions.get(id);
     const t = String(req.body?.title ?? '').trim() || p?.title;
+    // a mission on "Demander avant" starts the partner's work instead of adding a task
+    const tache = p?.source !== 'mission' || partenaires.ajouteTache(id);
     let todo = null;   // writeTodo drops a task already on the list
-    if (p?.status === 'pending' && act === 'accept') todo = addItem(todoFile, { t, s: p.project });
+    if (p?.status === 'pending' && act === 'accept' && tache) todo = addItem(todoFile, { t, s: p.project });
     if (p?.status === 'pending' && act === 'later') { const cur = readTodo(todoFile); todo = writeTodo(todoFile, cur.items, [...cur.later, { t, s: p.project }]); }
-    res.json({ proposition: propositions.decide(id, act, req.body?.title), todo: todo ?? readTodo(todoFile) });
+    const proposition = propositions.decide(id, act, req.body?.title);
+    // the partner hears back: accepted, postponed or rejected
+    if (proposition.source === 'mission') partenaires.surDecision(proposition).catch(e => console.error('partenaires', e.message));
+    res.json({ proposition, todo: todo ?? readTodo(todoFile) });
   } catch (e) { res.status(e.status ?? 400).json({ error: e.message }); }
 });
 

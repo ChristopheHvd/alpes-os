@@ -93,6 +93,72 @@ button, input, textarea, select { font-family: inherit; }
 .tools { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; align-items: start; }
 #apps, #decks { display: flex; flex-direction: column; gap: 10px; }
 
+/* ---------- connexions: partner OSes through the agents relay (Outils) ---------- */
+#cx-tool { display: flex; flex-direction: column; gap: 2px; }
+.cx-tool-it { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-radius: 6px; color: var(--ink); text-decoration: none; }
+.cx-tool-it:hover { background: var(--sunken); }
+.cx-tool-it span { flex: 1; min-width: 0; font: 500 13.5px/1.3 var(--font); }
+.cx { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+.cx-side { flex: 1 1 280px; min-width: 0; padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+.cx-it { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; color: var(--ink); text-decoration: none; }
+.cx-it:hover, .cx-it[aria-current] { background: var(--sunken); }
+.cx-it > span:first-child { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
+.cx-it b { font: 600 14.5px/1.35 var(--font); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cx-it.inv b { font-weight: 500; font-size: 14px; }
+.cx-sub, .cx-it small { font-size: 12.5px; color: var(--ink-2); }
+.cx-st { display: flex; align-items: center; gap: 6px; font: 500 12px/1 var(--font); color: var(--ink-2); white-space: nowrap; }
+.cx-st i { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--ink-3); }
+.cx-st.on { color: #2f7448; font-weight: 600; }
+.cx-st.on i { background: var(--good); border-color: var(--good); }
+.cx-add { margin: 10px 2px 2px; padding-top: 14px; border-top: 1px solid var(--line-soft); display: flex; flex-direction: column; gap: 8px; }
+.cx-add div, .cx-link { display: flex; gap: 8px; }
+.cx-add input, .cx-link input { flex: 1 1 auto; min-width: 0; min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); color: var(--ink); font-size: 13px; }
+.cx-link input { font: 400 12.5px var(--mono); }
+.cx-add .btn, .cx-link .btn, .cx-ask .btn { min-height: 36px; font-size: 13px; padding: 0 14px; border-radius: 7px; }
+.cx-detail { flex: 999 1 680px; min-width: 0; padding: 22px 26px 26px; display: flex; flex-direction: column; gap: 26px; }
+.cx-head { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 18px; }
+.cx-head > div { display: flex; flex-direction: column; gap: 4px; flex: 1 1 auto; }
+.cx-h2 { margin: 0; font: 600 26px/1.15 var(--display); letter-spacing: -.015em; }
+.cx-h2.sm { font-size: 20px; line-height: 1.2; }
+.cx-h3 { margin: 0; font: 600 15px/1.3 var(--font); color: var(--ink); }
+.cx-cut { border: 0; background: none; padding: 6px 0; color: var(--ink-2); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.cx-cut:hover { color: var(--crit); }
+.cx-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px 36px; }
+.cx-cols > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cx-h3row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.cx-row { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line-soft); }
+.cx-list > :first-child { border-top: 0; }
+.cx-row.top { align-items: flex-start; }
+.cx-main { display: flex; flex-direction: column; flex: 1 1 180px; min-width: 0; }
+.cx-main b { font: 600 14px/1.4 var(--font); }
+.cx-when { font-size: 12.5px; color: var(--ink-2); white-space: nowrap; }
+.cx-who { font: 600 11px/1.5 var(--font); padding: 2px 8px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; background: #e3edf5; color: #24597f; }
+.cx-who.moi { background: var(--sunken); color: var(--ink-2); }
+.cx-badge { font: 500 12px/1.4 var(--font); padding: 4px 10px; border-radius: 20px; border: 1px solid var(--line); color: var(--ink-2); text-decoration: none; white-space: nowrap; }
+.cx-badge.acc { border-color: transparent; background: var(--accent-soft); color: #9a3c15; font-weight: 600; }
+.cx-row details, details.cx-row { display: block; }
+details.cx-row summary { cursor: pointer; font: 500 13px/1.4 var(--font); color: var(--ink-2); }
+.cx-older { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; font-size: 13px; color: var(--ink-2); }
+.cx-empty { margin: 8px 0 0; font-size: 13px; color: var(--ink-3); }
+.cx-params { display: flex; flex-direction: column; gap: 22px; padding-top: 22px; border-top: 1px solid var(--line); }
+.cx-params > div { display: flex; flex-direction: column; gap: 12px; }
+.cx-seg { align-self: flex-start; display: flex; flex-wrap: wrap; gap: 2px; padding: 3px; border: 1px solid var(--line-soft); border-radius: 20px; background: var(--surface); }
+.cx-seg button { border: 0; background: transparent; color: var(--ink-3); border-radius: 16px; padding: 0 14px; min-height: 36px; font: 500 13px/1 var(--font); white-space: nowrap; cursor: pointer; }
+.cx-seg button:hover { color: var(--ink); }
+.cx-seg button.on { background: var(--sunken); color: var(--ink); font-weight: 600; }
+.cx-note { margin: 0; font-size: 13.5px; color: var(--ink-2); }
+.cx-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cx-chips .lbl { font-size: 12.5px; margin-right: 4px; }
+.cx-chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: 20px; padding: 0 12px; min-height: 32px; font: 500 12.5px/1 var(--font); color: var(--ink-2); }
+button.cx-chip { cursor: pointer; }
+button.cx-chip:hover { border-color: var(--ink-3); }
+.cx-chip.on { border-color: var(--ink); color: var(--ink); }
+.cx-chip svg { width: 12px; height: 12px; stroke: var(--ink-3); }
+.cx-chip.on svg { width: 13px; height: 13px; stroke: var(--accent); }
+.cx-ask { display: flex; flex-direction: column; gap: 10px; max-width: 640px; }
+.cx-ask p { margin: 0; font-size: 13.5px; color: var(--ink-2); }
+.cx-ask code { font: 400 12.5px var(--mono); background: var(--sunken); padding: 1px 5px; border-radius: 4px; }
+
 /* ---------- today: money band, the day's tasks, a glance column ---------- */
 .finband { padding: 16px 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 36px; }
 .fb-title { display: flex; align-items: center; gap: 9px; }
@@ -892,6 +958,7 @@ a.pf-card.res-cours p { color: var(--accent); }
     <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
     <symbol id="i-post" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 11v6M8 7.5v.01M12 17v-6M12 13.5a2.5 2.5 0 0 1 5 0V17"/></symbol>
     <symbol id="i-list" viewBox="0 0 24 24"><path d="M4 6h2M9 6h11M4 12h2M9 12h11M4 18h2M9 18h11"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
   </defs>
 </svg>
 
@@ -975,7 +1042,13 @@ a.pf-card.res-cours p { color: var(--accent); }
   <div class="tools">
     <section class="pane gl" aria-labelledby="h-apps"><div class="gl-head"><svg><use href="#i-grid"/></svg><h2 id="h-apps">Micro apps</h2></div><div id="apps"></div></section>
     <section class="pane gl" aria-labelledby="h-decks"><div class="gl-head"><svg><use href="#i-course"/></svg><h2 id="h-decks">Supports de formation</h2></div><div id="decks"></div></section>
+    <section class="pane gl" aria-labelledby="h-cx"><div class="gl-head"><svg><use href="#i-link"/></svg><h2 id="h-cx">Connexions</h2><span class="sp"></span><a class="more" href="#connexions">Ouvrir →</a></div><div id="cx-tool"><span class="lbl">Chargement…</span></div></section>
   </div>
+</main>
+
+<main class="view page" data-view="connexions" hidden>
+  <h1 class="ptitle">Connexions</h1>
+  <div class="cx" id="cx-body"><span class="lbl">Chargement…</span></div>
 </main>
 
 <div class="chat" id="chat"></div>
@@ -3376,16 +3449,173 @@ addEventListener('keydown', e => {
   closeLiview();
 }, true);
 
+/* ---------- connexions: partner OSes through the agents relay ---------- */
+// #connexions, #connexions/<connection id>, #connexions/invitation/<code>
+let cx = null, cxAct = null, cxSig = '';
+const cxRoute = () => { const m = location.hash.match(/^#connexions(?:\/invitation\/([A-Z2-7]+)|\/([\w-]+))?$/); return m && { invitation: m[1] ?? null, id: m[2] ?? null }; };
+const CX_ETAT = { submitted: 'reçue', working: 'en cours', 'input-required': 'en attente', completed: 'faite', failed: 'échouée', canceled: 'annulée', rejected: 'refusée' };
+const CX_NOTE = {
+  montrer: () => 'Ses missions arrivent dans Aujourd\'hui, rien ne démarre sans toi.',
+  demander_avant: p => `Ton agent te demande avant de commencer, puis répond seul à ${p}.`,
+  faire_puis_valider: p => `Rien ne repart chez ${p} sans ton accord.`,
+  faire_seul: p => `Ton agent fait la mission et répond seul à ${p}.`,
+};
+function cxWhen(iso) {
+  if (!iso) return '';
+  const d = new Date(iso), hm = `${d.getHours()} h ${String(d.getMinutes()).padStart(2, '0')}`;
+  const days = Math.round((new Date(new Date().toDateString()) - new Date(d.toDateString())) / 864e5);
+  if (days === 0) return `${d.getHours() < 12 ? 'Ce matin' : 'Aujourd\'hui'}, ${hm}`;
+  if (days === 1) return `Hier, ${hm}`;
+  if (days < 7) { const w = d.toLocaleDateString('fr-FR', { weekday: 'long' }); return w[0].toUpperCase() + w.slice(1); }
+  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+}
+const cxDate = iso => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+const cxSend = (url, body, method = 'POST') => api(url, { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body ?? {}) });
+function cxSel() {
+  const r = cxRoute();
+  if (!r || !cx || r.invitation) return null;
+  return cx.connexions.find(c => c.id === r.id) ?? (r.id ? null : cx.connexions[0] ?? null);
+}
+// redrawn only when something changed, so an open <details> or a typed address survives the polling
+async function loadCx(force) {
+  try { cx = await api('/api/connexions'); } catch (e) { return; }
+  renderCxTool();
+  if (!cxRoute()) return;
+  const sel = cxSel();
+  cxAct = sel ? await api(`/api/connexions/${encodeURIComponent(sel.id)}/activite`).catch(() => null) : null;
+  const sig = JSON.stringify([cx, cxAct, location.hash]);
+  if (force || sig !== cxSig) { cxSig = sig; renderCx(); }
+}
+function renderCxTool() {
+  const el = $('#cx-tool');
+  if (!cx.actif) { el.innerHTML = '<span class="lbl">Relais non configuré.</span>'; return; }
+  el.innerHTML = cx.connexions.map(c => `<a class="cx-tool-it" href="#connexions/${esc(c.id)}"><span>${esc(c.court)}</span><span class="cx-st on"><i></i>Connecté</span></a>`).join('')
+    + cx.invitations.map(i => `<a class="cx-tool-it" href="#connexions/invitation/${esc(i.code)}"><span>${esc(i.email || 'Invitation')}</span><span class="cx-st"><i></i>En attente</span></a>`).join('')
+    || '<span class="lbl">Aucun partenaire pour l\'instant.</span>';
+}
+const cxInvitation = i => `<section class="pane cx-detail cx-ask" aria-labelledby="cx-t"><h2 class="cx-h2" id="cx-t">Invitation${i.email ? ` pour ${esc(i.email)}` : ''}</h2>
+  <p>Transmets ce lien à ton partenaire : il le colle dans son OS pour se connecter. Valable jusqu'au ${esc(cxDate(i.expireLe))}. AlpesOS n'envoie aucun mail.</p>
+  <div class="cx-link"><input readonly id="cx-lien" value="${esc(i.lien)}" aria-label="Lien d'invitation"><button type="button" class="btn acc" id="cx-copy">Copier</button></div></section>`;
+function cxFiche(c, act) {
+  const p = c.court, enCours = act?.enCours ?? [], faites = act?.terminees ?? [], donnees = act?.donnees ?? [];
+  const who = m => (m.sens === 'recue' ? `<span class="cx-who">${esc(p.split(/\s/)[0])}</span>` : '<span class="cx-who moi">Toi</span>');
+  const badge = m => (m.attente ? '<a class="cx-badge acc" href="#">À valider dans Aujourd\'hui</a>'
+    : m.agent?.statut === 'en_cours' ? '<span class="cx-badge">Ton agent y travaille</span>'
+      : m.agent?.statut === 'bloque' ? '<a class="cx-badge acc" href="#">Ton agent a une question</a>'
+        : m.plusTard ? '<span class="cx-badge">Plus tard</span>'
+          : m.etat === 'working' ? `<button type="button" class="btn sm" data-terminer="${esc(m.id)}">Marquer faite</button>`
+            : `<span class="cx-badge">${esc(CX_ETAT[m.etat] ?? m.etat)}</span>`);
+  const lieu = d => [d.champs?.entreprise, d.champs?.ville].filter(Boolean).join(', ');
+  const dRow = d => `<div class="cx-row top"><span class="cx-main"><b>${esc(d.libelle)}</b><small class="cx-sub">${esc([lieu(d), d.champs?.resume || d.champs?.etape || d.champs?.date].filter(Boolean).join(' · '))}</small></span><span class="cx-when">${esc(cxWhen(d.recueLe))}</span></div>`;
+  return `<section class="pane cx-detail" aria-labelledby="cx-t">
+    <div class="cx-head"><div><h2 class="cx-h2" id="cx-t">${esc(p)}</h2><span class="cx-sub">${esc(c.partenaire.nom)}${c.dernierEchange ? ` · dernier échange il y a ${esc(rel(c.dernierEchange))}` : ''}</span></div>
+      <button type="button" class="cx-cut" id="cx-cut">Couper la connexion</button></div>
+    <div class="cx-cols">
+      <div><h3 class="cx-h3">Missions en cours</h3><div class="cx-list">
+        ${enCours.map(m => `<div class="cx-row">${who(m)}<span class="cx-main"><b>${esc(m.titre)}</b><small class="cx-sub">${esc(cxWhen(m.recueLe))}</small></span>${badge(m)}</div>`).join('') || '<p class="cx-empty">Aucune mission en cours.</p>'}
+        ${faites.length ? `<details class="cx-row"><summary>Missions terminées</summary><div class="cx-older">${faites.map(m => `<span>${esc(m.titre)} · ${esc(CX_ETAT[m.etat] ?? m.etat)}, ${esc(cxWhen(m.majLe).toLowerCase())}</span>`).join('')}</div></details>` : ''}
+      </div></div>
+      <div><div class="cx-h3row"><h3 class="cx-h3">Données reçues</h3><span class="lbl">rangées dans ton second brain</span></div><div class="cx-list">
+        ${donnees.slice(0, 4).map(dRow).join('') || '<p class="cx-empty">Rien de reçu pour l\'instant.</p>'}
+        ${donnees.length > 4 ? `<details class="cx-row"><summary>Plus anciennes</summary><div class="cx-older">${donnees.slice(4).map(d => `<span>${esc([d.libelle, lieu(d), cxDate(d.recueLe)].filter(Boolean).join(' · '))}</span>`).join('')}</div></details>` : ''}
+      </div></div>
+    </div>
+    <div class="cx-params"><h3 class="cx-h2 sm">Paramètres</h3>
+      <div><h4 id="cx-auto" class="cx-h3">Quand ${esc(p)} confie une mission à ton agent</h4>
+        <div class="cx-seg" role="group" aria-labelledby="cx-auto">${cx.niveaux.map(n => `<button type="button" data-niveau="${n.id}"${n.id === c.niveau ? ' class="on"' : ''} aria-pressed="${n.id === c.niveau}">${esc(n.libelle)}</button>`).join('')}</div>
+        <p class="cx-note">${esc(CX_NOTE[c.niveau](p))}</p>
+        <div class="cx-chips"><span class="lbl">Toujours avec ton accord</span>${cx.gardeFous.map(g => `<span class="cx-chip"><svg aria-hidden="true"><use href="#i-lock"/></svg>${esc(g)}</span>`).join('')}</div>
+      </div>
+      <div><h4 id="cx-voit" class="cx-h3">${esc(p)} voit</h4>
+        <div class="cx-chips" role="group" aria-labelledby="cx-voit">${cx.partages.map(x => { const on = c.partage.includes(x); return `<button type="button" class="cx-chip${on ? ' on' : ''}" aria-pressed="${on}" data-partage="${esc(x)}">${on ? '<svg aria-hidden="true"><use href="#i-check"/></svg>' : ''}${esc(x)}</button>`; }).join('')}</div>
+        <p class="cx-note">Réglage gardé pour la suite : rien n'est encore envoyé automatiquement.</p>
+      </div>
+    </div>
+  </section>`;
+}
+function renderCx() {
+  const r = cxRoute(), el = $('#cx-body');
+  if (!r || !cx) return;
+  if (!cx.actif) {
+    el.innerHTML = `<section class="pane cx-detail cx-ask"><h2 class="cx-h2">Relais non configuré</h2>
+      <p>Pour relier AlpesOS à ses partenaires, inscris-le une fois au relais avec <code>node scripts/relais-inscription.js &lt;fichier de la clé&gt;</code>, puis redémarre AlpesOS.</p></section>`;
+    return;
+  }
+  const inv = r.invitation ? cx.invitations.find(i => i.code === r.invitation) : null, sel = cxSel();
+  const typed = $('#cx-in')?.value ?? '', focused = document.activeElement?.id === 'cx-in';
+  el.innerHTML = `<nav class="pane cx-side" aria-label="Partenaires">
+    ${cx.connexions.map(c => `<a class="cx-it" href="#connexions/${esc(c.id)}"${c === sel ? ' aria-current="page"' : ''}><span><b>${esc(c.court)}</b><small>${esc(c.partenaire.nom)}</small></span><span class="cx-st on"><i></i>Connecté</span></a>`).join('')}
+    ${cx.invitations.map(i => `<a class="cx-it inv" href="#connexions/invitation/${esc(i.code)}"${i === inv ? ' aria-current="page"' : ''}><span><b>${esc(i.email || 'Invitation sans e-mail')}</b><small>Invitation du ${esc(cxDate(i.creeLe))}</small></span><span class="cx-st"><i></i>En attente</span></a>`).join('')}
+    <form class="cx-add" id="cx-add"><label for="cx-in" class="lbl">Ajouter un partenaire</label>
+      <div><input id="cx-in" type="text" placeholder="Adresse de son OS ou e-mail" autocomplete="off"><button type="submit" class="btn">Ajouter</button></div></form>
+  </nav>${inv ? cxInvitation(inv) : sel ? cxFiche(sel, cxAct)
+    : r.invitation ? '<section class="pane cx-detail cx-ask"><h2 class="cx-h2">Invitation utilisée ou expirée</h2><p>Si ton partenaire l\'a acceptée, il apparaît dans la liste.</p></section>'
+      : '<section class="pane cx-detail cx-ask"><h2 class="cx-h2">Aucun partenaire connecté</h2><p>Colle le lien d\'invitation reçu d\'un partenaire, ou son e-mail pour créer une invitation à lui transmettre.</p></section>'}`;
+  $('#cx-in').value = typed;
+  if (focused) $('#cx-in').focus();
+}
+$('#cx-body').addEventListener('submit', async e => {
+  if (e.target.id !== 'cx-add') return;
+  e.preventDefault();
+  const v = $('#cx-in').value.trim(), btn = e.target.querySelector('button');
+  btn.disabled = true;
+  try {
+    if (/^https?:\/\//i.test(v)) {
+      const r = await cxSend('/api/connexions/rejoindre', { lien: v });
+      if (r.error) throw new Error(r.error);
+      $('#cx-in').value = '';
+      toast(`Connecté à ${r.partenaire?.nom ?? 'ton partenaire'}`);
+      location.hash = `connexions/${r.id}`;
+    } else if (!v || /^[^\s@]+@[^\s@]+$/.test(v)) {
+      const r = await cxSend('/api/connexions/invitations', v ? { email: v } : {});
+      if (r.error) throw new Error(r.error);
+      $('#cx-in').value = '';
+      location.hash = `connexions/invitation/${r.code}`;
+    } else throw new Error('Colle le lien d\'invitation de son OS, ou son e-mail');
+    await loadCx(true);
+  } catch (err) { toast(err.message, true); } finally { btn.disabled = false; }
+});
+$('#cx-body').addEventListener('click', async e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  const sel = cxSel(), url = sel && `/api/connexions/${encodeURIComponent(sel.id)}`;
+  let r = null;
+  if (b.id === 'cx-copy') {
+    try { await navigator.clipboard.writeText($('#cx-lien').value); toast('Lien copié'); } catch (err) { $('#cx-lien').select(); }
+    return;
+  }
+  if (b.dataset.niveau && sel) r = await cxSend(url, { niveau: b.dataset.niveau }, 'PATCH');
+  else if (b.dataset.partage && sel) {
+    const set = new Set(sel.partage);
+    if (!set.delete(b.dataset.partage)) set.add(b.dataset.partage);
+    r = await cxSend(url, { partage: [...set] }, 'PATCH');
+  } else if (b.id === 'cx-cut' && sel) {
+    if (!confirm(`Couper la connexion avec ${sel.court} ? Plus rien ne passera entre vos deux OS ; l'historique reste ici.`)) return;
+    r = await api(url, { method: 'DELETE' });
+    if (!r.error) { toast('Connexion coupée'); location.hash = 'connexions'; }
+  } else if (b.dataset.terminer) {
+    const message = prompt(`Message pour ${sel?.court ?? 'ton partenaire'} (un lien vers le livrable, par exemple)`, 'Terminée.');
+    if (message === null) return;
+    r = await cxSend(`/api/connexions/missions/${encodeURIComponent(b.dataset.terminer)}/terminer`, { message });
+    if (!r.error) toast(`Mission close, ${sel?.court ?? 'ton partenaire'} est prévenu`);
+  } else return;
+  if (r?.error) toast(r.error, true);
+  loadCx(true);
+});
+addEventListener('hashchange', () => { if (cxRoute()) loadCx(true); });
+
 /* ---------- shell: tabs routed by the hash, the assistant one keystroke away ---------- */
-const TAB_OF = { projets: 'projets', portefeuille: 'projets', finances: 'finances', linkedin: 'linkedin', 'second-brain': 'brain', outils: 'outils' };
+const TAB_OF = { projets: 'projets', portefeuille: 'projets', finances: 'finances', linkedin: 'linkedin', 'second-brain': 'brain', outils: 'outils', connexions: 'outils' };
+// a page of its own that still lights up its parent tab
+const VIEW_OF = { connexions: 'connexions' };
 const shellTab = () => TAB_OF[location.hash.slice(1).split('/')[0]] ?? 'today';
 function onShellHash() {
-  const tab = shellTab();
+  const tab = shellTab(), view = VIEW_OF[location.hash.slice(1).split('/')[0]] ?? tab;
   document.querySelectorAll('#nav a').forEach(a => {
     a.classList.toggle('on', a.dataset.tab === tab);
     if (a.dataset.tab === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
-  document.querySelectorAll('.view').forEach(v => { v.hidden = v.dataset.view !== tab; });
+  document.querySelectorAll('.view').forEach(v => { v.hidden = v.dataset.view !== view; });
 }
 addEventListener('hashchange', onShellHash);
 onShellHash();
@@ -3418,7 +3648,8 @@ renderDemo();
   cfg = await api('/api/config');
   chatBoot();
   draw();
-  await Promise.all([loadGraph(), loadTodo(), loadRuns(), loadProjects(), loadDecks(), loadDelegations(), loadReview()]);
+  await Promise.all([loadGraph(), loadTodo(), loadRuns(), loadProjects(), loadDecks(), loadDelegations(), loadReview(), loadCx()]);
+  setInterval(loadCx, 30e3);
   setInterval(loadGraph, 30e3);      // second brain edits show up within 30 s
   setInterval(loadProjects, 60e3);
   loadSb();
