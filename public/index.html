@@ -2890,8 +2890,9 @@ function chatConnect() {
       return;
     }
     if (m.type === 'tool') {
-      // a short line right before a call is narration ("je regarde…"): the status line says it already
-      if (botEl && botEl.dataset.raw.trim().length <= 200) botEl.remove();
+      // a short line right before a read is narration ("je regarde…"): the status line says it
+      // already. Before a write it is the answer that leads to the card, and stays.
+      if (botEl && CHAT_TOOLS[m.name]?.[2] && botEl.dataset.raw.trim().length <= 200) botEl.remove();
       chatActTool(m);
       botEl = null;
       return;
