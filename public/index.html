@@ -10,8 +10,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* ============================================================
-   AlpesOS — two themes, "Papier" (light) and "Ardoise" (dark).
-   Light is the default; the toggle stamps data-theme on <html>.
+   AlpesOS — one theme, "Papier": warm paper, orange accent.
    ============================================================ */
 :root {
   --bg: #faf8f4;          /* warm paper */
@@ -21,8 +20,8 @@
   --line-soft: #efeae2;
   --ink: #211d18;
   --ink-2: #5d564c;
-  --ink-3: #948b7e;
-  --accent: #cf5520;      /* Alpes IA orange, deepened to hold on paper */
+  --ink-3: #766d60;
+  --accent: #c4501d;      /* Alpes IA orange, deepened to hold on paper */
   --accent-ink: #ffffff;
   --accent-soft: #fbeade;
   --c-signed: #cf5520; --c-pipe: #2f7cb0;   /* finance chart, validated with dataviz/validate_palette */
@@ -44,34 +43,6 @@
   --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --r: 8px;
   color-scheme: light;
-}
-:root[data-theme="dark"] {
-  --bg: #17150f;          /* warm slate, not black */
-  --surface: #1f1c16;
-  --sunken: #262218;
-  --line: #35301f;
-  --line-soft: #292418;
-  --ink: #f2ece0;
-  --ink-2: #a89e8d;
-  --ink-3: #7a7161;
-  --accent: #ff8a3d;
-  --accent-ink: #17150f;
-  --accent-soft: #2e2317;
-  --c-signed: #e0702a; --c-pipe: #4b8fc2;
-  --good: #7cc48a;
-  --warn: #e0b24f;
-  --crit: #e0685c;
-  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
-  --shadow-lg: 0 16px 56px rgba(0,0,0,.55);
-  --scrim: rgba(0,0,0,.6);
-  --canvas-edge: 242,236,224;
-  --canvas-label-bg: 31,28,22;
-  --canvas-label-ink: #ffffff;
-  --d-knowledge: #7fc9f5; --d-clients: #f3b06e; --d-projects: #f38fa4;
-  --d-finance: #a8dd94;   --d-stack: #c2a5f0;  --d-maintenance: #eda17b;
-  --d-journal: #e9dc95;   --d-inbox: #8fcfc9;  --d-skills: #d5b3ef;
-  --d-root: #d8d0c2;
-  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -176,10 +147,6 @@ body.resizing { cursor: col-resize; user-select: none; }
 .icobtn:hover { border-color: var(--ink-3); color: var(--ink); }
 .icobtn:disabled { opacity: .35; cursor: default; }
 
-/* ---------- theme switch ---------- */
-.skins { position: absolute; left: 16px; top: 20px; display: flex; gap: 2px; z-index: 3; background: var(--surface); border: 1px solid var(--line-soft); border-radius: 20px; padding: 3px; box-shadow: var(--shadow); }
-.skins button { border: 0; background: transparent; color: var(--ink-3); cursor: pointer; border-radius: 16px; padding: 5px 12px; font: 500 11.5px/1 var(--font); }
-.skins button.on { background: var(--sunken); color: var(--ink); }
 
 /* ---------- mail ---------- */
 #gmail { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
@@ -896,10 +863,6 @@ a.pf-card.res-cours p { color: var(--accent); }
 
   <main class="core">
     <canvas id="g"></canvas>
-    <div class="skins" role="group" aria-label="Thème">
-      <button data-theme="light">Papier</button>
-      <button data-theme="dark">Ardoise</button>
-    </div>
     <div class="sbsync" id="sbsync" hidden></div>
     <header class="brand">
       <h1><svg><use href="#i-hex"/></svg>Alpes<span>OS</span></h1>
@@ -1088,17 +1051,7 @@ const api = (p, opt) => fetch(p, opt).then(r => r.json());
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const rel = iso => { const m = (Date.now() - new Date(iso)) / 6e4; return m < 60 ? `${Math.max(1, m | 0)} min` : m < 1440 ? `${m / 60 | 0}h` : `${m / 1440 | 0} j`; };
 
-/* ---------- skins ---------- */
-/* ---------- theme: Papier (light) / Ardoise (dark) ---------- */
 const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-function setTheme(t, remember) {
-  document.documentElement.dataset.theme = t;
-  document.querySelectorAll('.skins button').forEach(b => b.classList.toggle('on', b.dataset.theme === t));
-  if (remember) { try { localStorage.setItem('theme', t); } catch (e) {} }
-}
-document.querySelectorAll('.skins button').forEach(b => b.onclick = () => setTheme(b.dataset.theme, true));
-setTheme((() => { try { return localStorage.getItem('theme'); } catch (e) { return null; } })()
-  ?? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
 
 /* ---------- todo (brain/journal/todo.md in the second brain) ---------- */
 let todo = { items: [], carried: [], later: [], max: 5 };
@@ -1504,7 +1457,7 @@ function draw() {
   step();
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.clearRect(0, 0, W, H);
   const accent = cssVar('--accent'), edge = cssVar('--canvas-edge'), labelBg = cssVar('--canvas-label-bg'), labelInk = cssVar('--canvas-label-ink');
-  const glow = document.documentElement.dataset.theme === 'dark' ? 1 : .55;
+  const glow = .55;
   const focus = selected || hover, t = performance.now() / 1000;
   ctx.save(); ctx.translate(W / 2, H / 2); ctx.scale(cam.k, cam.k); ctx.translate(cam.x, cam.y);
   for (const e of edges) {
