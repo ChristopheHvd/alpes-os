@@ -35,6 +35,12 @@
   "chat": {
     "model": "claude-opus-5"
   },
+  "review": {
+    "model": "claude-haiku-5-5",
+    "weekdays": [1, 2, 3, 4, 5],
+    "from": 9,
+    "to": 19
+  },
   "apps": [
     {
       "id": "devis",

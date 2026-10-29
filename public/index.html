@@ -113,6 +113,26 @@ button, input, textarea, select { font-family: inherit; }
 .t-head .btn, .dg-new .btn { min-height: 36px; font-size: 13px; padding: 0 14px; border-radius: 7px; }
 #propositions { margin-top: 16px; }
 #propositions:empty { display: none; }
+/* hourly review: its summary and what it suggests, above the tasks */
+.rv { padding: 14px 16px; border-radius: 10px; background: var(--accent-soft); }
+.rv-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.rv svg { width: 16px; height: 16px; stroke: var(--accent); fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.rv-head h2 { margin: 0; font: 600 13.5px/1.3 var(--font); color: var(--ink); }
+.rv-head span { font-size: 12px; color: var(--ink-2); }
+.rv-head .sp { flex: 1; }
+.rv .btn.ghost { background: transparent; }
+.rv-head .btn { border-color: var(--accent); color: var(--accent); }
+.rv-sum { margin: 8px 0 0; font: 400 14px/1.55 var(--font); color: var(--ink); }
+.rv-err { margin: 6px 0 0; font-size: 12px; color: var(--crit); }
+.rv-list { margin-top: 10px; display: grid; }
+.sg { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid color-mix(in srgb, var(--accent) 18%, transparent); }
+.sg-t { flex: 1; min-width: 0; }
+.sg-t input { display: block; width: 100%; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--ink); font: 500 13.5px/1.4 var(--font); padding: 3px 6px; margin-left: -7px; outline: none; text-overflow: ellipsis; }
+.sg-t input:hover { border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+.sg-t input:focus { border-color: var(--accent); background: var(--surface); }
+.sg-t small { display: block; font-size: 12px; color: var(--ink-2); }
+@media (max-width: 640px) { .sg { flex-wrap: wrap; } .sg-t { flex-basis: calc(100% - 26px); } .sg .btn:first-of-type { margin-left: 26px; } }
+#rv-agent + #agents > .ag:first-child { border-top: 1px solid var(--line-soft); }
 .gl { padding: 16px 18px; }
 .gl-head { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
 .gl-head .meta { font: 400 12px/1.2 var(--font); color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -922,6 +942,7 @@ a.pf-card.res-cours p { color: var(--accent); }
       </section>
       <section class="pane gl" id="w-agents" aria-labelledby="h-ag">
         <div class="gl-head"><svg><use href="#i-agent"/></svg><h2 id="h-ag">Agents</h2><span class="sp"></span><span class="meta" id="dg-meta"></span></div>
+        <div id="rv-agent"></div>
         <div id="agents"><span class="lbl">Chargement…</span></div>
         <form class="dg-new" id="dg-new"><label class="sr" for="dg-task">Tâche pour un nouvel agent</label><input id="dg-task" placeholder="Confier une tâche à un agent…" autocomplete="off"><button class="btn acc" type="submit">Lancer</button></form>
       </section>
@@ -1084,7 +1105,8 @@ Cherche le contexte dans le second brain (projet, client, décisions, échéance
 // The open tasks in order: the first three are what to do now, the rest comes next.
 // Done ones and "Plus tard" stay folded under the add field.
 function renderTodo() {
-  const why = (t, carried) => [esc(t.s), t.p === 'h' ? '<b>urgent</b>' : t.p === 'm' ? '<b>important</b>' : '', carried ? `reporté du ${esc(t.from)}` : ''].filter(Boolean).join(' · ');
+  rvOrder();
+  const why = (t, carried) => [esc(t.s), esc(rvWhy(t)), t.p === 'h' ? '<b>urgent</b>' : t.p === 'm' ? '<b>important</b>' : '', carried ? `reporté du ${esc(t.from)}` : ''].filter(Boolean).join(' · ');
   const acts = (list, i, t) => `<div class="acts"><button class="ib dgb${dgActive(t) ? ' on' : ''}" data-list="${list}" data-i="${i}" title="${dgActive(t) ? 'Un agent travaille déjà sur cette tâche' : 'Déléguer à un agent'}" aria-label="Déléguer à un agent"><svg><use href="#i-agent"/></svg></button><button class="ib ai" data-list="${list}" data-i="${i}" title="Confier à l'assistant" aria-label="Confier à l'assistant"><svg><use href="#i-spark"/></svg></button><button class="ib fo" data-list="${list}" data-i="${i}" title="Mode focus" aria-label="Mode focus"><svg><use href="#i-target"/></svg></button>${list === 'carried' ? '' : `<button class="ib del" data-i="${i}"${list === 'later' ? ' data-later="1"' : ''} title="Supprimer" aria-label="Supprimer">×</button>`}</div>`;
   const row = (t, i, list, rank) => {
     const carried = list === 'carried', id = `td${carried ? 'c' : ''}${i}`, w = why(t, carried);
@@ -1126,6 +1148,7 @@ tasksEl.addEventListener('drop', async e => {
   e.preventDefault();
   const src = dragSrc, after = tg.classList.contains('drop-after');
   clearDrop();
+  rvHold();
   let list = tg.dataset.list, at = +tg.dataset.i + (after ? 1 : 0);
   if (list === 'carried') { list = 'items'; at = todo.items.length; }
   if (src.list === 'carried' && tg.dataset.list === 'carried') return;
@@ -1175,6 +1198,93 @@ $('#newtodo').addEventListener('keydown', e => {
   todo.items.push({ t: text, s, p, done: false }); e.target.value = ''; saveTodo();
 });
 $('#today').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).replace(/^./, c => c.toUpperCase());
+
+/* ---------- hourly review: ranks today's tasks, suggests what is missing ---------- */
+let review = null, props = [], rvPoll = null;
+const rvEdits = {};   // titles being edited survive a refresh
+const rvKey = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const rvToday = iso => !!iso && new Date(iso).toDateString() === new Date().toDateString();
+const rvHM = iso => new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+const rvHour = iso => { const d = new Date(iso); return `${d.getHours()} h${d.getMinutes() >= 5 ? ' ' + String(d.getMinutes()).padStart(2, '0') : ''}`; };
+const rvWhen = iso => {
+  const d = new Date(iso), tomorrow = new Date(Date.now() + 864e5).toDateString() === d.toDateString();
+  return `${rvToday(iso) ? '' : tomorrow ? 'demain ' : d.toLocaleDateString('fr-FR', { weekday: 'long' }) + ' '}à ${rvHour(iso)}`;
+};
+const rvOn = () => rvToday(review?.at) && review.ranking?.length > 0;
+const rvRank = t => { const k = rvOn() ? review.ranking.findIndex(r => rvKey(r.t) === rvKey(t.t)) : -1; return k < 0 ? Infinity : k; };
+const rvWhy = t => (t.done || todo.later.includes(t) || rvRank(t) === Infinity ? '' : review.ranking[rvRank(t)].why);
+// A reorder by hand wins over the review's order until the next review. The order
+// only reaches todo.md with Christophe's own next change, never from the review.
+const rvManual = () => { try { return localStorage.getItem('rv-manual') === review?.at; } catch (e) { return false; } };
+function rvHold() { try { if (review?.at) localStorage.setItem('rv-manual', review.at); } catch (e) { /* private mode */ } }
+function rvOrder() {
+  if (!rvOn() || rvManual()) return;
+  const sort = list => list.map((t, i) => [t, i]).sort(([a, i], [b, j]) => (rvRank(a) - rvRank(b)) || i - j).map(([t]) => t);
+  todo.items = sort(todo.items);
+  todo.carried = sort(todo.carried);
+}
+function rvRender() {
+  const r = review ?? {};
+  const failed = r.error && (!r.at || r.errorAt > r.at);
+  const head = r.running ? 'Revue en cours…' : rvToday(r.at) ? `Revue de ${rvHour(r.at)}` : r.at ? `Dernière revue ${rvWhen(r.at)}` : 'Revue horaire';
+  const meta = p => [p.source === 'mission' ? `Mission de ${p.from}` : '', p.project, p.why].filter(Boolean).map(esc).join(' · ');
+  $('#propositions').innerHTML = `<section class="rv" aria-labelledby="h-rev">
+    <div class="rv-head"><svg><use href="#i-agent"/></svg><h2 id="h-rev">${head}</h2>${r.auto && r.next && !r.running ? `<span>· prochaine ${rvWhen(r.next)}</span>` : ''}<span class="sp"></span>
+      <button class="btn sm ghost" id="rv-run"${r.running ? ' disabled' : ''}>${r.running ? 'En cours…' : 'Relancer'}</button></div>
+    ${rvToday(r.at) && r.summary ? `<p class="rv-sum">${esc(r.summary)}</p>` : ''}
+    ${failed ? `<p class="rv-err">La dernière revue a échoué : ${esc(String(r.error).slice(0, 160))}</p>` : ''}
+    ${props.length ? `<div class="rv-list">${props.map(p => `<div class="sg" data-id="${esc(p.id)}"><svg><use href="#i-plus"/></svg>
+      <div class="sg-t"><input value="${esc(rvEdits[p.id] ?? p.title)}" aria-label="Titre de la tâche, modifiable avant de l'ajouter" title="Modifiable avant d'ajouter"><small>${meta(p)}</small></div>
+      <button class="btn sm acc" data-do="accept">Ajouter</button><button class="btn sm ghost" data-do="later">Plus tard</button><button class="btn sm ghost" data-do="dismiss">Ignorer</button></div>`).join('')}</div>` : ''}
+  </section>`;
+}
+function rvAgent() {
+  const r = review ?? {};
+  const failed = r.error && (!r.at || r.errorAt > r.at);
+  const last = r.running ? 'en cours' : failed ? `échec à ${rvHM(r.errorAt)}` : r.at ? `dernière à ${rvHM(r.at)}${rvToday(r.at) ? '' : ' le ' + new Date(r.at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}` : 'pas encore passée';
+  $('#rv-agent').innerHTML = `<div class="ag"><i class="dot${r.running ? ' en_cours live' : failed ? ' echec' : ''}"></i>
+    <div class="ag-t"><b title="Voir la revue">Revue horaire</b><small>${r.auto ? 'toutes les heures' : 'à la demande'} · ${last}</small></div></div>`;
+}
+async function loadProps() { try { props = await api('/api/propositions'); } catch (e) { /* keep the last list */ } }
+async function loadReview() {
+  let r;
+  try { r = await api('/api/review'); } catch (e) { return; }
+  const fresh = r.at !== review?.at;
+  review = r;
+  await loadProps();
+  if (fresh) renderTodo();
+  rvRender(); rvAgent();
+  clearTimeout(rvPoll);
+  rvPoll = setTimeout(loadReview, r.running ? 5e3 : 60e3);
+}
+async function rvRun() {
+  review = { ...review, running: true };
+  rvRender(); rvAgent();
+  const r = await api('/api/review/run', { method: 'POST' });
+  if (r.error) toast('Revue échouée : ' + r.error, true);
+  loadReview();
+}
+async function rvDecide(id, act) {
+  const title = rvEdits[id] ?? props.find(x => x.id === id)?.title;
+  const r = await api(`/api/propositions/${encodeURIComponent(id)}/${act}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ title }) });
+  if (r.error) { toast(r.error, true); await loadProps(); rvRender(); return; }
+  delete rvEdits[id];
+  props = props.filter(x => x.id !== id);
+  todo = r.todo;
+  renderTodo(); rvRender();
+  // a full day sends what is added to "Plus tard", as for a task typed by hand
+  if (act === 'accept' && todo.later.some(t => rvKey(t.t) === rvKey(title))) toast(`Journée pleine (${todo.max} tâches) : ajoutée dans « Plus tard »`);
+  else if (todo.bumped) toast(`Limite de ${todo.max} tâches : ${todo.bumped} passée${todo.bumped > 1 ? 's' : ''} dans « Plus tard »`);
+  else if (act === 'later') toast('Ajoutée à « Plus tard »');
+}
+$('#propositions').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (b?.id === 'rv-run') rvRun();
+  else if (b?.dataset.do) rvDecide(b.closest('.sg').dataset.id, b.dataset.do);
+});
+$('#propositions').addEventListener('input', e => { const sg = e.target.closest('.sg'); if (sg) rvEdits[sg.dataset.id] = e.target.value; });
+$('#propositions').addEventListener('keydown', e => { const sg = e.target.closest('.sg'); if (sg && e.key === 'Enter') rvDecide(sg.dataset.id, 'accept'); });
+$('#rv-agent').addEventListener('click', e => { if (e.target.closest('b')) $('#propositions').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
 
 /* ---------- micro apps + runs ---------- */
 let cfg = { apps: [], gmail: {} }, runs = [];
@@ -3284,7 +3394,7 @@ renderDemo();
   cfg = await api('/api/config');
   chatReplay();   // a reload should not wipe what was already said
   draw();
-  await Promise.all([loadGraph(), loadTodo(), loadRuns(), loadProjects(), loadDecks(), loadDelegations()]);
+  await Promise.all([loadGraph(), loadTodo(), loadRuns(), loadProjects(), loadDecks(), loadDelegations(), loadReview()]);
   setInterval(loadGraph, 30e3);      // second brain edits show up within 30 s
   setInterval(loadProjects, 60e3);
   loadSb();

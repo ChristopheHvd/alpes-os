@@ -28,6 +28,9 @@ import { readCredo, shuffleForDay } from './lib/credo.js';
 import { bundle } from './lib/sbqueue.js';
 import { makeLinkedin, checkPost } from './lib/linkedin.js';
 import { loadLinkedin, updatePost, visualFor, localToday, dueForPreparation, toProduce, planFrame, parsePrepared, planFile } from './lib/linkedin-plan.js';
+import { makePropositions } from './lib/propositions.js';
+import { makeReview } from './lib/review.js';
+import { claudeActivity } from './lib/activity.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 // Local config stays out of git: it holds real paths, identity and bank details.
@@ -838,6 +841,77 @@ async function brainPass() {
 setInterval(brainPass, 2 * 60 * 60e3).unref();
 // a restart shouldn't delay new meetings by two hours: look once shortly after start
 if (MEET_AUTO) setTimeout(() => collectMeetings('au démarrage'), 2 * 60e3).unref();
+
+// Propositions — tasks suggested for today (hourly review, SIMATIS missions) waiting
+// on Christophe: accepted they join today's todo, "plus tard" goes to Plus tard
+const propositions = makePropositions(path.join(ROOT, 'output', 'propositions.json'));
+app.get('/api/propositions', (req, res) => res.json(propositions.pending()));
+app.post('/api/propositions', (req, res) => {
+  try { res.json(propositions.add(req.body ?? {})); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+app.post('/api/propositions/:id/:act', (req, res) => {
+  const { id, act } = req.params;
+  try {
+    const p = propositions.get(id);
+    const t = String(req.body?.title ?? '').trim() || p?.title;
+    let todo = null;   // writeTodo drops a task already on the list
+    if (p?.status === 'pending' && act === 'accept') todo = addItem(todoFile, { t, s: p.project });
+    if (p?.status === 'pending' && act === 'later') { const cur = readTodo(todoFile); todo = writeTodo(todoFile, cur.items, [...cur.later, { t, s: p.project }]); }
+    res.json({ proposition: propositions.decide(id, act, req.body?.title), todo: todo ?? readTodo(todoFile) });
+  } catch (e) { res.status(e.status ?? 400).json({ error: e.message }); }
+});
+
+// Hourly review — the server gathers the facts, a light model ranks today's tasks
+// and suggests what is missing. A test instance only runs it on demand, unless
+// ALPES_OS_REVIEW_AUTO=1.
+const revCfg = { model: 'claude-haiku-5-5', weekdays: [1, 2, 3, 4, 5], from: 9, to: 19, ...(cfg.review ?? {}) };
+async function reviewContext() {
+  const now = new Date();
+  const midnight = new Date(now); midnight.setHours(0, 0, 0, 0);
+  const todo = readTodo(todoFile);
+  const open = [...todo.items.filter(i => !i.done), ...todo.carried];
+  let agenda = [], agendaErreur = null;
+  try {
+    const c = await calendar.upcoming({ ...calOpts(), days: 1, max: 15 });
+    if (c.needsScope) agendaErreur = 'lecture agenda non autorisée';
+    agenda = c.events.map(e => ({ titre: e.title, debut: e.start, fin: e.end, journee_entiere: e.allDay, avec: e.attendees, lieu: e.location }));
+  } catch (e) { agendaErreur = e.message.slice(0, 200); }
+  const today = localToday(now), horizon = localToday(new Date(now.getTime() + 30 * 864e5));
+  return {
+    maintenant: now.toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }),
+    taches_du_jour: open.map((i, n) => ({
+      id: n + 1, t: i.t, ...(i.s ? { contexte: i.s } : {}),
+      ...(i.p ? { priorite: i.p === 'h' ? 'haute' : 'moyenne' } : {}), ...(i.from ? { reportee_du: i.from } : {}),
+    })),
+    faites_aujourdhui: todo.items.filter(i => i.done).map(i => i.t),
+    plus_tard: todo.later.map(i => i.t),
+    activite_claude_code: await claudeActivity({ since: midnight.getTime() }),
+    notes_recentes: getGraph(cfg.secondBrain, cfg.brainFolders).nodes
+      .filter(n => n.mtime >= now - 48 * 3600e3 && !n.idx && n.id !== cfg.todoFile)
+      .sort((a, b) => b.mtime - a.mtime).slice(0, 25)
+      .map(n => ({ chemin: n.id, titre: n.t, description: n.desc, modifiee: new Date(n.mtime).toLocaleString('fr-FR', { weekday: 'short', hour: '2-digit', minute: '2-digit' }) })),
+    projets: listProjects(cfg.secondBrain).filter(p => p.stage !== 'terminé').map(p => ({
+      slug: p.slug, titre: p.title, stade: p.stage, prochaine_etape: p.next || p.steps[0] || '', revu_le: p.updated, jours_sans_mouvement: daysSince(p.updated),
+    })),
+    agenda, agenda_erreur: agendaErreur,
+    echeances: listFinance(cfg.secondBrain)
+      .flatMap(n => n.echeances.filter(e => e.statut !== 'encaisse' && e.date && e.date <= horizon)
+        .map(e => ({ note: n.title, libelle: e.libelle, montant: e.montant, date: e.date, statut: e.statut, ...(e.date < today ? { en_retard: true } : {}) })))
+      .sort((a, b) => a.date.localeCompare(b.date)).slice(0, 10),
+  };
+}
+const review = makeReview(path.join(ROOT, 'output', 'review.json'), {
+  bin: cfg.claude.bin, model: revCfg.model, schedule: revCfg,
+  auto: sbQueue === CURATOR_QUEUE || process.env.ALPES_OS_REVIEW_AUTO === '1',
+}, { context: reviewContext, propositions });
+setInterval(() => review.tick(), 60e3).unref();
+app.get('/api/review', (req, res) => res.json(review.status()));
+// the Relancer button: waits for the review, or for the one already running
+app.post('/api/review/run', async (req, res) => {
+  try { await review.run('demandée').done; res.json(review.status()); }
+  catch (e) { res.status(500).json({ ...review.status(), error: e.message }); }
+});
 
 app.get('/api/artifacts', (req, res) => res.json(runner.artifacts(req.query.app ? String(req.query.app) : null)));
 // everything one app has ever done: its runs, and the files no run claims
