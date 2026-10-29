@@ -625,39 +625,52 @@ a.pf-card.res-cours p { color: var(--accent); }
 .li-run { font-size: 12.5px; color: var(--ink-2); display: flex; gap: 6px; align-items: center; }
 .li-run.bad { color: var(--crit); }
 /* ---- finance ---- */
-.fin-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
-.fin-tile { background: var(--surface); border: 1px solid var(--line-soft); border-radius: 8px; padding: 14px 16px; display: grid; gap: 4px; min-width: 0; }
-.fin-tile small { font: 500 12px/1.3 var(--font); color: var(--ink-3); }
-.fin-tile b { font: 600 24px/1.15 var(--font); color: var(--ink); letter-spacing: -.01em; }
-.fin-tile.hero b { font-size: 34px; }
-.fin-tile span { font-size: 12px; color: var(--ink-2); }
-.fin-tile em { font-style: normal; }
 .late { color: var(--crit); font-weight: 600; }
-.fin-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.fin-h { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+.fin-h .ptitle { margin: 0; }
+.fin-h .sp { flex: 1; }
+.fin-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.fin-kpis .kpi { padding: 16px 18px; }
+.fin-kpis .kpi small, .fin-kpis .kpi span { font-size: 12.5px; }
+.fin-kpis .kpi b { font-size: 32px; margin: 4px 0 2px; }
+.fin-row { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 16px; align-items: stretch; }
+.fin-row h2, .fin-sec { margin: 0; font: 600 15px/1.2 var(--font); color: var(--ink); }
+.fin-sec { margin: 28px 0 10px; }
+.fin-chart-card { flex: 999 1 560px; padding: 16px 18px; }
+.fin-leads { flex: 1 1 320px; padding: 16px 18px; }
+.fin-leads > .lbl { display: block; margin: 2px 0 8px; font-size: 12.5px; }
+.fin-head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.fin-head h2 { flex: 1; }
 .fin-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); }
 .fin-legend span { display: inline-flex; align-items: center; gap: 6px; }
-.key { display: inline-block; width: 16px; height: 0; border-top: 2px solid var(--c-signed); vertical-align: middle; }
-.key.pipe { border-top: 2px dashed var(--c-pipe); }
-.fin-chart { position: relative; background: var(--surface); border: 1px solid var(--line-soft); border-radius: 8px; padding: 8px 0 0; min-height: 288px; overflow: hidden; }
-.fin-chart svg { display: block; }
-.fin-chart .grid { stroke: var(--line-soft); stroke-width: 1; }
-.fin-chart .tick { fill: var(--ink-3); font: 400 11px var(--font); font-variant-numeric: tabular-nums; }
-.fin-chart .ln { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
-.fin-chart .ln.signed { stroke: var(--c-signed); }
-.fin-chart .ln.pipe { stroke: var(--c-pipe); stroke-dasharray: 5 4; }
-.fin-chart .wash { fill: var(--c-signed); opacity: .1; }
-.fin-chart .today { stroke: var(--ink-3); stroke-width: 1; }
-.fin-chart .cross { stroke: var(--ink-3); stroke-width: 1; }
-.fin-chart .dot-signed { fill: var(--c-signed); stroke: var(--surface); stroke-width: 2; }
-.fin-chart .dot-pipe { fill: var(--c-pipe); stroke: var(--surface); stroke-width: 2; }
-.fin-chart .hit { cursor: crosshair; }
-.fin-tip[hidden] { display: none; }
-.fin-tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-lg); padding: 9px 11px; font-size: 12px; color: var(--ink-2); display: grid; gap: 3px; max-width: 280px; }
-.fin-tip b { color: var(--ink); font-weight: 600; }
-.fin-tip div { display: flex; align-items: center; gap: 6px; }
-.fin-tip div span { margin-left: auto; padding-left: 12px; color: var(--ink); font-variant-numeric: tabular-nums; }
-.fin-tip small { color: var(--ink-3); }
-.fin-foot { color: var(--ink-3); font-size: 12px; }
+.sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; flex-shrink: 0; }
+.s-enc { background: var(--c-signed); }
+.s-att { background: var(--c-pipe); }
+.s-pis { background: repeating-linear-gradient(135deg, var(--c-pipe) 0 2px, transparent 2px 6px); box-shadow: inset 0 0 0 1.5px var(--c-pipe); }
+.fin-bars { position: relative; height: 240px; margin-top: 18px; padding-left: 52px; }
+.fin-bars .gl { position: absolute; left: 0; right: 0; display: flex; align-items: center; gap: 8px; pointer-events: none; transform: translateY(50%); }
+.fin-bars .gl span { width: 44px; text-align: right; font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.fin-bars .gl::after { content: ""; flex: 1; border-top: 1px solid var(--line-soft); }
+.fin-cols { position: relative; height: 100%; display: flex; gap: 6px; }
+.fcol { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 2px; border-radius: 6px; }
+.fcol:hover, .fcol:focus-visible { background: var(--sunken); }
+.fcol.edge { border-left: 1px dashed var(--line); border-radius: 0 6px 6px 0; }
+.fcol .tot { font-size: 11.5px; font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; margin-bottom: 2px; }
+.fcol .seg { display: block; width: min(44px, 70%); border-radius: 3px; }
+.fin-mlabels { display: flex; gap: 6px; padding-left: 52px; margin-top: 6px; }
+.fin-mlabels span { flex: 1 1 0; min-width: 0; text-align: center; font-size: 12px; color: var(--ink-2); white-space: nowrap; }
+.fin-mlabels span.future { color: var(--ink-3); }
+.fin-hover { margin: 12px 0 0; font-size: 12.5px; color: var(--ink-2); min-height: 19px; }
+.pi { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-top: 1px solid var(--line-soft); cursor: pointer; }
+.pi:first-of-type { border-top: 0; }
+.pi input { margin: 3px 0 0; accent-color: var(--accent); width: 16px; height: 16px; flex-shrink: 0; cursor: pointer; }
+.pi-t { flex: 1; min-width: 0; }
+.pi-h { display: flex; gap: 8px; }
+.pi-h b { flex: 1; min-width: 0; font: 600 13.5px/1.35 var(--font); color: var(--ink); }
+.pi-h span { font-size: 13px; font-weight: 600; white-space: nowrap; }
+.pi small { display: block; font-size: 12.5px; color: var(--ink-3); }
+.fin-empty { color: var(--ink-3); font-size: 13px; padding: 8px 0; }
+.fin-foot { display: block; color: var(--ink-3); font-size: 12px; margin-top: 10px; }
 .fin-table { overflow-x: auto; background: var(--surface); border: 1px solid var(--line-soft); border-radius: 8px; }
 .fin-table table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .fin-table th { text-align: left; font: 500 11.5px/1.2 var(--font); color: var(--ink-3); padding: 9px 12px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
@@ -677,13 +690,12 @@ a.pf-card.res-cours p { color: var(--accent); }
 .st.ok { color: var(--good); background: color-mix(in srgb, var(--good) 12%, transparent); }
 .st.late { color: var(--crit); background: color-mix(in srgb, var(--crit) 12%, transparent); }
 .st.devis { background: transparent; border: 1px dashed var(--line); color: var(--ink-3); }
+.fin-add { margin-top: 18px; }
 .fin-add summary { cursor: pointer; font: 500 13px var(--font); color: var(--accent); list-style: none; }
 .fin-add summary::-webkit-details-marker { display: none; }
 .fin-add form { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; align-items: end; margin-top: 10px; }
 .fin-add label { display: grid; gap: 4px; font-size: 12px; color: var(--ink-3); }
 .fin-add input, .fin-add select { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px; color: var(--ink); font: 400 13px var(--font); min-width: 0; }
-.finview { grid-template-rows: auto 1fr; }
-.finview .pf-detail .inner { margin: 0 auto; }
 @media (max-width: 800px) {
   .pf-top { padding: 12px 16px; }
   .pf-main { grid-template-columns: 1fr; }
@@ -847,6 +859,11 @@ a.pf-card.res-cours p { color: var(--accent); }
   </div>
 </main>
 
+<main class="view page" data-view="finances" id="finview">
+  <div class="fin-h"><h1 class="ptitle">Finances</h1><span class="sp"></span><span class="lbl" id="fin-asof"></span></div>
+  <div id="fin-detail"></div>
+</main>
+
 <main class="view page" data-view="brain">
   <div class="sb-head"><h1 class="ptitle">Second brain</h1><span class="lbl" id="stats">—</span></div>
   <div class="sb-grid">
@@ -929,13 +946,6 @@ a.pf-card.res-cours p { color: var(--accent); }
     <nav class="pf-side" id="pf-side"></nav>
     <section class="pf-detail" id="pf-detail"></section>
   </div>
-</div>
-
-<div class="portfolio finview" id="finview" hidden>
-  <div class="pf-top">
-    <h1>Suivi financier</h1>
-  </div>
-  <section class="pf-detail" id="fin-detail"></section>
 </div>
 
 <div class="portfolio liview" id="liview" hidden>
@@ -1698,54 +1708,63 @@ function pfFinRows() {
     return n.echeances.map((e, idx) => ({ ...e, idx, note: n, client, late: e.statut === 'a_encaisser' && !!e.date && e.date < today }));
   });
 }
-const pfSum = (rows, st) => rows.filter(r => r.statut === st).reduce((a, r) => a + r.montant, 0);
 const pfClientTitle = slug => fin.clients.find(c => c.slug === slug)?.title || slug || 'Sans client';
 
 function pfFinance() {
-  const rows = pfFinRows(), today = isoToday();
-  const cashed = pfSum(rows, 'encaisse'), due = pfSum(rows, 'a_encaisser'), pipe = pfSum(rows, 'devis');
-  const late = rows.filter(r => r.late), lateSum = late.reduce((a, r) => a + r.montant, 0);
-  const next = rows.filter(r => r.statut === 'a_encaisser' && r.date >= today).sort((a, b) => a.date.localeCompare(b.date))[0];
-  const undated = rows.filter(r => r.statut !== 'encaisse' && !r.date).reduce((a, r) => a + r.montant, 0);
-  const d = iso => new Date(iso + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  const rows = pfFinRows(), f = finSummary(rows);
+  const d = iso => new Date(iso + 'T12:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
   const sorted = [...rows].sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999'));
+  const undated = rows.filter(r => r.statut !== 'encaisse' && !r.date).reduce((a, r) => a + r.montant, 0);
   const byClient = Object.values(rows.reduce((acc, r) => {
     const c = acc[r.client] ??= { slug: r.client, encaisse: 0, a_encaisser: 0, devis: 0 };
     c[r.statut] += r.montant; return acc;
   }, {})).sort((a, b) => (b.encaisse + b.a_encaisser + b.devis) - (a.encaisse + a.a_encaisser + a.devis));
   const chip = r => r.late ? '<span class="st late">! En retard</span>'
     : r.statut === 'encaisse' ? '<span class="st ok">✓ Encaissé</span>'
-    : r.statut === 'devis' ? '<span class="st devis">Devis non signé</span>' : '<span class="st due">À encaisser</span>';
+    : r.statut === 'devis' ? `<span class="st devis">${r.compte ? 'Devis compté' : 'Devis non signé'}</span>` : '<span class="st due">À encaisser</span>';
   const act = r => r.statut === 'a_encaisser' ? `<button class="btn sm" data-fin-set="encaisse" data-slug="${esc(r.note.slug)}" data-idx="${r.idx}">Marquer encaissé</button>`
     : r.statut === 'devis' ? `<button class="btn sm" data-fin-set="a_encaisser" data-slug="${esc(r.note.slug)}" data-idx="${r.idx}">Signé</button>` : '';
+  const leads = rows.filter(r => r.statut === 'devis').sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999'));
+  const lead = r => `<label class="pi"><input type="checkbox" data-fin-compte data-slug="${esc(r.note.slug)}" data-idx="${r.idx}"${r.compte ? ' checked' : ''}>
+    <span class="pi-t"><span class="pi-h"><b>${esc(pfClientTitle(r.client))} · ${esc(r.libelle)}</b><span>${EUR(r.montant)}</span></span>
+    <small>${r.date ? `prévu le ${d(r.date)}${r.date < isoToday() ? ', date dépassée' : ''}` : 'sans date, hors projection'}${r.ref ? ` · ${esc(r.ref)}` : ''}</small></span></label>`;
 
   return `
-    <p class="lead">Échéances lues dans le frontmatter des notes <code>brain/finance</code>. Montants HT, TVA non applicable.</p>
-    <div class="fin-tiles">
-      <div class="fin-tile hero"><small>Déjà encaissé</small><b>${EUR(cashed)}</b><span>${rows.filter(r => r.statut === 'encaisse').length} paiement(s) reçu(s)</span></div>
-      <div class="fin-tile"><small>Reste à encaisser (signé)</small><b>${EUR(due)}</b><span>${lateSum ? `<em class="late">! ${EUR(lateSum)} en retard</em>` : next ? `prochain : ${EUR(next.montant)} le ${d(next.date)}` : 'rien de prévu'}</span></div>
-      <div class="fin-tile"><small>Devis en cours</small><b>${EUR(pipe)}</b><span>non signés, hors reste à encaisser</span></div>
-      <div class="fin-tile"><small>Total si tout signe</small><b>${EUR(cashed + due + pipe)}</b><span>encaissé + signé + devis</span></div>
+    <div class="fin-kpis">
+      <div class="pane kpi"><small>Encaissé en ${f.year}</small><b>${EUR(f.cashed)}</b><span>${f.cashedN} paiement${f.cashedN > 1 ? 's' : ''}</span></div>
+      <div class="pane kpi"><small>À encaisser</small><b>${EUR(f.due)}</b><span>${finNextLabel(f)}</span></div>
+      <div class="pane kpi"><small>Projection ${esc(f.window)}</small><b>${EUR(f.sure + f.leads)}</b><span>${EUR(f.sure)} sûrs + ${EUR(f.leads)} de pistes</span></div>
     </div>
-    <div class="pf-sec"><div class="fin-head"><h3>Trésorerie cumulée et projection</h3>
-      <div class="fin-legend"><span><i class="key signed"></i>Signé (encaissé puis attendu)</span><span><i class="key pipe"></i>Si les devis en cours signent</span></div></div>
-      <div class="fin-chart" id="fin-chart"></div>
-      ${undated ? `<small class="fin-foot">${EUR(undated)} sans date d'encaissement, hors courbe.</small>` : ''}
+    <div class="fin-row">
+      <section class="pane fin-chart-card" aria-labelledby="fin-h-chart">
+        <div class="fin-head"><h2 id="fin-h-chart">Encaissements par mois</h2>
+          <div class="fin-legend"><span><i class="sw s-enc"></i>Encaissé</span><span><i class="sw s-att"></i>À encaisser</span><span><i class="sw s-pis"></i>Pistes comptées</span></div></div>
+        <div id="fin-chart"></div>
+        <p class="fin-hover" id="fin-hover"></p>
+        ${undated ? `<small class="fin-foot">${EUR(undated)} sans date d'encaissement, hors graphique et hors projection.</small>` : ''}
+      </section>
+      <section class="pane fin-leads" aria-labelledby="fin-h-leads">
+        <h2 id="fin-h-leads">Pistes</h2>
+        <span class="lbl">Coche les devis à compter dans la projection.</span>
+        ${leads.length ? leads.map(lead).join('') : '<div class="fin-empty">Aucun devis en cours.</div>'}
+      </section>
     </div>
-    <div class="pf-sec"><h3>Échéancier</h3><div class="fin-table"><table>
+    <h2 class="fin-sec">Échéances</h2>
+    <div class="fin-table"><table>
       <thead><tr><th>Date</th><th>Client</th><th>Libellé</th><th class="amt">Montant</th><th>Statut</th><th></th></tr></thead>
       <tbody>${sorted.map(r => `<tr class="${r.statut}${r.late ? ' is-late' : ''}">
         <td><input type="date" value="${esc(r.date)}" data-fin-date data-slug="${esc(r.note.slug)}" data-idx="${r.idx}" title="Modifier la date"></td>
         <td>${r.client ? `<a href="${pfHref('client', r.client)}">${esc(pfClientTitle(r.client))}</a>` : '<span class="muted">Sans client</span>'}</td>
         <td>${esc(r.libelle)}<small>${esc(r.note.title)}${r.ref ? ' · ' + esc(r.ref) : ''}</small></td>
         <td class="amt">${EUR(r.montant)}</td><td>${chip(r)}</td><td>${act(r)}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">Aucune échéance renseignée.</td></tr>'}</tbody>
-    </table></div></div>
-    <div class="pf-sec"><h3>Par client</h3><div class="fin-table"><table>
+    </table></div>
+    <h2 class="fin-sec">Par client</h2>
+    <div class="fin-table"><table>
       <thead><tr><th>Client</th><th class="amt">Encaissé</th><th class="amt">À encaisser</th><th class="amt">Devis</th><th class="amt">Total</th></tr></thead>
       <tbody>${byClient.map(c => `<tr><td>${c.slug ? `<a href="${pfHref('client', c.slug)}">${esc(pfClientTitle(c.slug))}</a>` : 'Sans client'}</td>
         <td class="amt">${EUR(c.encaisse)}</td><td class="amt">${EUR(c.a_encaisser)}</td><td class="amt">${EUR(c.devis)}</td><td class="amt"><b>${EUR(c.encaisse + c.a_encaisser + c.devis)}</b></td></tr>`).join('')}</tbody>
-    </table></div></div>
-    <details class="pf-sec fin-add"><summary>+ Ajouter une échéance</summary><form id="fin-form">
+    </table></div>
+    <details class="fin-add"><summary>+ Ajouter une échéance</summary><form id="fin-form">
       <label>Note finance<select name="slug" required>${fin.notes.map(n => `<option value="${esc(n.slug)}">${esc(pfClientTitle(n.client || n.clients[0]))} — ${esc(n.title)}</option>`).join('')}</select></label>
       <label>Libellé<input name="libelle" required placeholder="Solde 70 %"></label>
       <label>Montant (€)<input name="montant" required inputmode="decimal" placeholder="1 260"></label>
@@ -1753,78 +1772,64 @@ function pfFinance() {
       <label>Statut<select name="statut"><option value="a_encaisser">À encaisser</option><option value="encaisse">Encaissé</option><option value="devis">Devis non signé</option></select></label>
       <label>Réf.<input name="ref" placeholder="FAC-2026-009"></label>
       <button class="btn acc" type="submit">Ajouter</button>
-    </form><small class="fin-foot">Pour un nouveau client sans note finance, crée d'abord la note (devis via la micro-app, ou le chat).</small></details>`;
+    </form><small class="fin-foot">Pour un nouveau client sans note finance, crée d'abord la note (devis via la micro-app, ou le chat).</small></details>
+    <small class="fin-foot">Échéances lues dans le frontmatter des notes <code>brain/finance</code>. Montants HT, TVA non applicable.</small>`;
 }
 
-// cumulative cash as a step line: solid = signed (paid, then expected), dashed = plus unsigned quotes
+// Seven months, three behind and three ahead. Anything still expected but overdue
+// lands on the current month, like the projection counts it.
+function finMonths(rows) {
+  const now = new Date(), today = isoToday(), cur = today.slice(0, 7);
+  const months = Array.from({ length: 7 }, (_, k) => {
+    const dt = new Date(now.getFullYear(), now.getMonth() - 3 + k, 1);
+    return { key: dt.toLocaleDateString('sv-SE').slice(0, 7), dt, enc: [], att: [], pis: [] };
+  });
+  for (const r of rows) {
+    const kind = r.statut === 'encaisse' ? 'enc' : r.statut === 'a_encaisser' ? 'att' : r.compte ? 'pis' : null;
+    if (!kind || !r.date) continue;
+    const key = kind !== 'enc' && r.date < today ? cur : r.date.slice(0, 7);
+    months.find(m => m.key === key)?.[kind].push(r);
+  }
+  return months;
+}
+
+// stacked monthly bars: cashed, expected, then the counted leads hatched on top
 function drawFinanceChart(box) {
-  const rows = pfFinRows(), today = isoToday();
-  const day = iso => new Date(iso + 'T12:00:00').getTime();
-  // anything signed but overdue is still expected: it lands on today, not in the past
-  const when = r => (r.statut !== 'encaisse' && r.date < today) ? today : r.date;
-  const signed = rows.filter(r => r.date && r.statut !== 'devis').map(r => [day(when(r)), r.montant, r]);
-  const pipe = [...signed, ...rows.filter(r => r.date && r.statut === 'devis').map(r => [day(when(r)), r.montant, r])];
-  const W = box.clientWidth, H = 280, m = { l: 64, r: 18, t: 22, b: 30 };
-  if (!pipe.length) { box.innerHTML = '<div class="pf-empty">Aucune échéance datée.</div>'; return; }
-  const t0 = day(today), dates = pipe.map(p => p[0]);
-  const s = new Date(Math.min(t0, ...dates)); const start = new Date(s.getFullYear(), s.getMonth(), 1).getTime();
-  const e = new Date(Math.max(t0 + 120 * 864e5, ...dates)); const end = new Date(e.getFullYear(), e.getMonth() + 1, 1).getTime();
-  const cum = (evs, t) => evs.reduce((a, [d, v]) => d <= t ? a + v : a, 0);
-  const total = cum(pipe, end);
-  const step = 10 ** Math.floor(Math.log10(total || 1)), yMax = Math.ceil((total * 1.08) / step) * step || 1000;
-  const x = t => m.l + (t - start) / (end - start) * (W - m.l - m.r), y = v => m.t + (1 - v / yMax) * (H - m.t - m.b);
-  const path = evs => {
-    const pts = [...new Set(evs.map(p => p[0]))].sort((a, b) => a - b);
-    let dstr = `M${x(start)},${y(0)}`;
-    for (const t of pts) dstr += `H${x(t).toFixed(1)}V${y(cum(evs, t)).toFixed(1)}`;
-    return dstr + `H${x(end)}`;
-  };
-  const ticks = Array.from({ length: 5 }, (_, i) => yMax / 4 * i);
-  const months = [];
-  for (let dt = new Date(start); dt.getTime() <= end; dt.setMonth(dt.getMonth() + 1)) months.push(dt.getTime());
-  const every = Math.ceil(months.length / Math.max(2, Math.floor((W - m.l - m.r) / 70)));
-  const signedPath = path(signed);
-  box.innerHTML = `<svg width="${W}" height="${H}" role="img" aria-label="Trésorerie cumulée : ${EUR(cum(signed, end))} signés, ${EUR(total)} avec les devis en cours">
-    ${ticks.map(v => `<line x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}" class="grid"/><text x="${m.l - 8}" y="${y(v) + 4}" text-anchor="end" class="tick">${v.toLocaleString('fr-FR')} €</text>`).join('')}
-    ${months.map((t, i) => i % every || x(t) + 44 > W ? '' : `<text x="${x(t)}" y="${H - 10}" text-anchor="start" class="tick">${new Date(t).toLocaleDateString('fr-FR', { month: 'short', year: i === 0 || new Date(t).getMonth() === 0 ? '2-digit' : undefined })}</text>`).join('')}
-    <path d="${signedPath}V${y(0)}H${x(start)}Z" class="wash"/>
-    <path d="${path(pipe)}" class="ln pipe"/>
-    <path d="${signedPath}" class="ln signed"/>
-    <line x1="${x(t0)}" x2="${x(t0)}" y1="${m.t - 8}" y2="${H - m.b}" class="today"/><text x="${x(t0) + 5}" y="${m.t - 10}" class="tick">aujourd'hui</text>
-    <g class="hover" style="display:none"><line class="cross" y1="${m.t}" y2="${H - m.b}"/><circle r="4" class="dot-pipe"/><circle r="4" class="dot-signed"/></g>
-    <rect x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}" fill="transparent" class="hit"/>
-  </svg><div class="fin-tip" hidden></div>`;
-  const svg = box.querySelector('svg'), g = svg.querySelector('.hover'), tip = box.querySelector('.fin-tip');
-  svg.querySelector('.hit').onpointermove = ev => {
-    const px = ev.clientX - svg.getBoundingClientRect().left;
-    const t = Math.max(start, Math.min(end, start + (px - m.l) / (W - m.l - m.r) * (end - start)));
-    const vs = cum(signed, t), vp = cum(pipe, t), X = x(t);
-    g.style.display = '';
-    g.querySelector('.cross').setAttribute('x1', X); g.querySelector('.cross').setAttribute('x2', X);
-    const a = g.querySelector('.dot-signed'), b = g.querySelector('.dot-pipe');
-    a.setAttribute('cx', X); a.setAttribute('cy', y(vs)); b.setAttribute('cx', X); b.setAttribute('cy', y(vp));
-    const mo = new Date(t), mStart = new Date(mo.getFullYear(), mo.getMonth(), 1).getTime(), mEnd = new Date(mo.getFullYear(), mo.getMonth() + 1, 1).getTime();
-    const inMonth = pipe.filter(p => p[0] >= mStart && p[0] < mEnd);
-    tip.hidden = false;
-    tip.innerHTML = `<b>${mo.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</b>
-      <div><i class="key signed"></i>Signé <span>${EUR(vs)}</span></div>
-      <div><i class="key pipe"></i>Avec devis <span>${EUR(vp)}</span></div>
-      ${inMonth.length ? `<small>${mo.toLocaleDateString('fr-FR', { month: 'long' })} : ${inMonth.map(p => `${esc(pfClientTitle(p[2].client))} ${EUR(p[1])}${p[2].statut === 'devis' ? ' (devis)' : ''}`).join(' · ')}</small>` : ''}`;
-    const tw = tip.offsetWidth;
-    tip.style.left = Math.min(Math.max(0, X + 12), W - tw) + 'px';
-    tip.style.top = Math.max(0, Math.min(y(vp), y(vs)) - 10) + 'px';
-  };
-  svg.querySelector('.hit').onpointerleave = () => { g.style.display = 'none'; tip.hidden = true; };
+  const cur = isoToday().slice(0, 7), sum = l => l.reduce((a, r) => a + r.montant, 0);
+  const months = finMonths(pfFinRows()).map(m => ({ ...m, e: sum(m.enc), a: sum(m.att), p: sum(m.pis) }));
+  const max = Math.max(0, ...months.map(m => m.e + m.a + m.p));
+  const unit = 10 ** Math.floor(Math.log10(Math.max(1000, max)));
+  const top = Math.max(2 * unit, Math.ceil(max / unit) * unit + (Math.ceil(max / unit) % 2 ? unit : 0)), H = 200;
+  const px = v => v > 0 ? Math.max(3, Math.round(v / top * H)) : 0;
+  const k = v => v ? `${(v / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} k€` : '0';
+  const label = m => m.dt.toLocaleDateString('fr-FR', { month: 'short' }) + (m.dt.getFullYear() !== new Date().getFullYear() ? ` ${String(m.dt.getFullYear()).slice(2)}` : '');
+  const long = m => m.dt.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }).replace(/^./, c => c.toUpperCase());
+  const who = l => [...new Set(l.map(r => pfClientTitle(r.client)))].join(', ');
+  const detail = m => long(m) + ' · ' + ([
+    m.e && `${EUR(m.e)} encaissés (${who(m.enc)})`,
+    m.a && `${EUR(m.a)} à encaisser (${who(m.att)})`,
+    m.p && `${EUR(m.p)} de pistes (${who(m.pis)})`,
+  ].filter(Boolean).join(' · ') || 'rien de prévu');
+  const idle = 'Survole un mois pour le détail. À droite du pointillé : le prévisionnel.';
+  const firstFuture = months.find(m => m.key > cur)?.key;
+  box.innerHTML = `<div class="fin-bars">
+      ${[0, top / 2, top].map(v => `<div class="gl" style="bottom:${Math.round(v / top * H)}px"><span>${k(v)}</span></div>`).join('')}
+      <div class="fin-cols">${months.map((m, i) => `<div class="fcol${m.key === firstFuture ? ' edge' : ''}" data-i="${i}" tabindex="0" aria-label="${esc(detail(m))}">
+        <span class="tot">${m.e + m.a + m.p ? EUR(m.e + m.a + m.p) : ''}</span>
+        <i class="seg s-pis" style="height:${px(m.p)}px"></i><i class="seg s-att" style="height:${px(m.a)}px"></i><i class="seg s-enc" style="height:${px(m.e)}px"></i>
+      </div>`).join('')}</div>
+    </div>
+    <div class="fin-mlabels">${months.map(m => `<span class="${m.key > cur ? 'future' : ''}">${esc(label(m))}</span>`).join('')}</div>`;
+  const hover = $('#fin-hover');
+  hover.textContent = idle;
+  box.querySelectorAll('.fcol').forEach(c => {
+    c.onmouseenter = c.onfocus = () => { hover.textContent = detail(months[+c.dataset.i]); };
+    c.onmouseleave = c.onblur = () => { hover.textContent = idle; };
+  });
 }
 
-let finResize = null;
 function pfFinanceWire(el) {
-  const box = $('#fin-chart');
-  drawFinanceChart(box);
-  finResize?.disconnect();
-  let lastW = box.clientWidth;
-  finResize = new ResizeObserver(() => { if (box.isConnected && box.clientWidth !== lastW) { lastW = box.clientWidth; drawFinanceChart(box); } });
-  finResize.observe(box);
+  drawFinanceChart($('#fin-chart'));
   const patch = async (slug, idx, body) => {
     const r = await api(`/api/finance/${encodeURIComponent(slug)}/echeances/${idx}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     if (r.error) return toast(r.error, true);
@@ -1837,6 +1842,7 @@ function pfFinanceWire(el) {
     patch(b.dataset.slug, b.dataset.idx, body);
   });
   el.querySelectorAll('[data-fin-date]').forEach(i => i.onchange = () => patch(i.dataset.slug, i.dataset.idx, { date: i.value }));
+  el.querySelectorAll('[data-fin-compte]').forEach(i => i.onchange = () => patch(i.dataset.slug, i.dataset.idx, { compte: i.checked }));
   $('#fin-form').onsubmit = async e => {
     e.preventDefault();
     const f = Object.fromEntries(new FormData(e.target));
@@ -1846,7 +1852,7 @@ function pfFinanceWire(el) {
   };
 }
 
-// #finances: a space of its own, opened from the dashboard widget
+// #finances: its own tab; the today band shows the same three figures
 async function loadFinance() {
   const r = await api('/api/finance').catch(() => ({ error: 'Suivi financier indisponible : relance le serveur (npm start)' }));
   fin = r.error ? null : r;
@@ -1855,10 +1861,9 @@ async function loadFinance() {
 }
 function renderFinview(error) {
   const el = $('#fin-detail');
-  if (error || !fin) { el.innerHTML = `<div class="inner"><div class="pf-empty">${esc(error || 'Chargement…')}</div></div>`; return; }
-  const top = el.scrollTop;
-  el.innerHTML = `<div class="inner">${pfFinance()}</div>`;
-  el.scrollTop = top;
+  $('#fin-asof').textContent = `Exercice ${new Date().getFullYear()} · au ${new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`;
+  if (error || !fin) { el.innerHTML = `<div class="pf-empty">${esc(error || 'Chargement…')}</div>`; return; }
+  el.innerHTML = pfFinance();
   pfFinanceWire(el);
 }
 // The three figures both screens show: cashed this year, signed and expected, and
@@ -1889,19 +1894,11 @@ function renderFinWidget(error) {
     <div class="kpi"><small>Projection ${esc(f.window)}</small><b>${EUR(f.sure + f.leads)}</b><span>${EUR(f.sure)} sûrs + ${EUR(f.leads)} de pistes</span></div>`;
 }
 function onFinHash() {
-  const on = location.hash === '#finances', el = $('#finview');
-  if (!on) { el.hidden = true; return; }
-  el.hidden = false;
+  if (location.hash !== '#finances') return;
   renderFinview();
   loadFinance();
 }
-const closeFinview = () => { window.history.pushState('', '', location.pathname + location.search); onFinHash(); onShellHash(); };
 addEventListener('hashchange', onFinHash);
-addEventListener('keydown', e => {
-  if (e.key !== 'Escape' || $('#finview').hidden || document.activeElement?.matches('input, select')) return;
-  if (!$('#standup').hidden || !$('#appview').hidden || !$('#viewer').hidden) return;
-  closeFinview();
-}, true);
 
 const pfSize = n => n >= 1048576 ? (n / 1048576).toFixed(1).replace('.', ',') + ' Mo' : Math.max(1, Math.round(n / 1024)) + ' Ko';
 function pfResources(c) {
