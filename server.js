@@ -17,6 +17,7 @@ import { listFinance, addEcheance, updateEcheance } from './lib/finance.js';
 import { makeCalendar } from './lib/calendar.js';
 import { makeMailState } from './lib/mailstate.js';
 import { makeCalendarState } from './lib/calendarstate.js';
+import { makeProjectsOrder } from './lib/projectsorder.js';
 import { searchBrain } from './lib/search.js';
 import { makeChat } from './lib/chat.js';
 import { makeDelegations } from './lib/delegations.js';
@@ -71,6 +72,7 @@ const gmail = makeGmail(path.join(ROOT, 'credentials'), cfg.port, { secondBrain:
 const standup = makeStandup(cfg.secondBrain);
 const mailState = makeMailState(path.join(ROOT, 'output', 'mail-state.json'));
 const calState = makeCalendarState(path.join(ROOT, 'output', 'calendar-state.json'));
+const projectsOrder = makeProjectsOrder(path.join(ROOT, 'output', 'projects-order.json'));
 const calendar = makeCalendar(() => gmail.accessToken(), () => gmail.status().hasCalendar, cfg.calendar ?? {});
 // ALPES_OS_PORT lets a worktree run its own instance alongside the user's server.
 // gmail keeps cfg.port: Google only knows that redirect URI, so first-time OAuth
@@ -258,10 +260,22 @@ app.post('/api/runs', (req, res) => {
   if (!a || !act || !req.body.brief?.trim()) return res.status(400).json({ error: 'app, action et brief requis' });
   res.json(runner.start({ app: a, action: act, brief: req.body.brief.trim(), model: req.body.model, from: req.body.from }));
 });
-// Projects — long-running work, read from brain/projects/ in the second brain
-app.get('/api/projects', (req, res) => res.json(listProjects(cfg.secondBrain)));
+// Projects — long-running work, read from brain/projects/ in the second brain.
+// Archived ones only come back with ?all=1 (the Projets view); their order is local.
+app.get('/api/projects', (req, res) => {
+  const { order, hiddenFrom } = projectsOrder.get();
+  res.json(listProjects(cfg.secondBrain, { all: req.query.all === '1', order })
+    .map(p => p.stage === 'archivé' ? { ...p, hiddenFrom: hiddenFrom[p.slug] ?? 'pause' } : p));
+});
+app.put('/api/projects/order', (req, res) => {
+  if (!Array.isArray(req.body?.order)) return res.status(400).json({ error: 'order requis' });
+  res.json({ order: projectsOrder.setOrder(req.body.order).order });
+});
 app.patch('/api/projects/:slug', (req, res) => {
+  // remember the stage a project is hidden from, so showing it again puts it back there
+  const was = req.body?.stage === 'archivé' && listProjects(cfg.secondBrain).find(p => p.slug === req.params.slug)?.stage;
   const p = updateProject(cfg.secondBrain, req.params.slug, req.body ?? {});
+  if (p && was) projectsOrder.hid(p.slug, was);
   p ? res.json(p) : res.status(404).json({ error: 'projet introuvable' });
 });
 
@@ -275,7 +289,7 @@ app.post('/api/clients', (req, res) => {
 
 // Finance — payment schedules kept in the frontmatter of brain/finance notes
 app.get('/api/finance', (req, res) => {
-  try { res.json({ notes: listFinance(cfg.secondBrain), clients: listClients(cfg.secondBrain).map(c => ({ slug: c.slug, title: c.title })), projects: listProjects(cfg.secondBrain).map(p => ({ slug: p.slug, client: p.client })) }); }
+  try { res.json({ notes: listFinance(cfg.secondBrain), clients: listClients(cfg.secondBrain).map(c => ({ slug: c.slug, title: c.title })), projects: listProjects(cfg.secondBrain, { all: true }).map(p => ({ slug: p.slug, client: p.client })) }); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 app.post('/api/finance/:slug/echeances', (req, res) => {
