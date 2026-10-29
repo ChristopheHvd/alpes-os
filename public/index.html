@@ -502,22 +502,12 @@ button, input, textarea, select { font-family: inherit; }
 @keyframes pulse { 50% { opacity: .3; } }
 
 /* ---------- centre / graph ---------- */
-.sb-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
-.sb-head .ptitle { margin: 0; }
-.sb-grid { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; margin-top: 18px; }
-.sb-graph { flex: 999 1 640px; padding: 14px 16px; }
-.sb-ask { flex: 1 1 320px; }
-.ask-form { display: flex; gap: 8px; align-items: flex-end; margin-top: 12px; }
-.ask-form textarea { flex: 1; min-width: 0; resize: vertical; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); color: var(--ink); font: 400 14px/1.5 var(--font); padding: 10px 12px; min-height: 44px; outline: none; }
-.ask-form textarea:focus { border-color: var(--accent); }
-.ask-form .btn { width: 44px; height: 44px; padding: 0; display: grid; place-items: center; border-radius: 9px; }
-.ask-form .btn svg { stroke: var(--accent-ink); }
-.core { position: relative; min-width: 0; height: max(480px, calc(100vh - var(--bar-h, 61px) - 200px)); margin-top: 10px; background: var(--bg); border-radius: 8px; overflow: hidden; }
-.core canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
-.hud { position: absolute; bottom: 12px; right: 14px; text-align: right; max-width: 190px; font: 400 11.5px/1.6 var(--font); color: var(--ink-3); z-index: 2; pointer-events: none; }
-.hud b { color: var(--ink-2); font-weight: 500; }
-.sbsync { position: absolute; left: 12px; top: 12px; z-index: 4; max-width: min(360px, calc(100% - 32px)); }
-.sb-pill { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line-soft); background: var(--surface); color: var(--ink-2); border-radius: 20px; padding: 6px 12px; font: 500 11.5px/1 var(--font); cursor: pointer; box-shadow: var(--shadow); }
+.brain { position: relative; height: calc(100vh - var(--bar-h, 61px)); overflow: hidden; }
+.brain canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+.sb-tools { position: absolute; left: 16px; right: 16px; top: 12px; z-index: 3; display: flex; align-items: center; gap: 12px; pointer-events: none; }
+.sb-tools > * { pointer-events: auto; }
+.sbsync { position: absolute; left: 16px; top: 60px; z-index: 4; max-width: min(360px, calc(100% - 32px)); }
+.sb-pill { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line-soft); background: var(--surface); color: var(--ink-2); border-radius: 20px; padding: 6px 12px; font: 500 11.5px/1 var(--font); cursor: pointer; }
 .sb-pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--good); flex-shrink: 0; }
 .sb-pill.wait i { background: var(--accent); } .sb-pill.run i { background: var(--accent); animation: sbpulse 1s ease-in-out infinite; }
 .sb-pill.warn { color: var(--crit); } .sb-pill.warn i { background: var(--crit); }
@@ -532,18 +522,18 @@ button, input, textarea, select { font-family: inherit; }
 .sb-panel pre { margin: 0; white-space: pre-wrap; font: 400 11px/1.4 var(--mono); background: var(--sunken); border-radius: 6px; padding: 8px; max-height: 140px; overflow: auto; }
 .sb-panel .row { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
 @media (prefers-reduced-motion: reduce) { .sb-pill.run i { animation: none; } }
-.zoom { position: absolute; left: 12px; bottom: 12px; display: grid; gap: 5px; z-index: 2; }
-.zoom button { width: 30px; height: 30px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); border-radius: 6px; cursor: pointer; font: 400 15px/1 var(--font); box-shadow: var(--shadow); }
+.zoom { position: absolute; left: 16px; bottom: 16px; display: grid; gap: 5px; z-index: 2; }
+.zoom button { width: 30px; height: 30px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); border-radius: 6px; cursor: pointer; font: 400 15px/1 var(--font); }
 .zoom button:hover { border-color: var(--accent); color: var(--accent); }
 
-.doms { display: flex; gap: 6px; flex-wrap: wrap; }
-.dom { display: inline-flex; align-items: center; gap: 6px; font: 500 11.5px/1 var(--font); color: var(--ink-2); border: 1px solid var(--line-soft); padding: 6px 10px; border-radius: 20px; cursor: pointer; background: var(--surface); box-shadow: var(--shadow); }
+.doms { flex: 1; min-width: 0; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.doms::-webkit-scrollbar { display: none; }
+.dom { display: inline-flex; align-items: center; gap: 6px; font: 500 11.5px/1 var(--font); color: var(--ink-2); border: 1px solid var(--line-soft); padding: 7px 11px; border-radius: 20px; cursor: pointer; background: var(--surface); flex-shrink: 0; white-space: nowrap; }
 .dom i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
-.dom span { color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .dom:hover { border-color: var(--c); }
-.dom.on { border-color: var(--c); color: var(--ink); box-shadow: inset 0 0 0 1px var(--c), var(--shadow); }
+.dom.on { border-color: var(--c); color: var(--ink); box-shadow: inset 0 0 0 1px var(--c); }
 .dom.off { opacity: .4; }
-.search { position: absolute; right: 12px; top: 12px; z-index: 3; display: flex; align-items: center; gap: 8px; width: min(260px, calc(100% - 24px)); min-height: 38px; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 0 12px; }
+.search { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; width: min(240px, 40%); min-height: 38px; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 0 12px; }
 .search:focus-within { border-color: var(--accent); }
 .search svg { width: 15px; height: 15px; stroke: var(--ink-3); fill: none; stroke-width: 1.8; }
 .search input { flex: 1; background: transparent; border: 0; color: var(--ink); font: 400 13.5px var(--font); outline: none; }
@@ -552,8 +542,8 @@ button, input, textarea, select { font-family: inherit; }
 
 /* ---------- note panel ---------- */
 .panel {
-  position: absolute; right: 12px; top: 62px; width: 400px; min-width: 300px; max-width: 70%;
-  max-height: calc(100% - 110px); overflow: auto; resize: horizontal; direction: rtl;
+  position: absolute; right: 16px; top: 62px; width: 400px; min-width: 300px; max-width: calc(100% - 32px);
+  max-height: calc(100% - 78px); overflow: auto; resize: horizontal; direction: rtl;
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
   padding: 16px; display: none; gap: 11px; z-index: 4; box-shadow: var(--shadow-lg);
 }
@@ -563,8 +553,6 @@ button, input, textarea, select { font-family: inherit; }
 .panel .hd .dm { flex: 1; }
 .panel .dm { font: 500 11.5px/1 var(--font); }
 .panel b.t { font: 600 19px/1.25 var(--display); color: var(--ink); text-wrap: balance; }
-.panel .path { font: 400 11px/1.4 var(--mono); color: var(--ink-3); word-break: break-all; }
-.panel .tags { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
 .panel .links { display: grid; gap: 1px; }
 .panel .links div { display: grid; grid-template-columns: 8px 1fr; gap: 10px; align-items: center; font-size: 13px; color: var(--ink-2); cursor: pointer; padding: 5px 6px; border-radius: 5px; }
 .panel .links div:hover { background: var(--sunken); color: var(--ink); }
@@ -961,26 +949,15 @@ a.pf-card.res-cours p { color: var(--accent); }
   <div id="fin-detail"></div>
 </main>
 
-<main class="view page" data-view="brain" hidden>
-  <div class="sb-head"><h1 class="ptitle">Second brain</h1><span class="lbl" id="stats">—</span></div>
-  <div class="sb-grid">
-    <section class="pane sb-graph" aria-label="Graphe du second brain">
-      <div class="doms" id="doms"></div>
-      <div class="core">
-        <canvas id="g"></canvas>
-        <div class="sbsync" id="sbsync" hidden></div>
-        <label class="search"><svg><use href="#i-search"/></svg><span class="sr">Filtrer le graphe</span><input id="q" type="search" placeholder="Filtrer le graphe"></label>
-        <div class="zoom"><button id="z+" aria-label="Zoomer">+</button><button id="z-" aria-label="Dézoomer">−</button><button id="z0" title="Recentrer" aria-label="Recentrer">◎</button></div>
-        <div class="panel" id="panel"></div>
-        <div class="hud"><b>Glisser</b> pour déplacer, <b>molette</b> pour zoomer, <b>clic</b> pour ouvrir une fiche</div>
-      </div>
-    </section>
-    <section class="pane gl sb-ask" aria-labelledby="h-ask">
-      <div class="gl-head"><svg><use href="#i-spark"/></svg><h2 id="h-ask">Interroger</h2></div>
-      <p class="lbl">L'assistant cherche dans tes notes et répond, sources à l'appui.</p>
-      <form class="ask-form" id="ask-form"><label class="sr" for="ask-q">Question</label><textarea id="ask-q" rows="3" placeholder="Pose une question…"></textarea><button class="btn acc" type="submit" aria-label="Envoyer"><svg><use href="#i-arrow"/></svg></button></form>
-    </section>
+<main class="view brain" data-view="brain" hidden>
+  <canvas id="g" aria-label="Graphe du second brain"></canvas>
+  <div class="sb-tools">
+    <div class="doms" id="doms" role="group" aria-label="Domaines"></div>
+    <label class="search"><svg><use href="#i-search"/></svg><span class="sr">Filtrer le graphe</span><input id="q" type="search" placeholder="Filtrer"></label>
   </div>
+  <div class="sbsync" id="sbsync" hidden></div>
+  <div class="zoom"><button id="z+" aria-label="Zoomer">+</button><button id="z-" aria-label="Dézoomer">−</button><button id="z0" title="Recentrer" aria-label="Recentrer">◎</button></div>
+  <div class="panel" id="panel"></div>
 </main>
 
 <main class="view page" data-view="outils" hidden>
@@ -1478,13 +1455,12 @@ async function loadGraph() {
   if (!Object.keys(prev).length) domKeys.forEach((k, i) => { const a = i / domKeys.length * Math.PI * 2, R = k === 'knowledge' ? 0 : 260; nodes.filter(n => n.d === k).forEach(n => { n.x = Math.cos(a) * R + (Math.random() - .5) * 200; n.y = Math.sin(a) * R + (Math.random() - .5) * 200; }); });
   const changed = Object.keys(prev).length !== nodes.length || edges.length !== (window.__edgeCount ?? -1); window.__edgeCount = edges.length;
   if (changed) alpha = Math.max(alpha, .6);
-  $('#stats').textContent = `${nodes.length} fichiers · ${edges.length} liens · ${domKeys.length} domaines`;
   renderDoms();
   if (selected) selected = byId[selected.id] ?? null;
 }
 function renderDoms() {
   const el = $('#doms'); el.innerHTML = '';
-  domKeys.forEach(k => { const n = nodes.filter(f => f.d === k).length; const b = document.createElement('button'); b.className = 'dom' + (activeDom === k ? ' on' : activeDom ? ' off' : ''); b.dataset.k = k; b.style.setProperty('--c', domOf(k).c); b.innerHTML = `<i></i>${domOf(k).label} <span style="opacity:.6">${n}</span>`; b.onclick = () => { activeDom = activeDom === k ? null : k; renderDoms(); }; el.appendChild(b); });
+  domKeys.forEach(k => { const b = document.createElement('button'); b.className = 'dom' + (activeDom === k ? ' on' : activeDom ? ' off' : ''); b.dataset.k = k; b.setAttribute('aria-pressed', activeDom === k); b.style.setProperty('--c', domOf(k).c); b.innerHTML = `<i></i>${domOf(k).label}`; b.onclick = () => { activeDom = activeDom === k ? null : k; renderDoms(); }; el.appendChild(b); });
 }
 function step() {
   const t = performance.now() / 1000, a = Math.max(alpha, reduce ? 0 : .02);
@@ -1674,18 +1650,16 @@ async function select(n, fromNav) {
   const c = domOf(n.d).c, links = [...n.nb].sort((a, b) => b.deg - a.deg);
 const pf1 = pvFiche(n, links);
   panel.innerHTML = `<div class="hd"><button class="icobtn" id="pv-back" title="Précédent" ${history.length ? '' : 'disabled'}>‹</button><span class="dm" style="color:${c}">${domOf(n.d).label}${n.type ? ' · ' + esc(n.type) : ''}</span><button class="icobtn" id="pv-close" title="Fermer">×</button></div>
-    <b class="t">${esc(n.t)}</b><div class="path">second-brain/${esc(n.id)}</div>
-    <div class="tags">${n.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}${n.st ? `<span class="st ${n.st === 'verified' ? 'v' : 'd'}" style="align-self:center">${n.st === 'verified' ? '● verified' : '○ ' + esc(n.st)}</span>` : ''}</div>
+    <b class="t">${esc(n.t)}</b>
     ${n.desc ? `<p style="margin:0;font-size:13.5px;line-height:1.5;color:var(--ink-2)">${esc(n.desc)}</p>` : ''}
     <span class="lbl">${links.length} connexion${links.length > 1 ? 's' : ''}</span>
     <div class="links">${links.map(m => `<div data-id="${esc(m.id)}"><i style="background:${domOf(m.d).c}"></i>${esc(m.t)}</div>`).join('')}</div>
     <div class="body" id="pv-body"><span class="lbl">Chargement…</span></div>
-    <div class="row">${pf1 ? `<button class="btn acc" id="pv-fiche">${esc(pf1.label)}</button>` : ''}<button class="btn${pf1 ? '' : ' acc'}" id="pv-copy">Copier le chemin</button><button class="btn" id="pv-center">Centrer</button><button class="btn" id="pv-ask">Interroger</button></div>`;
+    <div class="row"><button class="btn acc" id="pv-ask">Demander à l'assistant</button>${pf1 ? `<button class="btn" id="pv-fiche">${esc(pf1.label)}</button>` : ''}<button class="btn" id="pv-copy">Copier le chemin</button></div>`;
   panel.classList.add('on');
   if (pf1) panel.querySelector('#pv-fiche').onclick = () => { location.hash = pf1.href; };
   panel.querySelectorAll('.links div').forEach(el => el.onclick = () => { const m = byId[el.dataset.id]; select(m); center(m); });
   panel.querySelector('#pv-copy').onclick = e => { navigator.clipboard?.writeText(`${cfg.secondBrain}/${n.id}`); e.target.textContent = 'Copié ✓'; setTimeout(() => e.target.textContent = 'Copier le chemin', 1200); };
-  panel.querySelector('#pv-center').onclick = () => center(n);
   panel.querySelector('#pv-ask').onclick = () => chatAsk(`Que dit mon second brain sur « ${n.t} » (${n.id}) ? Résume l'essentiel, ce qui est décidé et ce qui reste ouvert.`);
   panel.querySelector('#pv-close').onclick = () => select(null);
   panel.querySelector('#pv-back').onclick = () => { const m = history.pop(); if (m) { select(m, true); center(m); } };
@@ -1697,15 +1671,6 @@ const pf1 = pvFiche(n, links);
 function center(n) { const t0 = performance.now(), fx = cam.x, fy = cam.y, fk = cam.k, tk = Math.max(cam.k, 1.8); const off = panel.classList.contains('on') ? (panel.offsetWidth / 2 + 24) / tk : 0; /* keep the node clear of the panel */ (function anim() { const p = Math.min(1, (performance.now() - t0) / 450), e = 1 - Math.pow(1 - p, 3); cam.k = fk + (tk - fk) * e; cam.x = fx + (-n.x - off - fx) * e; cam.y = fy + (-n.y - fy) * e; if (p < 1) requestAnimationFrame(anim); })(); }
 const q = $('#q');
 q.addEventListener('input', () => query = q.value.trim().toLowerCase());
-// "Interroger" starts a new assistant thread; the answer opens in the assistant
-$('#ask-form').onsubmit = e => {
-  e.preventDefault();
-  const ta = $('#ask-q'), text = ta.value.trim();
-  if (!text) { ta.focus(); return; }
-  ta.value = '';
-  chatAsk(text);
-};
-$('#ask-q').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#ask-form').requestSubmit(); } });
 addEventListener('keydown', e => { if (!$('#focus').hidden) { if (e.key === 'Escape') focusClose(); return; } if (!$('#credo').hidden) { if (e.key === 'Escape') credoClose(); else if (e.key === 'ArrowRight') credoStep(1); else if (e.key === 'ArrowLeft') credoStep(-1); return; } if (e.key === 'Escape' && !su.hidden) { suClose(); return; } if (e.key === 'Escape') { if (!viewer.hidden) { viewer.hidden = true; return; } if (!appview.hidden) { appview.hidden = true; return; } if (chatOpen) { chatShow(false); return; } q.value = ''; query = ''; q.blur(); select(null); $('#modal').hidden = true; } });
 
 /* ---------- projects: long-running work, stored in the second brain ---------- */
@@ -2305,6 +2270,7 @@ function renderSb() {
   else if (sb.processing) { cls = 'warn'; label = `${sb.processing} à trancher`; }
   else if (queued && !sb.clean) { cls = 'warn'; label = `${queued} en attente · second-brain non propre`; }
   else if (queued) { cls = 'wait'; label = `${queued} changement${queued > 1 ? 's' : ''} en attente`; }
+  if (cls === 'ok') { el.hidden = true; sbOpen = false; return; }
   const where = { local: 'pas encore envoyé', inbox: 'en file', processing: 'bloqué chez le curateur' };
   const canRun = !running && !sb.locked && (sb.inbox || sb.processing || sb.unsent);
   el.innerHTML = `<button class="sb-pill ${cls}" id="sb-pill" aria-expanded="${sbOpen}"><i></i>${label}</button>`
