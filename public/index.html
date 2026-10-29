@@ -1710,6 +1710,7 @@ function pfFinRows() {
 }
 const pfClientTitle = slug => fin.clients.find(c => c.slug === slug)?.title || slug || 'Sans client';
 
+const finClient = slug => demoOn ? esc(pfClientTitle(slug)) : `<a href="${pfHref('client', slug)}">${esc(pfClientTitle(slug))}</a>`;
 function pfFinance() {
   const rows = pfFinRows(), f = finSummary(rows);
   const d = iso => new Date(iso + 'T12:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
@@ -1754,17 +1755,17 @@ function pfFinance() {
       <thead><tr><th>Date</th><th>Client</th><th>Libellé</th><th class="amt">Montant</th><th>Statut</th><th></th></tr></thead>
       <tbody>${sorted.map(r => `<tr class="${r.statut}${r.late ? ' is-late' : ''}">
         <td><input type="date" value="${esc(r.date)}" data-fin-date data-slug="${esc(r.note.slug)}" data-idx="${r.idx}" title="Modifier la date"></td>
-        <td>${r.client ? `<a href="${pfHref('client', r.client)}">${esc(pfClientTitle(r.client))}</a>` : '<span class="muted">Sans client</span>'}</td>
+        <td>${r.client ? finClient(r.client) : '<span class="muted">Sans client</span>'}</td>
         <td>${esc(r.libelle)}<small>${esc(r.note.title)}${r.ref ? ' · ' + esc(r.ref) : ''}</small></td>
         <td class="amt">${EUR(r.montant)}</td><td>${chip(r)}</td><td>${act(r)}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">Aucune échéance renseignée.</td></tr>'}</tbody>
     </table></div>
     <h2 class="fin-sec">Par client</h2>
     <div class="fin-table"><table>
       <thead><tr><th>Client</th><th class="amt">Encaissé</th><th class="amt">À encaisser</th><th class="amt">Devis</th><th class="amt">Total</th></tr></thead>
-      <tbody>${byClient.map(c => `<tr><td>${c.slug ? `<a href="${pfHref('client', c.slug)}">${esc(pfClientTitle(c.slug))}</a>` : 'Sans client'}</td>
+      <tbody>${byClient.map(c => `<tr><td>${c.slug ? finClient(c.slug) : 'Sans client'}</td>
         <td class="amt">${EUR(c.encaisse)}</td><td class="amt">${EUR(c.a_encaisser)}</td><td class="amt">${EUR(c.devis)}</td><td class="amt"><b>${EUR(c.encaisse + c.a_encaisser + c.devis)}</b></td></tr>`).join('')}</tbody>
     </table></div>
-    <details class="fin-add"><summary>+ Ajouter une échéance</summary><form id="fin-form">
+    ${demoOn ? '' : `<details class="fin-add"><summary>+ Ajouter une échéance</summary><form id="fin-form">
       <label>Note finance<select name="slug" required>${fin.notes.map(n => `<option value="${esc(n.slug)}">${esc(pfClientTitle(n.client || n.clients[0]))} — ${esc(n.title)}</option>`).join('')}</select></label>
       <label>Libellé<input name="libelle" required placeholder="Solde 70 %"></label>
       <label>Montant (€)<input name="montant" required inputmode="decimal" placeholder="1 260"></label>
@@ -1772,7 +1773,7 @@ function pfFinance() {
       <label>Statut<select name="statut"><option value="a_encaisser">À encaisser</option><option value="encaisse">Encaissé</option><option value="devis">Devis non signé</option></select></label>
       <label>Réf.<input name="ref" placeholder="FAC-2026-009"></label>
       <button class="btn acc" type="submit">Ajouter</button>
-    </form><small class="fin-foot">Pour un nouveau client sans note finance, crée d'abord la note (devis via la micro-app, ou le chat).</small></details>
+    </form><small class="fin-foot">Pour un nouveau client sans note finance, crée d'abord la note (devis via la micro-app, ou le chat).</small></details>`}
     <small class="fin-foot">Échéances lues dans le frontmatter des notes <code>brain/finance</code>. Montants HT, TVA non applicable.</small>`;
 }
 
@@ -1831,6 +1832,8 @@ function drawFinanceChart(box) {
 function pfFinanceWire(el) {
   drawFinanceChart($('#fin-chart'));
   const patch = async (slug, idx, body) => {
+    // demo figures live in memory only: nothing reaches the second brain
+    if (demoOn) { Object.assign(fin.notes.find(n => n.slug === slug).echeances[idx], body); renderFinWidget(); renderFinview(); return; }
     const r = await api(`/api/finance/${encodeURIComponent(slug)}/echeances/${idx}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     if (r.error) return toast(r.error, true);
     toast('Échéance mise à jour dans le second brain');
@@ -1843,7 +1846,7 @@ function pfFinanceWire(el) {
   });
   el.querySelectorAll('[data-fin-date]').forEach(i => i.onchange = () => patch(i.dataset.slug, i.dataset.idx, { date: i.value }));
   el.querySelectorAll('[data-fin-compte]').forEach(i => i.onchange = () => patch(i.dataset.slug, i.dataset.idx, { compte: i.checked }));
-  $('#fin-form').onsubmit = async e => {
+  if ($('#fin-form')) $('#fin-form').onsubmit = async e => {
     e.preventDefault();
     const f = Object.fromEntries(new FormData(e.target));
     const r = await api(`/api/finance/${encodeURIComponent(f.slug)}/echeances`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(f) });
@@ -1853,8 +1856,33 @@ function pfFinanceWire(el) {
 }
 
 // #finances: its own tab; the today band shows the same three figures
+// A made-up but consistent book for demos, dated around today: 12 900 € cashed in
+// four payments, 1 200 € due next month, 6 000 € of counted leads, one lead left out.
+function demoFinance() {
+  const now = new Date(), y = now.getFullYear(), m = now.getMonth();
+  const day = (k, d) => new Date(y, m + k, Math.min(d, new Date(y, m + k + 1, 0).getDate(), k ? 31 : now.getDate())).toLocaleDateString('sv-SE');
+  const e = (libelle, montant, k, d, statut, ref, compte = false) => ({ libelle, montant, date: day(k, d), statut, ref, compte });
+  const note = (slug, client, title, echeances) => ({ id: `brain/finance/${slug}.md`, slug, title, type: '', description: '', client, projet: '', projects: [], clients: [], echeances, sources: [] });
+  return {
+    clients: [['societe-fictive', 'Société Fictive'], ['cabinet-modele', 'Cabinet Modèle'], ['studio-demo', 'Studio Démo'], ['atelier-exemple', 'Atelier Exemple']].map(([slug, title]) => ({ slug, title })),
+    projects: [],
+    notes: [
+      note('societe-fictive-devis', 'societe-fictive', 'Devis Société Fictive, phase 1', [e('Acompte 30 %, phase 1', 2600, -3, 15, 'encaisse', 'FAC-0112'), e('Solde, phase 1', 6000, 0, 28, 'encaisse', 'FAC-0117')]),
+      note('cabinet-modele-audit', 'cabinet-modele', 'Cabinet Modèle, audit et atelier', [e('Audit des process', 2500, -1, 5, 'encaisse', 'FAC-0115'), e('Atelier IA', 1800, 0, 10, 'encaisse', 'FAC-0116'), e('Audit des outils, phase 2', 4600, 3, 20, 'devis', 'DEV-0121')]),
+      note('studio-demo', 'studio-demo', 'Studio Démo, formation et site', [e('Formation 1 jour', 1200, 1, 15, 'a_encaisser', 'FAC-0118'), e('Site et automatisations', 3000, 3, 15, 'devis', 'DEV-0120', true)]),
+      note('atelier-exemple-abonnement', 'atelier-exemple', 'Atelier Exemple, abonnement', [e('Abonnement, 1er mois', 1500, 2, 1, 'devis', 'DEV-0119', true), e('Abonnement, 2e mois', 1500, 3, 1, 'devis', 'DEV-0119', true)]),
+    ],
+  };
+}
 async function loadFinance() {
+  if (demoOn) {
+    fin ??= demoFinance();
+    renderFinWidget();
+    if (!$('#finview').hidden) renderFinview();
+    return;
+  }
   const r = await api('/api/finance').catch(() => ({ error: 'Suivi financier indisponible : relance le serveur (npm start)' }));
+  if (demoOn) return;   // switched on while the request was out
   fin = r.error ? null : r;
   renderFinWidget(r.error);
   if (!$('#finview').hidden) renderFinview(r.error);
@@ -2908,6 +2936,28 @@ addEventListener('hashchange', onShellHash);
 new ResizeObserver(() => document.documentElement.style.setProperty('--bar-h', $('#top').offsetHeight + 'px')).observe($('#top'));
 function askOpen() { chatShow(true); $('#chat textarea')?.focus(); }
 $('#ask-open').onclick = askOpen;
+
+// Demo: every money figure on screen comes from demoFinance(), nothing else changes.
+// Remembered across reloads, announced by a band under the top bar.
+let demoOn = (() => { try { return localStorage.getItem('demo') === '1'; } catch (e) { return false; } })();
+function renderDemo() {
+  $('#demo-toggle').classList.toggle('on', demoOn);
+  $('#demo-toggle').setAttribute('aria-pressed', String(demoOn));
+  $('#demobar').hidden = !demoOn;
+  $('#fb-demo').hidden = !demoOn;
+}
+function setDemo(on) {
+  demoOn = on;
+  try { localStorage.setItem('demo', on ? '1' : '0'); } catch (e) {}
+  renderDemo();
+  fin = null;
+  renderFinWidget();
+  if (!$('#finview').hidden) renderFinview();
+  loadFinance();
+}
+$('#demo-toggle').onclick = () => setDemo(!demoOn);
+$('#demo-quit').onclick = () => setDemo(false);
+renderDemo();
 
 (async () => {
   cfg = await api('/api/config');
