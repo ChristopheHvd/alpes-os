@@ -13,7 +13,7 @@ import { makeRunner } from './lib/runs.js';
 import { listProjects, updateProject, createProject } from './lib/projects.js';
 import { listClients, createClient } from './lib/clients.js';
 import { portfolio } from './lib/portfolio.js';
-import { listFinance, addEcheance, updateEcheance, removeEcheance } from './lib/finance.js';
+import { listFinance, addEcheance, updateEcheance, removeEcheance, createFinanceNote } from './lib/finance.js';
 import { makeCalendar } from './lib/calendar.js';
 import { makeMailState } from './lib/mailstate.js';
 import { makeCalendarState } from './lib/calendarstate.js';
@@ -28,7 +28,7 @@ import { readCredo, shuffleForDay } from './lib/credo.js';
 import { bundle } from './lib/sbqueue.js';
 import { makeLinkedin, checkPost } from './lib/linkedin.js';
 import { loadLinkedin, updatePost, visualFor, localToday, dueForPreparation, toProduce, planFrame, parsePrepared, planFile } from './lib/linkedin-plan.js';
-import { makePropositions } from './lib/propositions.js';
+import { makePropositions, moneyKey } from './lib/propositions.js';
 import { makeReview } from './lib/review.js';
 import { claudeActivity } from './lib/activity.js';
 
@@ -855,18 +855,41 @@ app.post('/api/propositions/:id/:act', (req, res) => {
   try {
     const p = propositions.get(id);
     const t = String(req.body?.title ?? '').trim() || p?.title;
-    let todo = null;   // writeTodo drops a task already on the list
-    if (p?.status === 'pending' && act === 'accept') todo = addItem(todoFile, { t, s: p.project });
-    if (p?.status === 'pending' && act === 'later') { const cur = readTodo(todoFile); todo = writeTodo(todoFile, cur.items, [...cur.later, { t, s: p.project }]); }
-    res.json({ proposition: propositions.decide(id, act, req.body?.title), todo: todo ?? readTodo(todoFile) });
+    const money = p?.type === 'finance';
+    let todo = null, finance = null;   // writeTodo drops a task already on the list
+    if (p?.status === 'pending' && act === 'accept') { if (money) finance = toFinance(p.echeance); else todo = addItem(todoFile, { t, s: p.project }); }
+    if (p?.status === 'pending' && act === 'later' && !money) { const cur = readTodo(todoFile); todo = writeTodo(todoFile, cur.items, [...cur.later, { t, s: p.project }]); }
+    res.json({ proposition: propositions.decide(id, act, req.body?.title), todo: todo ?? readTodo(todoFile), finance });
   } catch (e) { res.status(e.status ?? 400).json({ error: e.message }); }
 });
+
+// An accepted money proposition becomes a line in the client's finance note, or in
+// a minimal note when he has none; nothing is written twice for the same month.
+const clientOf = n => n.client || n.clients[0] || '';
+function toFinance(e) {
+  const mine = listFinance(cfg.secondBrain).filter(n => clientOf(n) === e.client);
+  if (mine.some(n => n.echeances.some(x => moneyKey({ ...x, client: e.client }) === moneyKey(e)))) return null;
+  const slug = mine.find(n => n.slug === e.note)?.slug ?? mine[0]?.slug
+    ?? createFinanceNote(cfg.secondBrain, { client: e.client, clientTitle: listClients(cfg.secondBrain).find(c => c.slug === e.client)?.title, libelle: e.libelle });
+  return addEcheance(cfg.secondBrain, slug, { libelle: e.libelle, montant: e.montant, date: e.date, statut: e.statut });
+}
+
+// The client a mail comes from: its address or domain is written in the client's
+// note, or the client's name is in the subject.
+const WEBMAIL = /gmail|outlook|hotmail|yahoo|icloud|free\.fr|orange\.fr|wanadoo/;
+function mailClient(t, clients) {
+  const domain = t.addr.split('@')[1] ?? '';
+  return clients.find(c => c.text.includes(t.addr) || (domain && !WEBMAIL.test(domain) && c.text.includes('@' + domain))
+    || t.subject.toLowerCase().includes(c.title.toLowerCase()));
+}
+// the lines of a note that carry a price: what a devis or a rate says
+const priceLines = txt => txt.split('\n').filter(l => /\d\s?€|€\s?\d|tarif|TJM/i.test(l)).map(l => l.trim().slice(0, 240)).slice(0, 12);
 
 // Hourly review — the server gathers the facts, a light model ranks today's tasks
 // and suggests what is missing. A test instance only runs it on demand, unless
 // ALPES_OS_REVIEW_AUTO=1.
 const revCfg = { model: 'claude-haiku-5-5', weekdays: [1, 2, 3, 4, 5], from: 9, to: 19, ...(cfg.review ?? {}) };
-async function reviewContext() {
+async function reviewContext({ since } = {}) {
   const now = new Date();
   const midnight = new Date(now); midnight.setHours(0, 0, 0, 0);
   const todo = readTodo(todoFile);
@@ -899,6 +922,35 @@ async function reviewContext() {
       .flatMap(n => n.echeances.filter(e => e.statut !== 'encaisse' && e.date && e.date <= horizon)
         .map(e => ({ note: n.title, libelle: e.libelle, montant: e.montant, date: e.date, statut: e.statut, ...(e.date < today ? { en_retard: true } : {}) })))
       .sort((a, b) => a.date.localeCompare(b.date)).slice(0, 10),
+    ...await moneyContext(since),
+  };
+}
+// Mails from real people since the last review (a week at most), with what the
+// second brain says about their client's money, for the review to spot commitments.
+async function moneyContext(since) {
+  const notes = listFinance(cfg.secondBrain);
+  const clients = listClients(cfg.secondBrain).map(c => ({ ...c, text: bundle.read(path.join(cfg.secondBrain, c.id)).toLowerCase() }));
+  const mails = [], extraits = {};
+  let mailErreur = null;
+  try {
+    if (gmail.status().hasToken) {
+      const from = Math.max(Date.parse(since ?? '') || 0, Date.now() - 7 * 864e5);
+      const { threads } = await gmail.flagged({ ...mailOpts(), maxThreads: 20 });
+      for (const t of threads.filter(t => Date.parse(t.date) > from).slice(0, 8)) {
+        const c = mailClient(t, clients);
+        let messages;
+        try { messages = await gmail.threadText(t.id); } catch (e) { messages = [{ de: t.from, date: t.date, texte: t.snippet }]; }
+        mails.push({ de: t.from, objet: t.subject, date: t.date, ...(c ? { client: c.slug } : {}), messages });
+        if (c && !extraits[c.slug]) extraits[c.slug] = [...priceLines(bundle.read(path.join(cfg.secondBrain, c.id))),
+          ...notes.filter(n => clientOf(n) === c.slug).flatMap(n => priceLines(bundle.read(path.join(cfg.secondBrain, n.id))).map(l => `${n.id} : ${l}`))].slice(0, 20);
+      }
+    }
+  } catch (e) { mailErreur = e.message.slice(0, 200); }
+  return {
+    mails_recents: mails, ...(mailErreur ? { mails_erreur: mailErreur } : {}),
+    clients: clients.map(c => ({ slug: c.slug, titre: c.title })),
+    notes_finance: notes.map(n => ({ note: n.slug, titre: n.title, client: clientOf(n), description: n.description, echeances: n.echeances.map(({ libelle, montant, date, statut }) => ({ libelle, montant, date, statut })) })),
+    extraits_clients: extraits,
   };
 }
 const review = makeReview(path.join(ROOT, 'output', 'review.json'), {
