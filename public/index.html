@@ -860,12 +860,12 @@ a.pf-card.res-cours p { color: var(--accent); }
   </div>
 </main>
 
-<main class="view page" data-view="finances" id="finview">
+<main class="view page" data-view="finances" id="finview" hidden>
   <div class="fin-h"><h1 class="ptitle">Finances</h1><span class="sp"></span><span class="lbl" id="fin-asof"></span></div>
   <div id="fin-detail"></div>
 </main>
 
-<main class="view page" data-view="brain">
+<main class="view page" data-view="brain" hidden>
   <div class="sb-head"><h1 class="ptitle">Second brain</h1><span class="lbl" id="stats">—</span></div>
   <div class="sb-grid">
     <section class="pane sb-graph" aria-label="Graphe du second brain">
@@ -887,7 +887,7 @@ a.pf-card.res-cours p { color: var(--accent); }
   </div>
 </main>
 
-<main class="view page" data-view="outils">
+<main class="view page" data-view="outils" hidden>
   <h1 class="ptitle">Outils</h1>
   <div class="tools">
     <section class="pane gl" aria-labelledby="h-apps"><div class="gl-head"><svg><use href="#i-grid"/></svg><h2 id="h-apps">Micro apps</h2></div><div id="apps"></div></section>
@@ -2934,6 +2934,7 @@ function onShellHash() {
   document.querySelectorAll('.view').forEach(v => { v.hidden = v.dataset.view !== tab; });
 }
 addEventListener('hashchange', onShellHash);
+onShellHash();
 new ResizeObserver(() => document.documentElement.style.setProperty('--bar-h', $('#top').offsetHeight + 'px')).observe($('#top'));
 function askOpen() { chatShow(true); $('#chat textarea')?.focus(); }
 $('#ask-open').onclick = askOpen;
@@ -2972,7 +2973,6 @@ renderDemo();
   setInterval(loadFinance, 60e3);
   // a test instance (own event queue) must not start a real stand-up on its own
   if (!cfg.testQueue) standupOnOpen();
-  onShellHash();
   onPortfolioHash();
   onFinHash();
   loadFinance();
