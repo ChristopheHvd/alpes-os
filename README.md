@@ -7,14 +7,20 @@ Une page, une adresse, qui montre le travail sans jamais devenir l'endroit où i
 
 ## Ce que la page affiche
 
-| Zone | Contenu |
+Une barre du haut ouvre chaque onglet (`#projets`, `#finances`, `#linkedin`, `#second-brain`, `#outils`) ;
+le bouton « Demander à l'assistant » (⌘K) ouvre l'assistant, le bouton Démo remplace les finances
+affichées par un jeu fictif.
+
+| Onglet | Contenu |
 |------|---------|
-| Centre | Le second brain en graphe force-directed : un nœud par note, une arête par lien markdown. Recherche, filtre par domaine, fiche de concept avec son corps rendu |
-| Boîte de réception | Les fils Gmail d'un label, triés en trois catégories : une personne, un automate, une liste de diffusion |
-| Aujourd'hui | La todo du jour, lue et écrite dans le second brain, plus les événements à venir |
-| Projets en cours | Les projets au long cours, avec leur prochaine étape éditable |
+| Aujourd'hui | Bande Finances (encaissé, à encaisser, projection sur 3 mois), la todo du jour lue et écrite dans le second brain, les projets en cours, les agents, le post LinkedIn du jour |
+| Projets | Les projets au long cours, avec leur prochaine étape éditable |
+| Finances | Échéances lues dans le frontmatter de `brain/finance`, graphique mensuel, devis cochés « comptés » dans la projection |
 | LinkedIn | Le plan éditorial du mois : post du jour préparé chaque matin par Claude, retouche, publication directe sur le profil |
-| Micro apps | Des boutons qui lancent une skill Claude Code en mode headless et rendent leurs livrables |
+| Second brain | Le graphe force-directed : un nœud par note, une arête par lien markdown. Filtre par domaine et par texte, fiche de concept, champ « Interroger » |
+| Outils | Les micro apps (une skill Claude Code lancée en mode headless) et les supports de formation |
+
+Gmail et l'agenda ne s'affichent plus, mais l'assistant et le stand-up continuent de les lire.
 
 ## Installation
 
