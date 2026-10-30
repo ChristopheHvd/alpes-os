@@ -130,7 +130,7 @@ ul.rv-sum { padding-left: 18px; }
 .sg-x { width: 28px; height: 28px; flex-shrink: 0; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--ink-3); font: 400 18px/1 var(--font); cursor: pointer; }
 .sg-x:hover, .sg-x:focus-visible { color: var(--ink); background: color-mix(in srgb, var(--accent) 14%, transparent); }
 .rv-err { margin: 6px 0 0; font-size: 12px; color: var(--crit); }
-.rv-list { margin-top: 10px; display: grid; }
+.rv-list { margin-top: 10px; display: grid; grid-template-columns: minmax(0, 1fr); }
 .sg { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid color-mix(in srgb, var(--accent) 18%, transparent); }
 .sg-t { flex: 1; min-width: 0; }
 .sg-t input { display: block; width: 100%; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--ink); font: 500 13.5px/1.4 var(--font); padding: 3px 6px; margin-left: -7px; outline: none; text-overflow: ellipsis; }
@@ -146,7 +146,7 @@ ul.rv-sum { padding-left: 18px; }
 .gl-head .meta a { color: var(--accent); }
 .gl .sp { flex: 1; }
 #w-projects .projects { max-height: 360px; }
-#agents { display: grid; }
+#agents { display: grid; grid-template-columns: minmax(0, 1fr); }
 .ag { display: flex; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line-soft); }
 .ag:first-child { border-top: 0; }
 .ag-t { flex: 1; min-width: 0; }
@@ -201,6 +201,11 @@ ul.rv-sum { padding-left: 18px; }
 .doc .rep-full { min-width: 0; overflow-x: auto; overflow-wrap: anywhere; border-top: 1px solid var(--line-soft); padding-top: 10px; font-size: 14px; }
 .doc .rep-files { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; }
 .doc .rep-mail { font-size: 13px; color: var(--ink-3); }
+.doc .rep.ctx { padding: 8px 14px; }
+.doc .ctx-line { display: flex; align-items: center; gap: 8px; width: 100%; padding: 0; border: 0; background: none; font: 600 14px/1.3 var(--font); color: var(--ink); text-align: left; cursor: pointer; }
+.doc .ctx-line span { font-weight: 400; color: var(--ink-3); }
+.doc .ctx-line svg { width: 14px; height: 14px; flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transform: rotate(-90deg); transition: transform .15s; }
+.doc .rep.ctx.open .ctx-line svg { transform: none; }
 .w-head { display: flex; align-items: center; gap: 10px; }
 .w-head h2 {
   margin: 0; font: 600 15px/1.2 var(--font); letter-spacing: -.01em; white-space: nowrap;
@@ -3102,7 +3107,7 @@ const dgPost = (p, body) => api('/api/delegations' + p, { method: 'POST', header
 async function dgDelegate(t) {
   if (dgActive(t)) { $('#w-agents').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); toast('Un agent travaille déjà sur cette tâche'); return; }
   const contexte = [t.s && `Rangée sous « ${t.s} » dans la todo`, t.p === 'h' ? 'priorité urgente' : t.p === 'm' ? 'priorité importante' : '', t.from && `reportée du ${t.from}`].filter(Boolean).join(', ');
-  const r = await dgPost('', { tache: t.t, contexte, source: t.t });
+  const r = await dgPost('', { tache: t.t, contexte, source: t.t, projet: t.s });
   if (r.error) { toast(r.error, true); return; }
   toast('Tâche confiée à un agent');
   loadDelegations(); renderTodo();
@@ -3144,7 +3149,7 @@ async function dgAct(id, what) {
 }
 // One thread in order: the task, each pass of the agent and each answer, the report
 // card after the last finished pass, then the reply box.
-let dgOpenId = null, dgOpenTimer = null, dgReportOpen = false;
+let dgOpenId = null, dgOpenTimer = null, dgReportOpen = false, dgCtx = {};
 async function dgOpen(id, toBottom) {
   const d = await api('/api/delegations/' + encodeURIComponent(id));
   if (d.error) { toast(d.error, true); return; }
@@ -3180,6 +3185,13 @@ async function dgOpen(id, toBottom) {
       ${files.length ? `<div class="rep-files">${files.map(f => `<a href="/${esc(f)}" target="_blank" rel="noopener">${esc(f.split('/').pop())}</a>`).join('')}</div>` : ''}
       ${d.brouillons.length ? `<p class="rep-mail">Brouillons Gmail : ${d.brouillons.map(b => `${esc(b.to)} « ${esc(b.subject)} »`).join(' ; ')}</p>` : ''}
     </section>` : '';
+  // what the agent was handed at launch, readable as it got it
+  if (dgCtx.id !== id) dgCtx = { id, open: false, text: null };
+  // folded by default: one line, the whole of it opens the file in place
+  const ctxCard = d.contexte ? `<section class="rep ctx${dgCtx.open ? ' open' : ''}" aria-label="Contexte transmis">
+      <button class="ctx-line" id="dg-ctx" aria-expanded="${dgCtx.open}"><svg><use href="#i-chev"/></svg>Contexte transmis${d.contexteTaille ? `<span>· ${Math.max(1, Math.round(d.contexteTaille / 1000))} k caractères</span>` : ''}</button>
+      ${dgCtx.open && dgCtx.text != null ? `<div class="rep-full">${md(dgCtx.text)}</div><div class="rep-files"><a href="/${esc(d.contexte)}" target="_blank" rel="noopener">CONTEXTE.md</a></div>` : ''}
+    </section>` : '';
   const lastDone = d.etapes.map(e => !!e.fin).lastIndexOf(true);
   const cardAt = lastDone === -1 ? d.etapes.length - 1 : lastDone;
   const thread = d.etapes.map((e, i) => {
@@ -3187,11 +3199,17 @@ async function dgOpen(id, toBottom) {
     const me = bubble('me', esc(asked).replace(/\n/g, '<br>'), e.debut);
     const ag = !e.fin ? bubble('ag', `<span class="lbl">Travaille… ${esc(d.activite ?? '')}</span>`, null, 'live')
       : bubble('ag', (e.reponse ? md(e.reponse) : `<p>${esc(e.resume ?? e.raison ?? '—')}</p>`) + (e.question ? `<p class="cv-q">${esc(e.question)}</p>` : ''), e.fin, e.raison && !e.reponse ? 'err' : '');
-    return me + ag + (i === cardAt ? card : '');
+    return me + (i === 0 ? ctxCard : '') + ag + (i === cardAt ? card : '');
   }).join('');
   body.innerHTML = `<div class="conv">${thread}</div>`;
   const rep = $('#dg-rep');
   if (rep) rep.onclick = () => { dgReportOpen = !dgReportOpen; dgOpen(id); };
+  const ctx = $('#dg-ctx');
+  if (ctx) ctx.onclick = async () => {
+    dgCtx.open = !dgCtx.open;
+    if (dgCtx.open && dgCtx.text == null) dgCtx.text = await fetch('/' + d.contexte).then(r => r.ok ? r.text() : 'CONTEXTE.md introuvable.').catch(() => 'CONTEXTE.md introuvable.');
+    dgOpen(id);
+  };
   renderVFiles();
   viewer.hidden = false;
   body.scrollTop = toBottom || atBottom ? body.scrollHeight : keep;
