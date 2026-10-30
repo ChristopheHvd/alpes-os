@@ -3752,7 +3752,7 @@ function cxMissions(c, act) {
 function cxMessages(c, act, repondre) {
   const p = c.court, fil = act?.messages ?? [];
   const who = x => (x.sens === 'recu' ? `<span class="cx-who">${esc(cxFirst(p))}</span>` : '<span class="cx-who moi">Toi</span>');
-  const open = id => cxForm === `rep:${id}` || repondre === id;
+  const open = id => cxForm === `rep:${id}` || (repondre === id && !fil.find(y => y.id === id)?.repondu);
   const rep = x => `<form class="cx-form" data-rep="${esc(x.id)}">
       <textarea data-k="rep-${esc(x.id)}" name="texte" required placeholder="Ta réponse, en Markdown" aria-label="Réponse à ${esc(x.sujet)}"></textarea>
       <div class="cx-act"><span class="sp"></span><button type="button" class="btn ghost" data-form="">Annuler</button><button type="submit" class="btn acc">Répondre</button></div></form>`;
@@ -3801,7 +3801,7 @@ const CX_TACHE = { appel: 'Appel', email: 'E-mail', tache: 'Tâche', reunion: 'R
 function cxSuiviAlertes(c) {
   const p = c.court;
   return [
-    ...(cxSv?.suppressions ?? []).map(s => `<div class="cx-alert"><span>${esc(s.titre ?? 'Fiche')} supprimée chez ${esc(p)} : la supprimer ici aussi ?</span>
+    ...(cxSv?.suppressions ?? []).map(s => `<div class="cx-alert"><span>${esc(p)} a supprimé « ${esc(s.titre ?? 'une fiche')} » de son suivi : supprimer aussi ici ?</span>
       <button type="button" class="btn ghost" data-garder="${esc(s.id)}">Garder</button><button type="button" class="btn acc" data-supprimer="${esc(s.id)}">Supprimer</button></div>`),
     ...(cxSv?.notes ?? []).map(n => `<div class="cx-alert"><span>${esc(n.texte)}</span><button type="button" class="btn ghost" data-vu="${esc(n.id)}">Vu</button></div>`),
   ].join('');
@@ -3917,7 +3917,7 @@ function cxOpen(form) {
   cxForm = form || null;
   const r = cxRoute();
   // leaving a reply opened from Aujourd'hui: back to the plain page
-  if (r?.vue === 'repondre' && cxForm !== `rep:${r.cle}`) { history.replaceState(null, '', `#connexions/${r.id}`); }
+  if (r?.vue === 'repondre' && cxForm !== `rep:${r.cle}`) { window.history.replaceState(null, '', `#connexions/${r.id}`); }
   renderCx();
   const first = $('#cx-body').querySelector('.cx-form:not(#cx-aff) :is(input:not([type="date"]), textarea)');
   if (cxForm) first?.focus();
@@ -3964,7 +3964,7 @@ $('#cx-body').addEventListener('submit', async e => {
       f.reset();
       toast(`Message envoyé à ${sel.court}`);
       cxForm = null;
-      if (cxRoute()?.vue === 'repondre') history.replaceState(null, '', `#connexions/${sel.id}`);
+      if (cxRoute()?.vue === 'repondre') window.history.replaceState(null, '', `#connexions/${sel.id}`);
       loadProps().then(rvRender);
     } else return;
     await loadCx(true);
