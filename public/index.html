@@ -162,7 +162,7 @@ button, input, textarea, select { font-family: inherit; }
 @media (max-width: 860px) { .page { padding: 18px 16px 40px; } }
 @media (max-width: 640px) { .todo .it { flex-wrap: wrap; } .tasks .todo .acts { opacity: 1; flex-basis: 100%; padding-left: 68px; } }
 
-.vreply { display: flex; gap: 8px; align-items: flex-end; padding: 12px 18px; border-top: 1px solid var(--line-soft); }
+.vreply { display: grid; gap: 6px; padding: 12px 18px; border-top: 1px solid var(--line-soft); }
 .vreply[hidden] { display: none; }
 .vreply textarea:disabled { opacity: .6; }
 .doc .conv { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
@@ -173,13 +173,28 @@ button, input, textarea, select { font-family: inherit; }
 .doc .cv .cv-t > :last-child { margin-bottom: 0; }
 .doc .cv.err .cv-t { color: var(--crit); }
 .doc .cv .cv-q { font-weight: 500; color: var(--ink); }
-.doc details.act { margin: 10px 0 14px; }
-.doc details.act summary { cursor: pointer; font: 500 13px/1.4 var(--font); color: var(--ink-3); }
-.vreply textarea { flex: 1; min-width: 0; resize: vertical; min-height: 64px; font: 400 13.5px/1.5 var(--font); padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
-.doc.trace .tr { font: 400 12.5px/1.5 var(--font); padding: 4px 0; border-bottom: 1px solid var(--line); white-space: pre-wrap; }
-.doc.trace .tr b { font: 500 11px/1 var(--mono); color: var(--ink-3); margin-right: 8px; text-transform: uppercase; }
-.doc.trace .tr.outil { color: var(--ink-3); font-family: var(--mono); font-size: 12px; }
-.doc.trace .tr.consigne, .doc.trace .tr.fin { color: var(--ink); font-weight: 500; }
+.vreply textarea { display: block; width: 100%; resize: vertical; min-height: 64px; font: 400 13.5px/1.5 var(--font); padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
+.vr-in { position: relative; }
+.vr-foot { display: flex; align-items: center; gap: 4px; }
+.vr-foot .sp { flex: 1; }
+.vr-foot select { font: 500 12px/1 var(--font); color: var(--ink-3); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 6px 4px; cursor: pointer; }
+.vr-foot select:hover, .vr-foot select:focus-visible { border-color: var(--line); color: var(--ink); }
+.sk-pop { position: absolute; left: 0; right: 0; bottom: calc(100% + 6px); z-index: 2; display: grid; gap: 1px; max-height: 280px; overflow-y: auto; padding: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-lg); }
+.sk-pop[hidden] { display: none; }
+.sk-pop button { display: grid; gap: 2px; text-align: left; border: 0; background: transparent; border-radius: 6px; padding: 7px 9px; cursor: pointer; }
+.sk-pop button[aria-selected="true"], .sk-pop button:hover { background: var(--sunken); }
+.sk-pop b { font: 500 13px/1.3 var(--mono); color: var(--ink); }
+.sk-pop small { font: 400 12px/1.4 var(--font); color: var(--ink-3); }
+.vw.agent .bottom { display: none; }
+.vw .doc.thread { max-width: none; }
+.doc.thread .conv { max-width: 76ch; margin: 0 auto; }
+.doc .rep { align-self: stretch; min-width: 0; display: grid; gap: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.doc .rep header { display: flex; align-items: center; gap: 10px; }
+.doc .rep header b { flex: 1; font: 600 14px/1.3 var(--font); color: var(--ink); }
+.doc .rep p { margin: 0; font-size: 14px; line-height: 1.55; }
+.doc .rep-full { min-width: 0; overflow-x: auto; overflow-wrap: anywhere; border-top: 1px solid var(--line-soft); padding-top: 10px; font-size: 14px; }
+.doc .rep-files { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; }
+.doc .rep-mail { font-size: 13px; color: var(--ink-3); }
 .w-head { display: flex; align-items: center; gap: 10px; }
 .w-head h2 {
   margin: 0; font: 600 15px/1.2 var(--font); letter-spacing: -.01em; white-space: nowrap;
@@ -1052,7 +1067,15 @@ a.pf-card.res-cours p { color: var(--accent); }
   <div class="vw">
     <div class="top"><span class="ext" id="v-ext"></span><b id="v-name"></b><span class="sp"></span><button class="btn" id="v-reveal">Finder</button><button class="btn" id="v-raw">Ouvrir</button><button class="btn acc" id="v-iterate">Itérer</button><button class="icobtn" id="v-close">×</button></div>
     <div class="doc" id="v-body"></div>
-    <div class="vreply" id="v-reply" hidden><textarea id="v-reply-text" rows="3"></textarea><button class="btn acc" id="v-reply-send" title="Entrée pour envoyer, Maj+Entrée pour aller à la ligne">Répondre</button></div>
+    <div class="vreply" id="v-reply" hidden>
+      <div class="vr-in"><textarea id="v-reply-text" rows="3" aria-label="Répondre à l'agent"></textarea><div class="sk-pop" id="v-skills" role="listbox" aria-label="Skills" hidden></div></div>
+      <div class="vr-foot">
+        <select id="v-model" aria-label="Modèle du prochain passage"><option value="claude-sonnet-5-5">Sonnet 5.5</option><option value="claude-opus-5-5">Opus 5.5</option></select>
+        <select id="v-effort" aria-label="Effort du prochain passage"><option value="low">Effort léger</option><option value="medium">Effort moyen</option><option value="high">Effort poussé</option></select>
+        <span class="sp"></span>
+        <button class="btn acc" id="v-reply-send" title="Entrée pour envoyer, Maj+Entrée pour aller à la ligne">Répondre</button>
+      </div>
+    </div>
     <div class="bottom"><div class="files" id="v-files"></div><span class="lbl" id="v-meta"></span></div>
   </div>
 </div>
@@ -1404,7 +1427,7 @@ async function openFile(p, run) {
   else if (f.ext === 'html') body.innerHTML = `<iframe src="/${esc(p)}" title="${esc(f.name)}"></iframe>`;
   else if (f.text != null) body.innerHTML = md(f.text);
   else body.innerHTML = `<p class="lbl">Aperçu indisponible pour ce format. Utilise « Ouvrir » ou « Finder ».</p>`;
-  body.classList.toggle('log', false);
+  body.className = 'doc';
   renderVFiles();
   viewer.hidden = false;
 }
@@ -1426,6 +1449,7 @@ function renderVFiles() {
   $('#v-reveal').style.display = vCtx.path ? '' : 'none';
   $('#v-iterate').style.display = vCtx.run ? '' : 'none';
   $('#v-reply').hidden = !vCtx.agent;
+  $('.vw').classList.toggle('agent', !!vCtx.agent);
 }
 $('#v-close').onclick = () => viewer.hidden = true;
 viewer.addEventListener('click', e => { if (e.target === viewer) viewer.hidden = true; });
@@ -3027,46 +3051,56 @@ async function dgAct(id, what) {
   else if (what === 'close') toast('Délégation close. Pense à cocher la tâche si elle est faite.');
   loadDelegations();
 }
-// the agent's report when there is one, then what it did step by step
-let dgOpenId = null, dgOpenTimer = null;
+// One thread in order: the task, each pass of the agent and each answer, the report
+// card after the last finished pass, then the reply box.
+let dgOpenId = null, dgOpenTimer = null, dgReportOpen = false;
 async function dgOpen(id, toBottom) {
   const d = await api('/api/delegations/' + encodeURIComponent(id));
   if (d.error) { toast(d.error, true); return; }
   // the reply box keeps what was typed when the same agent is redrawn
-  if (dgOpenId !== id) $('#v-reply-text').value = '';
+  if (dgOpenId !== id) { $('#v-reply-text').value = ''; dgReportOpen = false; }
   const body = $('#v-body');
   const same = dgOpenId === id && !viewer.hidden;
   const atBottom = same && body.scrollHeight - body.scrollTop - body.clientHeight < 40;
   const keep = same ? body.scrollTop : 0;
-  const traceOpen = same && !!body.querySelector('details.act[open]');
   dgOpenId = id;
-  vCtx = { path: null, run: null, files: d.livrables, agent: id };
+  vCtx = { path: null, run: null, files: [], agent: id };
   const box = $('#v-reply-text');
   box.disabled = d.enCours;
   $('#v-reply-send').disabled = d.enCours;
   box.placeholder = d.enCours ? "L'agent travaille… tu pourras lui répondre quand il aura fini."
-    : d.statut === 'bloque' ? 'Ta réponse à sa question…'
-    : "Précisions, corrections, brouillons à modifier… L'agent reprend avec tout son contexte.";
+    : d.statut === 'bloque' ? 'Ta réponse à sa question… « / » pour une skill'
+    : "Précisions, corrections, une skill avec « / »… L'agent reprend avec tout son contexte.";
   $('#v-name').textContent = d.tache;
   $('#v-ext').textContent = DG_ST[d.statut] ?? d.statut;
-  $('#v-meta').textContent = `${d.model} · lancé il y a ${rel(d.creeLe)}${d.cout ? ` · ${d.cout.toFixed(2)} $` : ''} · ${d.dossier}`;
-  body.className = 'doc';
+  $('#v-meta').textContent = '';
+  for (const [sel, v] of [['#v-model', d.model], ['#v-effort', d.effort]]) {
+    const el = $(sel);
+    if (![...el.options].some(o => o.value === v)) el.add(new Option(v, v));
+    el.value = v;
+  }
+  body.className = 'doc thread';
   const hm = iso => iso ? new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
-  const bubble = (who, html, at, cls = '') => `<div class="cv ${who} ${cls}"><small>${who === 'me' ? 'Toi' : 'Agent'} · ${hm(at)}</small><div class="cv-t">${html}</div></div>`;
-  // one exchange per pass: what was asked, then what the agent answered
-  const conv = d.etapes.map((e, i) => {
+  const bubble = (who, html, at, cls = '') => `<div class="cv ${who === 'me' ? 'me' : 'them'} ${cls}"><small>${who === 'me' ? 'Toi' : 'Agent'} · ${hm(at)}</small><div class="cv-t">${html}</div></div>`;
+  const files = d.livrables.filter(f => !f.endsWith('/RAPPORT.md'));
+  const card = d.rapport || files.length || d.brouillons.length ? `<section class="rep" aria-label="Rapport">
+      <header><b>Rapport</b>${d.rapport ? `<button class="btn sm" id="dg-rep" aria-expanded="${dgReportOpen}">${dgReportOpen ? 'Replier' : 'Ouvrir'}</button>` : ''}</header>
+      ${dgReportOpen ? `<div class="rep-full">${md(d.rapport)}</div>` : d.resume ? `<p>${esc(d.resume)}</p>` : ''}
+      ${files.length ? `<div class="rep-files">${files.map(f => `<a href="/${esc(f)}" target="_blank" rel="noopener">${esc(f.split('/').pop())}</a>`).join('')}</div>` : ''}
+      ${d.brouillons.length ? `<p class="rep-mail">Brouillons Gmail : ${d.brouillons.map(b => `${esc(b.to)} « ${esc(b.subject)} »`).join(' ; ')}</p>` : ''}
+    </section>` : '';
+  const lastDone = d.etapes.map(e => !!e.fin).lastIndexOf(true);
+  const cardAt = lastDone === -1 ? d.etapes.length - 1 : lastDone;
+  const thread = d.etapes.map((e, i) => {
     const asked = i === 0 ? d.tache : e.consigne === 'reprise' ? '(reprendre là où tu t\'étais arrêté)' : e.consigne;
     const me = bubble('me', esc(asked).replace(/\n/g, '<br>'), e.debut);
-    if (!e.fin) return me + bubble('ag', `<span class="lbl">Travaille… ${esc(d.activite ?? '')}</span>`, null, 'live');
-    const q = e.question ? `<p class="cv-q">${esc(e.question)}</p>` : '';
-    const text = e.reponse ? md(e.reponse) : `<p>${esc(e.resume ?? e.raison ?? '—')}</p>`;
-    return me + bubble('ag', text + q, e.fin, e.raison && !e.reponse ? 'err' : '');
+    const ag = !e.fin ? bubble('ag', `<span class="lbl">Travaille… ${esc(d.activite ?? '')}</span>`, null, 'live')
+      : bubble('ag', (e.reponse ? md(e.reponse) : `<p>${esc(e.resume ?? e.raison ?? '—')}</p>`) + (e.question ? `<p class="cv-q">${esc(e.question)}</p>` : ''), e.fin, e.raison && !e.reponse ? 'err' : '');
+    return me + ag + (i === cardAt ? card : '');
   }).join('');
-  const tr = d.trace.slice().reverse().map(x => `<div class="tr ${x.kind}"><b>${hm(x.at)}</b>${esc(x.text)}</div>`).join('');
-  body.innerHTML = (d.rapport ? md(d.rapport) + '<hr>' : '')
-    + (d.brouillons.length ? `<p><b>Brouillons Gmail :</b> ${d.brouillons.map(b => `${esc(b.to)} « ${esc(b.subject)} »${b.modifie ? ' (modifié)' : ''}`).join(' ; ')}</p>` : '')
-    + `<details class="act"${traceOpen ? ' open' : ''}><summary>Activité détaillée</summary><div class="doc trace">${tr || '<span class="lbl">Rien pour le moment.</span>'}</div></details>`
-    + `<h3>Échanges</h3><div class="conv">${conv}</div>`;
+  body.innerHTML = `<div class="conv">${thread}</div>`;
+  const rep = $('#dg-rep');
+  if (rep) rep.onclick = () => { dgReportOpen = !dgReportOpen; dgOpen(id); };
   renderVFiles();
   viewer.hidden = false;
   body.scrollTop = toBottom || atBottom ? body.scrollHeight : keep;
@@ -3074,6 +3108,42 @@ async function dgOpen(id, toBottom) {
   clearTimeout(dgOpenTimer);
   if (d.statut === 'en_cours') dgOpenTimer = setTimeout(() => { if (!viewer.hidden && dgOpenId === id) dgOpen(id); }, 4000);
 }
+// the next pass's model and effort, kept on the delegation as soon as they change
+for (const [sel, key] of [['#v-model', 'model'], ['#v-effort', 'effort']]) {
+  $(sel).onchange = async e => {
+    if (!vCtx?.agent) return;
+    const r = await dgPost(`/${encodeURIComponent(vCtx.agent)}/settings`, { [key]: e.target.value });
+    if (r.error) toast(r.error, true);
+  };
+}
+
+/* "/" in the reply box lists the second brain's skills and inserts /name */
+let dgSkills = null, skList = [], skSel = 0;
+const skToken = ta => ta.value.slice(0, ta.selectionStart).match(/(^|\s)\/([\w-]*)$/);
+const skShort = t => String(t ?? '').split(/(?<=\.)\s| - /)[0].slice(0, 120);
+async function skUpdate() {
+  const ta = $('#v-reply-text'), pop = $('#v-skills'), m = skToken(ta);
+  if (!m) { pop.hidden = true; return; }
+  dgSkills ??= await api('/api/delegations/skills').catch(() => null);
+  const q = m[2].toLowerCase(), starts = s => s.name.toLowerCase().startsWith(q);
+  skList = (dgSkills ?? []).filter(s => s.name.toLowerCase().includes(q)).sort((a, b) => starts(b) - starts(a)).slice(0, 8);
+  if (!skList.length) { pop.hidden = true; return; }
+  skSel = Math.min(skSel, skList.length - 1);
+  pop.innerHTML = skList.map((s, i) => `<button type="button" role="option" aria-selected="${i === skSel}" data-i="${i}"><b>/${esc(s.name)}</b><small>${esc(skShort(s.description))}</small></button>`).join('');
+  pop.hidden = false;
+}
+function skPick(i) {
+  const ta = $('#v-reply-text'), m = skToken(ta), sk = skList[i];
+  if (!m || !sk) return;
+  const start = ta.selectionStart - m[2].length - 1;
+  ta.value = ta.value.slice(0, start) + `/${sk.name} ` + ta.value.slice(ta.selectionStart);
+  ta.selectionStart = ta.selectionEnd = start + sk.name.length + 2;
+  $('#v-skills').hidden = true;
+  ta.focus();
+}
+$('#v-reply-text').addEventListener('input', () => { skSel = 0; skUpdate(); });
+$('#v-reply-text').addEventListener('blur', () => setTimeout(() => { $('#v-skills').hidden = true; }, 150));
+$('#v-skills').addEventListener('mousedown', e => { const b = e.target.closest('button'); if (b) { e.preventDefault(); skPick(+b.dataset.i); } });
 
 async function dgReply() {
   const id = vCtx?.agent;
@@ -3081,6 +3151,7 @@ async function dgReply() {
   const r = await dgPost(`/${encodeURIComponent(id)}/reply`, { texte: $('#v-reply-text').value.trim() });
   if (r.error) { toast(r.error, true); return; }
   $('#v-reply-text').value = '';
+  $('#v-skills').hidden = true;
   loadDelegations();
   dgOpen(id, true);
 }
@@ -3095,7 +3166,14 @@ $('#dg-new').onsubmit = async e => {
   toast('Tâche confiée à un agent');
   loadDelegations();
 };
-$('#v-reply-text').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); dgReply(); } });
+$('#v-reply-text').addEventListener('keydown', e => {
+  if (!$('#v-skills').hidden) {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); skSel = (skSel + (e.key === 'ArrowDown' ? 1 : skList.length - 1)) % skList.length; skUpdate(); return; }
+    if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); skPick(skSel); return; }
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); $('#v-skills').hidden = true; return; }
+  }
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); dgReply(); }
+});
 
 /* ---------- boot ---------- */
 /* ---------- LinkedIn: the editorial plan (#linkedin[/<plan>/<Jxx>]) ---------- */
