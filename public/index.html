@@ -3785,9 +3785,8 @@ function cxFiche(c, act, r) {
         <p class="cx-note">${esc(CX_NOTE[c.niveau](p))}</p>
         <div class="cx-chips"><span class="lbl">Toujours avec ton accord</span>${cx.gardeFous.map(g => `<span class="cx-chip"><svg aria-hidden="true"><use href="#i-lock"/></svg>${esc(g)}</span>`).join('')}</div>
       </div>
-      <div><h4 id="cx-voit" class="cx-h3">${esc(p)} voit</h4>
-        <div class="cx-chips" role="group" aria-labelledby="cx-voit">${cx.partages.map(x => { const on = c.partage.includes(x); return `<button type="button" class="cx-chip${on ? ' on' : ''}" aria-pressed="${on}" data-partage="${esc(x)}">${on ? '<svg aria-hidden="true"><use href="#i-check"/></svg>' : ''}${esc(x)}</button>`; }).join('')}</div>
-        <p class="cx-note">Réglage gardé pour la suite : rien n'est encore envoyé automatiquement.</p>
+      <div><h4 class="cx-h3">${esc(p)} voit</h4>
+        <p class="cx-note">Tes missions, tes messages et ce que tu changes dans son suivi commercial. Rien d'autre ne quitte AlpesOS.</p>
       </div>
     </div>`}
   </section>`;
@@ -3957,7 +3956,7 @@ $('#cx-body').addEventListener('submit', async e => {
       if (r.error) throw new Error(r.error);
       f.reset();
       cxForm = null;
-      toast(`Enregistré : part chez ${sel.court} au prochain échange`);
+      toast(`Enregistré, envoyé à ${sel.court}`);
     } else if (f.id === 'cx-message' || f.dataset.rep) {
       const type = f.querySelector('[data-type].on')?.dataset.type;
       const r = await cxSend(`${url}/messages`, { ...v, type, enReponseA: f.dataset.rep });
@@ -3990,11 +3989,7 @@ $('#cx-body').addEventListener('click', async e => {
     if (supprimer && !confirm('Supprimer cette fiche de ta copie du suivi commercial ?')) return;
     r = await cxSend(`${url}/suivi/suppressions/${encodeURIComponent(b.dataset.garder || b.dataset.supprimer)}`, { supprimer });
   } else if (b.dataset.niveau && sel) r = await cxSend(url, { niveau: b.dataset.niveau }, 'PATCH');
-  else if (b.dataset.partage && sel) {
-    const set = new Set(sel.partage);
-    if (!set.delete(b.dataset.partage)) set.add(b.dataset.partage);
-    r = await cxSend(url, { partage: [...set] }, 'PATCH');
-  } else if (b.id === 'cx-cut' && sel) {
+  else if (b.id === 'cx-cut' && sel) {
     if (!confirm(`Couper la connexion avec ${sel.court} ? Plus rien ne passera entre vos deux OS ; l'historique reste ici.`)) return;
     r = await api(url, { method: 'DELETE' });
     if (!r.error) { toast('Connexion coupée'); location.hash = 'connexions'; }

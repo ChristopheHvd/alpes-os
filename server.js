@@ -31,7 +31,7 @@ import { loadLinkedin, updatePost, visualFor, localToday, dueForPreparation, toP
 import { makePropositions, moneyKey } from './lib/propositions.js';
 import { makeReview, SYSTEM as REVIEW_SYSTEM } from './lib/review.js';
 import { makeReglages, pick, MODELS, EFFORTS } from './lib/reglages.js';
-import { makePartenaires, trouverFiche, blocDonnee, evenementDonnee, evenementFait, deposerEvenement, libelleDonnee } from './lib/partenaires.js';
+import { makePartenaires, evenementFait, deposerEvenement } from './lib/partenaires.js';
 import { claudeActivity } from './lib/activity.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -886,16 +886,11 @@ const propositions = makePropositions(path.join(ROOT, 'output', 'propositions.js
 
 // Connexions — partner OSes (SIMATIS OS first) linked through the agents relay. Their
 // missions become propositions or delegations depending on the level set per connection;
-// the facts they push go to the client file when one matches, else to the curator to decide.
+// the sales follow-up they share is kept as a copy in output/crm/ (lib/suivi.js).
 // Off until credentials/relais.json exists (scripts/relais-inscription.js).
-function rangerDonnee(d, { partenaire, quand }) {
-  const fiche = trouverFiche(listClients(cfg.secondBrain), d.champs?.entreprise);
-  if (fiche) bundle.append(path.join(cfg.secondBrain, fiche.id), blocDonnee(d, { partenaire, quand }), { subject: `${libelleDonnee(d)} : ${fiche.title}`, why: `fait transmis par ${partenaire} par le relais d'agents (réf. ${d.ref})` });
-  else deposerEvenement(sbQueue, evenementDonnee(d, { partenaire, quand }));
-}
 const partenaires = makePartenaires({
   dir: path.join(ROOT, 'output'), credentials: path.join(ROOT, 'credentials', 'relais.json'),
-  propositions, delegations, ranger: rangerDonnee,
+  propositions, delegations,
   // only the notable facts of the shared sales follow-up reach the curator; the rest lives in output/crm/
   marquant: fait => deposerEvenement(sbQueue, evenementFait(fait)),
 });
