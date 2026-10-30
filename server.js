@@ -19,9 +19,9 @@ import { makeMailState } from './lib/mailstate.js';
 import { makeCalendarState } from './lib/calendarstate.js';
 import { makeProjectsOrder } from './lib/projectsorder.js';
 import { searchBrain } from './lib/search.js';
-import { makeChat } from './lib/chat.js';
-import { makeDelegations } from './lib/delegations.js';
-import { makeMeetings, MEETINGS_TOOLS } from './lib/meetings.js';
+import { makeChat, SYSTEM as CHAT_SYSTEM } from './lib/chat.js';
+import { makeDelegations, listSkills, RULES as AGENT_RULES } from './lib/delegations.js';
+import { makeMeetings, MEETINGS_TOOLS, BRIEF as MEETINGS_BRIEF } from './lib/meetings.js';
 import { makeStandup, slotNow } from './lib/standup.js';
 import { makeChatLog } from './lib/chatlog.js';
 import { readCredo, shuffleForDay } from './lib/credo.js';
@@ -29,7 +29,8 @@ import { bundle } from './lib/sbqueue.js';
 import { makeLinkedin, checkPost } from './lib/linkedin.js';
 import { loadLinkedin, updatePost, visualFor, localToday, dueForPreparation, toProduce, planFrame, parsePrepared, planFile } from './lib/linkedin-plan.js';
 import { makePropositions, moneyKey } from './lib/propositions.js';
-import { makeReview } from './lib/review.js';
+import { makeReview, SYSTEM as REVIEW_SYSTEM } from './lib/review.js';
+import { makeReglages, pick, MODELS, EFFORTS } from './lib/reglages.js';
 import { claudeActivity } from './lib/activity.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -82,7 +83,30 @@ const calendar = makeCalendar(() => gmail.accessToken(), () => gmail.status().ha
 // has to happen on it.
 const PORT = Number(process.env.ALPES_OS_PORT) || cfg.port;
 const chatLog = makeChatLog(cfg.secondBrain);
-const chat = makeChat(ROOT, { port: PORT, bin: cfg.claude.bin, model: cfg.chat?.model ?? 'claude-opus-5', log: chatLog });
+// Réglages — every function that calls Claude. Its model and effort come from the
+// Réglages screen, then config.json, then the code's default ([config, default] below);
+// those with a prompt in the code can have it replaced there. All of it is read at
+// each launch, so a change needs no restart.
+const reglages = makeReglages(path.join(ROOT, 'config'));
+const FUNCTIONS = [
+  { id: 'assistant', name: 'Assistant', model: [cfg.chat?.model, 'claude-opus-5'], prompt: CHAT_SYSTEM },
+  { id: 'agents', name: 'Agents délégués', model: [cfg.delegations?.model, 'claude-opus-5-5'], effort: [cfg.delegations?.effort, 'medium'], prompt: AGENT_RULES },
+  { id: 'revue', name: 'Revue horaire', model: [cfg.review?.model, 'claude-haiku-5-5'], prompt: REVIEW_SYSTEM },
+  { id: 'reunions', name: 'Réunions Wispr Flow', model: [cfg.claude.defaultModel], prompt: MEETINGS_BRIEF },
+  { id: 'linkedin', name: 'Post LinkedIn', model: [cfg.linkedin?.model, 'claude-opus-5'], skill: 'linkedin-post' },
+  ...cfg.apps.map(a => ({ id: a.id, name: a.name, model: [a.model, cfg.claude.defaultModel], skill: a.skill?.replace(/^\//, ''), uses: a.skillsUsed ?? [] })),
+  { id: 'curateur', name: 'Second cerveau', model: [cfg.claude.defaultModel], skill: 'second-brain-curator' },
+];
+function setting(id) {
+  const f = FUNCTIONS.find(x => x.id === id) ?? {};
+  return { model: reglages.model(id, ...(f.model ?? [])), effort: reglages.effort(id, ...(f.effort ?? [])) };
+}
+const chat = makeChat(ROOT, {
+  port: PORT, bin: cfg.claude.bin, log: chatLog,
+  get model() { return setting('assistant').model; },
+  get effort() { return setting('assistant').effort; },
+  get system() { return reglages.prompt('assistant', CHAT_SYSTEM); },
+});
 setInterval(() => chat.sweep(), 5 * 60e3).unref();
 // Délégations: a todo task handed to a background agent. Each finished pass is
 // journaled in the second brain with its report, through the curator's queue.
@@ -98,8 +122,11 @@ status: draft
 
 `;
 const delegations = makeDelegations(ROOT, {
-  port: PORT, bin: cfg.claude.bin, secondBrain: cfg.secondBrain,
-  model: cfg.delegations?.model ?? 'claude-opus-5-5', effort: cfg.delegations?.effort ?? 'medium', maxMinutes: cfg.delegations?.maxMinutes,
+  port: PORT, bin: cfg.claude.bin, secondBrain: cfg.secondBrain, maxMinutes: cfg.delegations?.maxMinutes,
+  get model() { return setting('agents').model; },
+  get effort() { return setting('agents').effort; },
+  get rules() { return reglages.prompt('agents', AGENT_RULES); },
+  skillOn: name => reglages.skillOn(name),
   denyRead: [path.join(ROOT, 'credentials'), path.join(ROOT, 'config')],
 }, {
   onChange(d, event) {
@@ -201,7 +228,7 @@ app.post('/api/cours/:deck/img', express.raw({ type: 'image/*', limit: '15mb' })
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/config', (req, res) => res.json({ testQueue: sbQueue !== CURATOR_QUEUE, apps: cfg.apps, gmail: { label: cfg.gmail.label, ...gmail.status() }, brand: { company: branding.company, owner: branding.owner }, secondBrain: cfg.secondBrain }));
+app.get('/api/config', (req, res) => res.json({ testQueue: sbQueue !== CURATOR_QUEUE, apps: cfg.apps.map(a => ({ ...a, model: setting(a.id).model })), gmail: { label: cfg.gmail.label, ...gmail.status() }, brand: { company: branding.company, owner: branding.owner }, secondBrain: cfg.secondBrain }));
 
 // Memory — the visual second brain
 app.get('/api/graph', (req, res) => res.json(getGraph(cfg.secondBrain, cfg.brainFolders)));
@@ -261,7 +288,9 @@ app.get('/api/runs/:id', (req, res) => { const r = runner.get(req.params.id); r 
 app.post('/api/runs', (req, res) => {
   const a = cfg.apps.find(x => x.id === req.body.app), act = a?.actions.find(x => x.id === req.body.action);
   if (!a || !act || !req.body.brief?.trim()) return res.status(400).json({ error: 'app, action et brief requis' });
-  res.json(runner.start({ app: a, action: act, brief: req.body.brief.trim(), model: req.body.model, from: req.body.from }));
+  // the model picked when launching wins over Réglages
+  const s = setting(a.id);
+  res.json(runner.start({ app: a, action: act, brief: req.body.brief.trim(), model: req.body.model || s.model, effort: s.effort, from: req.body.from }));
 });
 // Projects — long-running work, read from brain/projects/ in the second brain.
 // Archived ones only come back with ?all=1 (the Projets view); their order is local.
@@ -440,7 +469,8 @@ function runStandup(action, brief, model) {
   const a = cfg.apps.find(x => x.id === 'standup');
   const act = a?.actions.find(x => x.id === action);
   if (!a || !act) throw new Error("l'app standup est absente de la config");
-  return waitRun(runner.start({ app: a, action: act, brief, model: model ?? a.model }));
+  const s = setting(a.id);
+  return waitRun(runner.start({ app: a, action: act, brief, model: model ?? s.model, effort: s.effort }));
 }
 
 function waitRun(run) {
@@ -601,7 +631,8 @@ app.post('/api/briefing', async (req, res) => {
     if (!a || !act) return res.status(404).json({ error: "l'app standup est absente de la config" });
     const out = path.join(ROOT, 'output', 'standup', `compose-${ctx.date}-${slot}.md`);
     const brief = `compose\n\nMoment : ${slot}. Aucune réponse à exploiter, compose à partir du seul contexte. Écris le compte rendu dans ${out}.\n\nCONTEXTE:\n${JSON.stringify({ ...ctx, reponses: [] }, null, 1)}`;
-    const run = runner.start({ app: a, action: act, brief, model: req.body?.model ?? a.model });
+    const s = setting(a.id);
+    const run = runner.start({ app: a, action: act, brief, model: req.body?.model ?? s.model, effort: s.effort });
     waitRun(run).then(async () => { adoptComposedTodo(ctx.date, slot); await createStandupEvents(ctx.date, slot, out); });
     res.json(run);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -671,7 +702,7 @@ function prepareLinkedin(post, { produire = toProduce(post), consigne = '' } = {
     second_brain: cfg.secondBrain,
   };
   const startedAt = Date.now();
-  const run = runner.start({ app: LINKEDIN, action: LINKEDIN.actions[0], brief: `prepare\n\nCONTEXTE:\n${JSON.stringify(ctx, null, 1)}` });
+  const run = runner.start({ app: LINKEDIN, action: LINKEDIN.actions[0], brief: `prepare\n\nCONTEXTE:\n${JSON.stringify(ctx, null, 1)}`, ...setting('linkedin') });
   liRuns.set(key, { id: run.id, startedAt: new Date(startedAt).toISOString() });
   waitRun(run).then(r => {
     const entry = liRuns.get(key);
@@ -784,7 +815,7 @@ function integrate(reason) {
   if (st.locked) return { error: 'le curateur tient déjà le verrou (curator.lock)' };
   if (!st.inbox && !st.processing) return { error: 'rien à intégrer' };
   curatorRun = runner.start({
-    app: CURATOR, action: CURATOR.actions[0],
+    app: CURATOR, action: CURATOR.actions[0], ...setting('curateur'),
     brief: `Traite la file du Second Brain, brain/inbox (${reason}). Suis ton protocole exclusif : verrou atomique, arbre propre sur main, dépôts dans l'ordre (documents rangés dans Drive), lint, commit et push, archivage, libération du verrou. Si un événement est en conflit, laisse-le dans processing et explique le point à trancher.`,
   });
   waitRun(curatorRun).then(() => bundle.settle());
@@ -814,7 +845,8 @@ function collectMeetings(reason) {
   if (meetingsRun && runner.get(meetingsRun.id)?.status === 'running') return { error: 'rapatriement des réunions déjà en cours' };
   const checkedAt = new Date().toISOString();
   const resultFile = path.join(ROOT, 'output', 'meetings', `result-${Date.now()}.json`);
-  meetingsRun = runner.start({ app: MEETINGS, action: MEETINGS.actions[0], brief: `${meetings.brief({ queueDir: sbQueue, resultFile })}\n\n(${reason})` });
+  const brief = meetings.brief({ queueDir: sbQueue, resultFile, text: reglages.prompt('reunions', MEETINGS_BRIEF) });
+  meetingsRun = runner.start({ app: MEETINGS, action: MEETINGS.actions[0], brief: `${brief}\n\n(${reason})`, ...setting('reunions') });
   const done = waitRun(meetingsRun).then(r => {
     const found = r.status === 'done' ? meetings.adopt(resultFile, { checkedAt }) : null;
     if (found?.length) console.log(`réunions : ${found.length} déposée(s) dans la file`);
@@ -957,7 +989,10 @@ async function moneyContext(since) {
   };
 }
 const review = makeReview(path.join(ROOT, 'output', 'review.json'), {
-  bin: cfg.claude.bin, model: revCfg.model, schedule: revCfg,
+  bin: cfg.claude.bin, schedule: revCfg,
+  get model() { return setting('revue').model; },
+  get effort() { return setting('revue').effort; },
+  get system() { return reglages.prompt('revue', REVIEW_SYSTEM); },
   auto: sbQueue === CURATOR_QUEUE || process.env.ALPES_OS_REVIEW_AUTO === '1',
 }, { context: reviewContext, propositions });
 setInterval(() => review.tick(), 60e3).unref();
@@ -966,6 +1001,60 @@ app.get('/api/review', (req, res) => res.json(review.status()));
 app.post('/api/review/run', async (req, res) => {
   try { await review.run('demandée').done; res.json(review.status()); }
   catch (e) { res.status(500).json({ ...review.status(), error: e.message }); }
+});
+
+// Réglages screen — model, effort and prompt of each function; the second brain's
+// skills, offered or not to the agents. A SKILL.md is edited through the curator's queue.
+const fnView = f => ({
+  id: f.id, name: f.name, skill: f.skill ?? null, ...setting(f.id),
+  fallback: { model: pick(...f.model), effort: pick(...(f.effort ?? [])) ?? null },
+  ...(f.prompt ? { prompt: reglages.prompt(f.id, f.prompt), original: f.prompt, modified: reglages.modified(f.id) } : {}),
+});
+const skillFile = s => path.join(s.dir, 'SKILL.md');
+function skillView(s) {
+  const agents = reglages.skillOn(s.name);
+  const usedBy = FUNCTIONS.filter(f => f.skill === s.name || f.uses?.some(u => path.basename(u) === s.name)).map(f => f.name);
+  return { name: s.name, description: s.description, agents, usedBy: agents ? [...usedBy, 'Agents'] : usedBy, text: bundle.read(skillFile(s)), pending: bundle.isPending(skillFile(s)) };
+}
+app.get('/api/reglages', (req, res) => {
+  try { res.json({ models: MODELS, efforts: EFFORTS, functions: FUNCTIONS.map(fnView), skills: listSkills(cfg.secondBrain).map(skillView) }); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.put('/api/reglages/functions/:id', (req, res) => {
+  const f = FUNCTIONS.find(x => x.id === req.params.id);
+  if (!f) return res.status(404).json({ error: 'fonction inconnue' });
+  // picking what config.json or the code gives anyway clears the setting
+  const b = req.body ?? {}, patch = {};
+  for (const k of ['model', 'effort']) if (k in b) patch[k] = !b[k] || b[k] === pick(...(f[k] ?? [])) ? null : b[k];
+  try { reglages.set(f.id, patch); res.json(fnView(f)); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+app.put('/api/reglages/prompts/:id', (req, res) => {
+  const f = FUNCTIONS.find(x => x.id === req.params.id && x.prompt);
+  if (!f) return res.status(404).json({ error: 'fonction sans prompt' });
+  const text = String(req.body?.text ?? '');
+  if (!text.trim()) return res.status(400).json({ error: 'prompt vide' });
+  if (text.trim() === f.prompt.trim()) reglages.resetPrompt(f.id); else reglages.setPrompt(f.id, text);
+  res.json(fnView(f));
+});
+app.delete('/api/reglages/prompts/:id', (req, res) => {
+  const f = FUNCTIONS.find(x => x.id === req.params.id && x.prompt);
+  if (!f) return res.status(404).json({ error: 'fonction sans prompt' });
+  reglages.resetPrompt(f.id);
+  res.json(fnView(f));
+});
+app.put('/api/reglages/skills/:name', (req, res) => {
+  const s = listSkills(cfg.secondBrain).find(x => x.name === req.params.name);
+  if (!s) return res.status(404).json({ error: 'skill introuvable' });
+  const b = req.body ?? {};
+  if (typeof b.text === 'string' && !b.text.trim()) return res.status(400).json({ error: 'SKILL.md vide' });
+  try {
+    if (typeof b.agents === 'boolean') reglages.setSkill(s.name, b.agents);
+    if (typeof b.text === 'string' && b.text !== bundle.read(skillFile(s))) {
+      bundle.replace(skillFile(s), b.text, { why: `skill ${s.name} modifiée depuis les Réglages d'AlpesOS`, subject: `Skill ${s.name}` });
+    }
+    res.json(skillView(s));
+  } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
 app.get('/api/artifacts', (req, res) => res.json(runner.artifacts(req.query.app ? String(req.query.app) : null)));
