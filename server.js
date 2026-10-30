@@ -891,10 +891,14 @@ app.post('/api/propositions/:id/:act', (req, res) => {
     const p = propositions.get(id);
     const t = String(req.body?.title ?? '').trim() || p?.title;
     const money = p?.type === 'finance';
-    let todo = null, finance = null;   // writeTodo drops a task already on the list
+    let todo = null, finance = null, delegation = null;   // writeTodo drops a task already on the list
     if (p?.status === 'pending' && act === 'accept') { if (money) finance = toFinance(p.echeance); else todo = addItem(todoFile, { t, s: p.project }); }
     if (p?.status === 'pending' && act === 'later' && !money) { const cur = readTodo(todoFile); todo = writeTodo(todoFile, cur.items, [...cur.later, { t, s: p.project }]); }
-    res.json({ proposition: propositions.decide(id, act, req.body?.title), todo: todo ?? readTodo(todoFile), finance });
+    // Lancer: an agent takes the task straight away, it never joins the todo
+    if (p?.status === 'pending' && act === 'launch' && !money) {
+      delegation = delegations.create({ tache: t, contexte: [p.project && `Projet : ${p.project}`, p.why && `Proposée par la revue horaire : ${p.why}`].filter(Boolean).join('. '), source: p.id });
+    }
+    res.json({ proposition: propositions.decide(id, act, req.body?.title), todo: todo ?? readTodo(todoFile), finance, delegation });
   } catch (e) { res.status(e.status ?? 400).json({ error: e.message }); }
 });
 
@@ -924,6 +928,7 @@ const priceLines = txt => txt.split('\n').filter(l => /\d\s?€|€\s?\d|tarif|T
 // and suggests what is missing. A test instance only runs it on demand, unless
 // ALPES_OS_REVIEW_AUTO=1.
 const revCfg = { model: 'claude-haiku-5-5', weekdays: [1, 2, 3, 4, 5], from: 9, to: 19, ...(cfg.review ?? {}) };
+const STOPPED = ['pause', 'terminé', 'archivé'];
 async function reviewContext({ since } = {}) {
   const now = new Date();
   const midnight = new Date(now); midnight.setHours(0, 0, 0, 0);
@@ -936,6 +941,13 @@ async function reviewContext({ since } = {}) {
     agenda = c.events.map(e => ({ titre: e.title, debut: e.start, fin: e.end, journee_entiere: e.allDay, avec: e.attendees, lieu: e.location }));
   } catch (e) { agendaErreur = e.message.slice(0, 200); }
   const today = localToday(now), horizon = localToday(new Date(now.getTime() + 30 * 864e5));
+  // paused, finished or archived: his decision, in `next`, rules out suggestions about it
+  const projects = listProjects(cfg.secondBrain, { all: true }), notes = listFinance(cfg.secondBrain);
+  const isStopped = p => STOPPED.includes(p.stage);
+  const clientsOf = p => [p.client, ...notes.filter(n => n.projet === p.slug).map(clientOf)].filter(Boolean);
+  const live = new Set(projects.filter(p => !isStopped(p)).flatMap(clientsOf));
+  const closed = new Set(projects.filter(p => ['terminé', 'archivé'].includes(p.stage)).map(p => p.slug));
+  const noteClosed = n => n.projet ? closed.has(n.projet) : n.projects.length > 0 && n.projects.every(s => closed.has(s));
   return {
     maintenant: now.toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }),
     taches_du_jour: open.map((i, n) => ({
@@ -949,13 +961,17 @@ async function reviewContext({ since } = {}) {
       .filter(n => n.mtime >= now - 48 * 3600e3 && !n.idx && n.id !== cfg.todoFile)
       .sort((a, b) => b.mtime - a.mtime).slice(0, 25)
       .map(n => ({ chemin: n.id, titre: n.t, description: n.desc, modifiee: new Date(n.mtime).toLocaleString('fr-FR', { weekday: 'short', hour: '2-digit', minute: '2-digit' }) })),
-    projets: listProjects(cfg.secondBrain).filter(p => p.stage !== 'terminé').map(p => ({
+    projets: projects.filter(p => !isStopped(p)).map(p => ({
       slug: p.slug, titre: p.title, stade: p.stage, prochaine_etape: p.next || p.steps[0] || '', revu_le: p.updated, jours_sans_mouvement: daysSince(p.updated),
     })),
+    projets_arretes: projects.filter(isStopped).map(p => ({
+      slug: p.slug, titre: p.title, stade: p.stage, decision: (p.next || '').slice(0, 300), clients: clientsOf(p).filter(c => !live.has(c)),
+    })),
     agenda, agenda_erreur: agendaErreur,
-    echeances: listFinance(cfg.secondBrain)
+    // an unsigned devis is no money owed, so it is never late
+    echeances: notes.filter(n => !noteClosed(n))
       .flatMap(n => n.echeances.filter(e => e.statut !== 'encaisse' && e.date && e.date <= horizon)
-        .map(e => ({ note: n.title, libelle: e.libelle, montant: e.montant, date: e.date, statut: e.statut, ...(e.date < today ? { en_retard: true } : {}) })))
+        .map(e => ({ note: n.title, libelle: e.libelle, montant: e.montant, date: e.date, statut: e.statut, ...(e.date < today && e.statut !== 'devis' ? { en_retard: true } : {}) })))
       .sort((a, b) => a.date.localeCompare(b.date)).slice(0, 10),
     ...await moneyContext(since),
   };

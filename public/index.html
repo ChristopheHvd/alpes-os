@@ -124,6 +124,11 @@ button, input, textarea, select { font-family: inherit; }
 .rv .btn.ghost { background: transparent; }
 .rv-head .btn { border-color: var(--accent); color: var(--accent); }
 .rv-sum { margin: 8px 0 0; font: 400 14px/1.55 var(--font); color: var(--ink); }
+ul.rv-sum { padding-left: 18px; }
+.sg-h { margin: 12px 0 2px; font: 600 12px/1.3 var(--font); color: var(--ink-2); }
+.rv-list > .sg-h:first-child { margin-top: 0; }
+.sg-x { width: 28px; height: 28px; flex-shrink: 0; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--ink-3); font: 400 18px/1 var(--font); cursor: pointer; }
+.sg-x:hover, .sg-x:focus-visible { color: var(--ink); background: color-mix(in srgb, var(--accent) 14%, transparent); }
 .rv-err { margin: 6px 0 0; font-size: 12px; color: var(--crit); }
 .rv-list { margin-top: 10px; display: grid; }
 .sg { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid color-mix(in srgb, var(--accent) 18%, transparent); }
@@ -879,6 +884,7 @@ a.pf-card.res-cours p { color: var(--accent); }
 
 .toast { position: fixed; bottom: 22px; right: 22px; z-index: 40; background: var(--ink); color: var(--bg); border-radius: 8px; padding: 12px 16px; font: 500 13px var(--font); box-shadow: var(--shadow-lg); }
 .toast.bad { background: var(--crit); color: #fff; }
+.toast.go { border: 0; text-align: left; cursor: pointer; }
 
 /* ---------- réglages: model, effort and prompt of each function, the skills ---------- */
 .gear { width: 36px; height: 36px; border-radius: 7px; border: 1px solid transparent; background: var(--sunken); color: var(--ink); display: grid; place-items: center; flex-shrink: 0; }
@@ -1302,21 +1308,32 @@ function rvRender() {
   const r = review ?? {};
   const failed = r.error && (!r.at || r.errorAt > r.at);
   const head = r.running ? 'Revue en cours…' : rvToday(r.at) ? `Revue de ${rvHour(r.at)}` : r.at ? `Dernière revue ${rvWhen(r.at)}` : 'Revue horaire';
-  const meta = p => [p.source === 'mission' ? `Mission de ${p.from}` : '', p.project, p.why].filter(Boolean).map(esc).join(' · ');
+  const meta = p => [p.source === 'mission' ? `Mission de ${p.from}` : '', p.why].filter(Boolean).map(esc).join(' · ');
   // real amounts never show in demo mode
   const shown = props.filter(p => !(demoOn && p.type === 'finance'));
+  const x = '<button class="sg-x" data-do="dismiss" title="Écarter : la revue ne la reproposera pas" aria-label="Écarter cette proposition">×</button>';
+  const input = p => `<input value="${esc(rvEdits[p.id] ?? p.title)}" aria-label="Titre de la tâche, modifiable" title="Modifiable avant de valider">`;
   const row = p => p.type === 'finance'
     ? `<div class="sg" data-id="${esc(p.id)}"><svg><use href="#i-euro"/></svg><div class="sg-t"><b>${esc(p.title)}</b><small>${meta(p)}</small></div>
-      <button class="btn sm acc" data-do="accept">Ajouter aux finances</button><button class="btn sm ghost" data-do="dismiss">Ignorer</button></div>`
+      <button class="btn sm acc" data-do="accept">Ajouter aux finances</button>${x}</div>`
+    : p.source === 'revue'
+    ? `<div class="sg" data-id="${esc(p.id)}"><svg><use href="#i-agent"/></svg><div class="sg-t">${input(p)}<small>${meta(p)}</small></div>
+      <button class="btn sm acc" data-do="launch" title="Un agent s'en charge tout de suite">Lancer</button>${x}</div>`
     : `<div class="sg" data-id="${esc(p.id)}"><svg><use href="#i-plus"/></svg>
-      <div class="sg-t"><input value="${esc(rvEdits[p.id] ?? p.title)}" aria-label="Titre de la tâche, modifiable avant de l'ajouter" title="Modifiable avant d'ajouter"><small>${meta(p)}</small></div>
+      <div class="sg-t">${input(p)}<small>${meta(p)}</small></div>
       <button class="btn sm acc" data-do="accept">Ajouter</button><button class="btn sm ghost" data-do="later">Plus tard</button><button class="btn sm ghost" data-do="dismiss">Ignorer</button></div>`;
+  // one heading per project, the ones without a project last
+  const groups = [];
+  for (const p of shown) { const k = p.project || ''; let g = groups.find(g => g.k === k); if (!g) groups.push(g = { k, list: [] }); g.list.push(p); }
+  groups.sort((a, b) => !a.k - !b.k);
+  const list = groups.map(g => `${g.k || groups.length > 1 ? `<h3 class="sg-h">${esc(g.k || 'Autres')}</h3>` : ''}${g.list.map(row).join('')}`).join('');
+  const sum = r.summary?.length && (Array.isArray(r.summary) ? `<ul class="rv-sum">${r.summary.map(s => `<li>${esc(s)}</li>`).join('')}</ul>` : `<p class="rv-sum">${esc(r.summary)}</p>`);
   $('#propositions').innerHTML = `<section class="rv" aria-labelledby="h-rev">
     <div class="rv-head"><svg><use href="#i-agent"/></svg><h2 id="h-rev">${head}</h2>${r.auto && r.next && !r.running ? `<span>· prochaine ${rvWhen(r.next)}</span>` : ''}<span class="sp"></span>
       <button class="btn sm ghost" id="rv-run"${r.running ? ' disabled' : ''}>${r.running ? 'En cours…' : 'Relancer'}</button></div>
-    ${rvToday(r.at) && r.summary ? `<p class="rv-sum">${esc(r.summary)}</p>` : ''}
+    ${rvToday(r.at) && sum ? sum : ''}
     ${failed ? `<p class="rv-err">La dernière revue a échoué : ${esc(String(r.error).slice(0, 160))}</p>` : ''}
-    ${shown.length ? `<div class="rv-list">${shown.map(row).join('')}</div>` : ''}
+    ${shown.length ? `<div class="rv-list">${list}</div>` : ''}
   </section>`;
 }
 function rvAgent() {
@@ -1354,6 +1371,7 @@ async function rvDecide(id, act) {
   todo = r.todo;
   renderTodo(); rvRender();
   if (p?.type === 'finance' && act === 'accept') { loadFinance(); toast(r.finance ? 'Ajoutée aux finances : la projection est à jour' : 'Cette échéance était déjà dans les finances'); return; }
+  if (act === 'launch') { loadDelegations(); toast(`Agent lancé : ${title} · voir dans Agents`, false, () => $('#w-agents').scrollIntoView({ behavior: 'smooth', block: 'center' })); return; }
   // a full day sends what is added to "Plus tard", as for a task typed by hand
   if (act === 'accept' && todo.later.some(t => rvKey(t.t) === rvKey(title))) toast(`Journée pleine (${todo.max} tâches) : ajoutée dans « Plus tard »`);
   else if (todo.bumped) toast(`Limite de ${todo.max} tâches : ${todo.bumped} passée${todo.bumped > 1 ? 's' : ''} dans « Plus tard »`);
@@ -1365,7 +1383,7 @@ $('#propositions').addEventListener('click', e => {
   else if (b?.dataset.do) rvDecide(b.closest('.sg').dataset.id, b.dataset.do);
 });
 $('#propositions').addEventListener('input', e => { const sg = e.target.closest('.sg'); if (sg) rvEdits[sg.dataset.id] = e.target.value; });
-$('#propositions').addEventListener('keydown', e => { const sg = e.target.closest('.sg'); if (sg && e.key === 'Enter') rvDecide(sg.dataset.id, 'accept'); });
+$('#propositions').addEventListener('keydown', e => { const sg = e.target.closest('.sg'); if (sg && e.target.matches('input') && e.key === 'Enter') rvDecide(sg.dataset.id, sg.querySelector('.acc').dataset.do); });
 $('#rv-agent').addEventListener('click', e => { if (e.target.closest('b')) $('#propositions').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
 
 /* ---------- micro apps + runs ---------- */
@@ -1429,7 +1447,11 @@ $('#m-run').onclick = async () => {
   } catch (e) { toast('Échec du lancement : ' + e.message, true); }
   btn.disabled = false; btn.textContent = 'Lancer';
 };
-function toast(msg, bad) { const el = document.createElement('div'); el.className = 'toast' + (bad ? ' bad' : ''); el.textContent = msg; document.body.appendChild(el); setTimeout(() => el.remove(), 4000); }
+function toast(msg, bad, go) {
+  const el = document.createElement(go ? 'button' : 'div'); el.className = 'toast' + (bad ? ' bad' : '') + (go ? ' go' : ''); el.textContent = msg;
+  if (go) el.onclick = () => { el.remove(); go(); };
+  document.body.appendChild(el); setTimeout(() => el.remove(), go ? 6000 : 4000);
+}
 async function loadRuns() {
   runs = await api('/api/runs'); renderApps();
   if (!appview.hidden && avId) openApp(avId);
