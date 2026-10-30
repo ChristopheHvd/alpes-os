@@ -129,8 +129,16 @@ ul.rv-sum { padding-left: 18px; }
 .rv-list > .sg-h:first-child { margin-top: 0; }
 .sg-x { width: 28px; height: 28px; flex-shrink: 0; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--ink-3); font: 400 18px/1 var(--font); cursor: pointer; }
 .sg-x:hover, .sg-x:focus-visible { color: var(--ink); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.sg-chev { width: 16px; height: 22px; flex-shrink: 0; padding: 0; border: 0; border-radius: 5px; background: transparent; display: grid; place-items: center; cursor: pointer; }
+.sg-chev svg { transform: rotate(-90deg); transition: transform .15s; }
+.sg.open .sg-chev svg { transform: none; }
+.sg.unfold { cursor: pointer; }
+.sg-more { padding: 0 0 12px 32px; display: grid; gap: 4px; font-size: 13px; color: var(--ink); }
+.sg-more h4 { margin: 6px 0 0; font: 600 12px/1.3 var(--font); color: var(--ink-2); }
+.sg-more ol, .sg-more ul { margin: 0; padding-left: 18px; line-height: 1.5; }
+.sg-more p { margin: 0; color: var(--ink-2); }
 .rv-err { margin: 6px 0 0; font-size: 12px; color: var(--crit); }
-.rv-list { margin-top: 10px; display: grid; }
+.rv-list { margin-top: 10px; display: grid; grid-template-columns: minmax(0, 1fr); }
 .sg { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid color-mix(in srgb, var(--accent) 18%, transparent); }
 .sg-t { flex: 1; min-width: 0; }
 .sg-t input { display: block; width: 100%; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--ink); font: 500 13.5px/1.4 var(--font); padding: 3px 6px; margin-left: -7px; outline: none; text-overflow: ellipsis; }
@@ -146,7 +154,7 @@ ul.rv-sum { padding-left: 18px; }
 .gl-head .meta a { color: var(--accent); }
 .gl .sp { flex: 1; }
 #w-projects .projects { max-height: 360px; }
-#agents { display: grid; }
+#agents { display: grid; grid-template-columns: minmax(0, 1fr); }
 .ag { display: flex; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line-soft); }
 .ag:first-child { border-top: 0; }
 .ag-t { flex: 1; min-width: 0; }
@@ -1318,9 +1326,7 @@ function rvRender() {
   const row = p => p.type === 'finance'
     ? `<div class="sg" data-id="${esc(p.id)}"><svg><use href="#i-euro"/></svg><div class="sg-t"><b>${esc(p.title)}</b><small>${meta(p)}</small></div>
       <button class="btn sm acc" data-do="accept">Ajouter aux finances</button>${x}</div>`
-    : p.source === 'revue'
-    ? `<div class="sg" data-id="${esc(p.id)}"><svg><use href="#i-agent"/></svg><div class="sg-t">${input(p)}<small>${meta(p)}</small></div>
-      <button class="btn sm acc" data-do="launch" title="Un agent s'en charge tout de suite">Lancer</button>${x}</div>`
+    : p.source === 'revue' ? rvRow(p, x, input, meta)
     : `<div class="sg" data-id="${esc(p.id)}"><svg><use href="#i-plus"/></svg>
       <div class="sg-t">${input(p)}<small>${meta(p)}</small></div>
       <button class="btn sm acc" data-do="accept">Ajouter</button><button class="btn sm ghost" data-do="later">Plus tard</button><button class="btn sm ghost" data-do="dismiss">Ignorer</button></div>`;
@@ -1337,6 +1343,22 @@ function rvRender() {
     ${failed ? `<p class="rv-err">La dernière revue a échoué : ${esc(String(r.error).slice(0, 160))}</p>` : ''}
     ${shown.length ? `<div class="rv-list">${list}</div>` : ''}
   </section>`;
+}
+// A review task unfolds into what the agent will do and what it will have at hand
+const rvOpen = new Set();
+function rvRow(p, x, input, meta) {
+  const sources = [...new Set([p.project && `Projet : ${p.project}`, ...(p.refs ?? []).map(r => r.label)].filter(Boolean))];
+  const can = !!(p.etapes?.length || sources.length), open = can && rvOpen.has(p.id);
+  return `<div class="sg${can ? ' unfold' : ''}${open ? ' open' : ''}" data-id="${esc(p.id)}">${can
+      ? `<button class="sg-chev" data-do="more" aria-expanded="${open}" aria-label="${open ? 'Replier' : "Voir ce que l'agent va faire"}"><svg><use href="#i-chev"/></svg></button>`
+      : '<svg><use href="#i-agent"/></svg>'}<div class="sg-t">${input(p)}<small>${meta(p)}</small></div>
+      <button class="btn sm acc" data-do="launch" title="Un agent s'en charge tout de suite">Lancer</button>${x}</div>
+    ${open ? `<div class="sg-more">
+      ${p.etapes?.length ? `<h4>Ce que l'agent va faire</h4><ol>${p.etapes.map(e => `<li>${esc(e)}</li>`).join('')}</ol>` : ''}
+      ${p.objectif ? `<p>Fini quand : ${esc(p.objectif)}</p>` : ''}
+      ${sources.length ? `<h4>Ce qu'il aura sous les yeux</h4><ul>${sources.map(s => `<li>${esc(s)}</li>`).join('')}</ul>` : ''}
+      ${p.project ? '<p>Avec les notes client et finance, l\'agenda et le journal liés au projet.</p>' : ''}
+    </div>` : ''}`;
 }
 function rvAgent() {
   const r = review ?? {};
@@ -1380,8 +1402,9 @@ async function rvDecide(id, act) {
   else if (act === 'later') toast('Ajoutée à « Plus tard »');
 }
 $('#propositions').addEventListener('click', e => {
-  const b = e.target.closest('button');
+  const b = e.target.closest('button'), sg = e.target.closest('.sg.unfold');
   if (b?.id === 'rv-run') rvRun();
+  else if (sg && (b?.dataset.do === 'more' || (!b && !e.target.closest('input')))) { rvOpen.has(sg.dataset.id) ? rvOpen.delete(sg.dataset.id) : rvOpen.add(sg.dataset.id); rvRender(); }
   else if (b?.dataset.do) rvDecide(b.closest('.sg').dataset.id, b.dataset.do);
 });
 $('#propositions').addEventListener('input', e => { const sg = e.target.closest('.sg'); if (sg) rvEdits[sg.dataset.id] = e.target.value; });
@@ -3102,7 +3125,7 @@ const dgPost = (p, body) => api('/api/delegations' + p, { method: 'POST', header
 async function dgDelegate(t) {
   if (dgActive(t)) { $('#w-agents').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); toast('Un agent travaille déjà sur cette tâche'); return; }
   const contexte = [t.s && `Rangée sous « ${t.s} » dans la todo`, t.p === 'h' ? 'priorité urgente' : t.p === 'm' ? 'priorité importante' : '', t.from && `reportée du ${t.from}`].filter(Boolean).join(', ');
-  const r = await dgPost('', { tache: t.t, contexte, source: t.t });
+  const r = await dgPost('', { tache: t.t, contexte, source: t.t, projet: t.s });
   if (r.error) { toast(r.error, true); return; }
   toast('Tâche confiée à un agent');
   loadDelegations(); renderTodo();
@@ -3144,7 +3167,7 @@ async function dgAct(id, what) {
 }
 // One thread in order: the task, each pass of the agent and each answer, the report
 // card after the last finished pass, then the reply box.
-let dgOpenId = null, dgOpenTimer = null, dgReportOpen = false;
+let dgOpenId = null, dgOpenTimer = null, dgReportOpen = false, dgCtx = {};
 async function dgOpen(id, toBottom) {
   const d = await api('/api/delegations/' + encodeURIComponent(id));
   if (d.error) { toast(d.error, true); return; }
@@ -3180,6 +3203,12 @@ async function dgOpen(id, toBottom) {
       ${files.length ? `<div class="rep-files">${files.map(f => `<a href="/${esc(f)}" target="_blank" rel="noopener">${esc(f.split('/').pop())}</a>`).join('')}</div>` : ''}
       ${d.brouillons.length ? `<p class="rep-mail">Brouillons Gmail : ${d.brouillons.map(b => `${esc(b.to)} « ${esc(b.subject)} »`).join(' ; ')}</p>` : ''}
     </section>` : '';
+  // what the agent was handed at launch, readable as it got it
+  if (dgCtx.id !== id) dgCtx = { id, open: false, text: null };
+  const ctxCard = d.contexte ? `<section class="rep" aria-label="Contexte transmis">
+      <header><b>Contexte transmis${d.contexteTaille ? ` · ${Math.max(1, Math.round(d.contexteTaille / 1000))} k caractères` : ''}</b><a href="/${esc(d.contexte)}" target="_blank" rel="noopener">CONTEXTE.md</a><button class="btn sm" id="dg-ctx" aria-expanded="${dgCtx.open}">${dgCtx.open ? 'Replier' : 'Ouvrir'}</button></header>
+      ${dgCtx.open && dgCtx.text != null ? `<div class="rep-full">${md(dgCtx.text)}</div>` : ''}
+    </section>` : '';
   const lastDone = d.etapes.map(e => !!e.fin).lastIndexOf(true);
   const cardAt = lastDone === -1 ? d.etapes.length - 1 : lastDone;
   const thread = d.etapes.map((e, i) => {
@@ -3187,11 +3216,17 @@ async function dgOpen(id, toBottom) {
     const me = bubble('me', esc(asked).replace(/\n/g, '<br>'), e.debut);
     const ag = !e.fin ? bubble('ag', `<span class="lbl">Travaille… ${esc(d.activite ?? '')}</span>`, null, 'live')
       : bubble('ag', (e.reponse ? md(e.reponse) : `<p>${esc(e.resume ?? e.raison ?? '—')}</p>`) + (e.question ? `<p class="cv-q">${esc(e.question)}</p>` : ''), e.fin, e.raison && !e.reponse ? 'err' : '');
-    return me + ag + (i === cardAt ? card : '');
+    return me + (i === 0 ? ctxCard : '') + ag + (i === cardAt ? card : '');
   }).join('');
   body.innerHTML = `<div class="conv">${thread}</div>`;
   const rep = $('#dg-rep');
   if (rep) rep.onclick = () => { dgReportOpen = !dgReportOpen; dgOpen(id); };
+  const ctx = $('#dg-ctx');
+  if (ctx) ctx.onclick = async () => {
+    dgCtx.open = !dgCtx.open;
+    if (dgCtx.open && dgCtx.text == null) dgCtx.text = await fetch('/' + d.contexte).then(r => r.ok ? r.text() : 'CONTEXTE.md introuvable.').catch(() => 'CONTEXTE.md introuvable.');
+    dgOpen(id);
+  };
   renderVFiles();
   viewer.hidden = false;
   body.scrollTop = toBottom || atBottom ? body.scrollHeight : keep;
