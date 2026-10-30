@@ -83,6 +83,7 @@ button, input, textarea, select { font-family: inherit; }
   .nav { order: 3; flex-basis: 100%; overflow-x: auto; }
   .demobar { padding: 8px 16px; }
 }
+@media (max-width: 520px) { .askbtn kbd { display: none; } }
 
 .page { max-width: 1380px; margin: 0 auto; padding: 24px 28px 48px; }
 .ptitle { margin: 0 0 20px; font: 600 34px/1.1 var(--display); letter-spacing: -.015em; color: var(--ink); }
@@ -197,6 +198,7 @@ button.cx-chip:hover { border-color: var(--ink-3); }
 .sg-t input:hover { border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
 .sg-t input:focus { border-color: var(--accent); background: var(--surface); }
 .sg-t small { display: block; font-size: 12px; color: var(--ink-2); }
+.sg-t b { display: block; font: 500 13.5px/1.4 var(--font); color: var(--ink); }
 @media (max-width: 640px) { .sg { flex-wrap: wrap; } .sg-t { flex-basis: calc(100% - 26px); } .sg .btn:first-of-type { margin-left: 26px; } }
 #rv-agent + #agents > .ag:first-child { border-top: 1px solid var(--line-soft); }
 .gl { padding: 16px 18px; }
@@ -227,7 +229,7 @@ button.cx-chip:hover { border-color: var(--ink-3); }
 @media (max-width: 860px) { .page { padding: 18px 16px 40px; } }
 @media (max-width: 640px) { .todo .it { flex-wrap: wrap; } .tasks .todo .acts { opacity: 1; flex-basis: 100%; padding-left: 68px; } }
 
-.vreply { display: flex; gap: 8px; align-items: flex-end; padding: 12px 18px; border-top: 1px solid var(--line-soft); }
+.vreply { display: grid; gap: 6px; padding: 12px 18px; border-top: 1px solid var(--line-soft); }
 .vreply[hidden] { display: none; }
 .vreply textarea:disabled { opacity: .6; }
 .doc .conv { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
@@ -238,13 +240,28 @@ button.cx-chip:hover { border-color: var(--ink-3); }
 .doc .cv .cv-t > :last-child { margin-bottom: 0; }
 .doc .cv.err .cv-t { color: var(--crit); }
 .doc .cv .cv-q { font-weight: 500; color: var(--ink); }
-.doc details.act { margin: 10px 0 14px; }
-.doc details.act summary { cursor: pointer; font: 500 13px/1.4 var(--font); color: var(--ink-3); }
-.vreply textarea { flex: 1; min-width: 0; resize: vertical; min-height: 64px; font: 400 13.5px/1.5 var(--font); padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
-.doc.trace .tr { font: 400 12.5px/1.5 var(--font); padding: 4px 0; border-bottom: 1px solid var(--line); white-space: pre-wrap; }
-.doc.trace .tr b { font: 500 11px/1 var(--mono); color: var(--ink-3); margin-right: 8px; text-transform: uppercase; }
-.doc.trace .tr.outil { color: var(--ink-3); font-family: var(--mono); font-size: 12px; }
-.doc.trace .tr.consigne, .doc.trace .tr.fin { color: var(--ink); font-weight: 500; }
+.vreply textarea { display: block; width: 100%; resize: vertical; min-height: 64px; font: 400 13.5px/1.5 var(--font); padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
+.vr-in { position: relative; }
+.vr-foot { display: flex; align-items: center; gap: 4px; }
+.vr-foot .sp { flex: 1; }
+.vr-foot select { font: 500 12px/1 var(--font); color: var(--ink-3); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 6px 4px; cursor: pointer; }
+.vr-foot select:hover, .vr-foot select:focus-visible { border-color: var(--line); color: var(--ink); }
+.sk-pop { position: absolute; left: 0; right: 0; bottom: calc(100% + 6px); z-index: 2; display: grid; gap: 1px; max-height: 280px; overflow-y: auto; padding: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-lg); }
+.sk-pop[hidden] { display: none; }
+.sk-pop button { display: grid; gap: 2px; text-align: left; border: 0; background: transparent; border-radius: 6px; padding: 7px 9px; cursor: pointer; }
+.sk-pop button[aria-selected="true"], .sk-pop button:hover { background: var(--sunken); }
+.sk-pop b { font: 500 13px/1.3 var(--mono); color: var(--ink); }
+.sk-pop small { font: 400 12px/1.4 var(--font); color: var(--ink-3); }
+.vw.agent .bottom { display: none; }
+.vw .doc.thread { max-width: none; }
+.doc.thread .conv { max-width: 76ch; margin: 0 auto; }
+.doc .rep { align-self: stretch; min-width: 0; display: grid; gap: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.doc .rep header { display: flex; align-items: center; gap: 10px; }
+.doc .rep header b { flex: 1; font: 600 14px/1.3 var(--font); color: var(--ink); }
+.doc .rep p { margin: 0; font-size: 14px; line-height: 1.55; }
+.doc .rep-full { min-width: 0; overflow-x: auto; overflow-wrap: anywhere; border-top: 1px solid var(--line-soft); padding-top: 10px; font-size: 14px; }
+.doc .rep-files { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; }
+.doc .rep-mail { font-size: 13px; color: var(--ink-3); }
 .w-head { display: flex; align-items: center; gap: 10px; }
 .w-head h2 {
   margin: 0; font: 600 15px/1.2 var(--font); letter-spacing: -.01em; white-space: nowrap;
@@ -929,6 +946,56 @@ a.pf-card.res-cours p { color: var(--accent); }
 .toast { position: fixed; bottom: 22px; right: 22px; z-index: 40; background: var(--ink); color: var(--bg); border-radius: 8px; padding: 12px 16px; font: 500 13px var(--font); box-shadow: var(--shadow-lg); }
 .toast.bad { background: var(--crit); color: #fff; }
 
+/* ---------- réglages: model, effort and prompt of each function, the skills ---------- */
+.gear { width: 36px; height: 36px; border-radius: 7px; border: 1px solid transparent; background: var(--sunken); color: var(--ink); display: grid; place-items: center; flex-shrink: 0; }
+.gear:hover { border-color: var(--ink-3); }
+.gear.on { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.gear svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.rg-h { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.rg-h .ptitle { flex: 1; margin: 0; }
+.rg-tabs { display: flex; gap: 2px; padding: 3px; border: 1px solid var(--line-soft); border-radius: 20px; background: var(--surface); }
+.rg-tabs button { border: 0; background: transparent; color: var(--ink-3); border-radius: 16px; padding: 0 14px; min-height: 32px; font: 500 13px/1 var(--font); cursor: pointer; }
+.rg-tabs button:hover { color: var(--ink); }
+.rg-tabs button[aria-selected="true"] { background: var(--sunken); color: var(--ink); }
+.rg-body { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; margin-top: 18px; }
+.rg-list { flex: 1 1 280px; max-width: 340px; padding: 8px; }
+.rg-li { width: 100%; border: 0; background: transparent; text-align: left; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; color: var(--ink); cursor: pointer; }
+.rg-li:hover { background: var(--sunken); }
+.rg-li.on { background: var(--accent-soft); }
+.rg-li > span { flex: 1; min-width: 0; }
+.rg-li b { display: block; font: 500 14px/1.4 var(--font); }
+.rg-li.sk b { font: 500 13px/1.4 var(--mono); }
+.rg-li small { display: block; font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rg-badge { font: 600 11px/1.4 var(--font); padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+.rg-badge.mod { background: var(--accent-soft); color: var(--accent); }
+.rg-li.on .rg-badge.mod { background: var(--surface); }
+.rg-badge.wait { background: var(--sunken); color: var(--warn); }
+.rg-detail { flex: 999 1 560px; padding: 20px 22px; display: flex; flex-direction: column; gap: 16px; }
+.rg-title { display: flex; align-items: center; gap: 10px; }
+.rg-title h2 { margin: 0; font: 600 18px/1.3 var(--font); flex: 1; }
+.rg-title h2.mono { font: 500 18px/1.3 var(--mono); }
+.rg-desc { margin: 4px 0 0; font-size: 13.5px; color: var(--ink-2); }
+.rg-sels { display: flex; gap: 16px; flex-wrap: wrap; }
+.rg-sels .lbl, .rg-ed .lbl { display: block; font-size: 12px; margin-bottom: 4px; }
+.rg-sels select { border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); font: 400 13px var(--font); padding: 0 10px; min-height: 36px; cursor: pointer; }
+.rg-ed textarea { display: block; width: 100%; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); color: var(--ink); font: 400 12.5px/1.6 var(--mono); padding: 14px 16px; resize: vertical; outline: none; }
+.rg-ed textarea:focus { border-color: var(--accent); }
+.rg-acts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rg-acts .btn { min-height: 36px; font-size: 13px; padding: 0 14px; border-radius: 7px; }
+.rg-acts span { font-size: 12.5px; color: var(--ink-3); }
+.rg-skill { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-radius: 9px; background: var(--bg); border: 1px solid var(--line-soft); }
+.rg-skill span { font-size: 13.5px; flex: 1; }
+.rg-skill b { font: 500 13.5px var(--mono); }
+.rg-skill button { border: 0; background: transparent; padding: 0; color: var(--accent); font: 600 13px var(--font); min-height: 28px; cursor: pointer; }
+.rg-used { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.rg-used .lbl { font-size: 12px; }
+.rg-chip { font: 500 12px/1.4 var(--font); padding: 3px 10px; border-radius: 20px; border: 1px solid var(--line); color: var(--ink-2); background: var(--surface); white-space: nowrap; }
+.rg-sw { display: flex; align-items: center; gap: 12px; font-size: 13.5px; }
+.rg-sw button { width: 40px; height: 24px; border-radius: 12px; border: 0; padding: 2px; background: var(--line); display: flex; justify-content: flex-start; flex-shrink: 0; cursor: pointer; }
+.rg-sw button i { width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+.rg-sw button[aria-checked="true"] { background: var(--good); justify-content: flex-end; }
+@media (max-width: 860px) { .rg-list { max-width: none; } }
+
 </style>
 </head>
 <body>
@@ -957,6 +1024,7 @@ a.pf-card.res-cours p { color: var(--accent); }
     <symbol id="i-box" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></symbol>
     <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
     <symbol id="i-post" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 11v6M8 7.5v.01M12 17v-6M12 13.5a2.5 2.5 0 0 1 5 0V17"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
     <symbol id="i-list" viewBox="0 0 24 24"><path d="M4 6h2M9 6h11M4 12h2M9 12h11M4 18h2M9 18h11"/></symbol>
     <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
   </defs>
@@ -976,6 +1044,7 @@ a.pf-card.res-cours p { color: var(--accent); }
     <span class="sp"></span>
     <button class="btn askbtn" id="ask-open"><svg><use href="#i-spark"/></svg><span>Demander à l'assistant</span><kbd>⌘K</kbd></button>
     <button class="btn" id="demo-toggle" aria-pressed="false" title="Remplace les finances par des données fictives, sur tous les écrans"><svg><use href="#i-screen"/></svg>Démo</button>
+    <a class="gear" id="gear" href="#reglages" aria-label="Réglages" title="Réglages"><svg><use href="#i-gear"/></svg></a>
   </header>
   <div class="demobar" id="demobar" hidden><span>Mode démo : les finances affichent des données fictives.</span><button class="btn sm" id="demo-quit">Quitter la démo</button></div>
 </div>
@@ -1051,6 +1120,17 @@ a.pf-card.res-cours p { color: var(--accent); }
   <div class="cx" id="cx-body"><span class="lbl">Chargement…</span></div>
 </main>
 
+<main class="view page" data-view="reglages" hidden>
+  <div class="rg-h">
+    <h1 class="ptitle">Réglages</h1>
+    <div class="rg-tabs" id="rg-tabs" role="tablist" aria-label="Réglages"><button role="tab" data-t="prompts">Prompts</button><button role="tab" data-t="skills">Skills</button></div>
+  </div>
+  <div class="rg-body">
+    <nav class="pane rg-list" id="rg-list" aria-label="Liste"><span class="lbl">Chargement…</span></nav>
+    <section class="pane rg-detail" id="rg-detail"></section>
+  </div>
+</main>
+
 <div class="chat" id="chat"></div>
 
 <div class="standup" id="standup" hidden>
@@ -1124,7 +1204,15 @@ a.pf-card.res-cours p { color: var(--accent); }
   <div class="vw">
     <div class="top"><span class="ext" id="v-ext"></span><b id="v-name"></b><span class="sp"></span><button class="btn" id="v-reveal">Finder</button><button class="btn" id="v-raw">Ouvrir</button><button class="btn acc" id="v-iterate">Itérer</button><button class="icobtn" id="v-close">×</button></div>
     <div class="doc" id="v-body"></div>
-    <div class="vreply" id="v-reply" hidden><textarea id="v-reply-text" rows="3"></textarea><button class="btn acc" id="v-reply-send" title="Entrée pour envoyer, Maj+Entrée pour aller à la ligne">Répondre</button></div>
+    <div class="vreply" id="v-reply" hidden>
+      <div class="vr-in"><textarea id="v-reply-text" rows="3" aria-label="Répondre à l'agent"></textarea><div class="sk-pop" id="v-skills" role="listbox" aria-label="Skills" hidden></div></div>
+      <div class="vr-foot">
+        <select id="v-model" aria-label="Modèle du prochain passage"><option value="claude-sonnet-5-5">Sonnet 5.5</option><option value="claude-opus-5-5">Opus 5.5</option></select>
+        <select id="v-effort" aria-label="Effort du prochain passage"><option value="low">Effort léger</option><option value="medium">Effort moyen</option><option value="high">Effort poussé</option></select>
+        <span class="sp"></span>
+        <button class="btn acc" id="v-reply-send" title="Entrée pour envoyer, Maj+Entrée pour aller à la ligne">Répondre</button>
+      </div>
+    </div>
     <div class="bottom"><div class="files" id="v-files"></div><span class="lbl" id="v-meta"></span></div>
   </div>
 </div>
@@ -1288,14 +1376,20 @@ function rvRender() {
   const failed = r.error && (!r.at || r.errorAt > r.at);
   const head = r.running ? 'Revue en cours…' : rvToday(r.at) ? `Revue de ${rvHour(r.at)}` : r.at ? `Dernière revue ${rvWhen(r.at)}` : 'Revue horaire';
   const meta = p => [p.source === 'mission' ? `Mission de ${p.from}` : '', p.project, p.why].filter(Boolean).map(esc).join(' · ');
+  // real amounts never show in demo mode
+  const shown = props.filter(p => !(demoOn && p.type === 'finance'));
+  const row = p => p.type === 'finance'
+    ? `<div class="sg" data-id="${esc(p.id)}"><svg><use href="#i-euro"/></svg><div class="sg-t"><b>${esc(p.title)}</b><small>${meta(p)}</small></div>
+      <button class="btn sm acc" data-do="accept">Ajouter aux finances</button><button class="btn sm ghost" data-do="dismiss">Ignorer</button></div>`
+    : `<div class="sg" data-id="${esc(p.id)}"><svg><use href="#i-plus"/></svg>
+      <div class="sg-t"><input value="${esc(rvEdits[p.id] ?? p.title)}" aria-label="Titre de la tâche, modifiable avant de l'ajouter" title="Modifiable avant d'ajouter"><small>${meta(p)}</small></div>
+      <button class="btn sm acc" data-do="accept">Ajouter</button><button class="btn sm ghost" data-do="later">Plus tard</button><button class="btn sm ghost" data-do="dismiss">Ignorer</button></div>`;
   $('#propositions').innerHTML = `<section class="rv" aria-labelledby="h-rev">
     <div class="rv-head"><svg><use href="#i-agent"/></svg><h2 id="h-rev">${head}</h2>${r.auto && r.next && !r.running ? `<span>· prochaine ${rvWhen(r.next)}</span>` : ''}<span class="sp"></span>
       <button class="btn sm ghost" id="rv-run"${r.running ? ' disabled' : ''}>${r.running ? 'En cours…' : 'Relancer'}</button></div>
     ${rvToday(r.at) && r.summary ? `<p class="rv-sum">${esc(r.summary)}</p>` : ''}
     ${failed ? `<p class="rv-err">La dernière revue a échoué : ${esc(String(r.error).slice(0, 160))}</p>` : ''}
-    ${props.length ? `<div class="rv-list">${props.map(p => `<div class="sg" data-id="${esc(p.id)}"><svg><use href="#i-plus"/></svg>
-      <div class="sg-t"><input value="${esc(rvEdits[p.id] ?? p.title)}" aria-label="Titre de la tâche, modifiable avant de l'ajouter" title="Modifiable avant d'ajouter"><small>${meta(p)}</small></div>
-      <button class="btn sm acc" data-do="accept">Ajouter</button><button class="btn sm ghost" data-do="later">Plus tard</button><button class="btn sm ghost" data-do="dismiss">Ignorer</button></div>`).join('')}</div>` : ''}
+    ${shown.length ? `<div class="rv-list">${shown.map(row).join('')}</div>` : ''}
   </section>`;
 }
 function rvAgent() {
@@ -1325,13 +1419,14 @@ async function rvRun() {
   loadReview();
 }
 async function rvDecide(id, act) {
-  const title = rvEdits[id] ?? props.find(x => x.id === id)?.title;
+  const p = props.find(x => x.id === id), title = rvEdits[id] ?? p?.title;
   const r = await api(`/api/propositions/${encodeURIComponent(id)}/${act}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ title }) });
   if (r.error) { toast(r.error, true); await loadProps(); rvRender(); return; }
   delete rvEdits[id];
   props = props.filter(x => x.id !== id);
   todo = r.todo;
   renderTodo(); rvRender();
+  if (p?.type === 'finance' && act === 'accept') { loadFinance(); toast(r.finance ? 'Ajoutée aux finances : la projection est à jour' : 'Cette échéance était déjà dans les finances'); return; }
   // a full day sends what is added to "Plus tard", as for a task typed by hand
   if (act === 'accept' && todo.later.some(t => rvKey(t.t) === rvKey(title))) toast(`Journée pleine (${todo.max} tâches) : ajoutée dans « Plus tard »`);
   else if (todo.bumped) toast(`Limite de ${todo.max} tâches : ${todo.bumped} passée${todo.bumped > 1 ? 's' : ''} dans « Plus tard »`);
@@ -1389,7 +1484,10 @@ function openModal(appId, actionId, from) {
   if (from?.length) fromEl.textContent = 'Reprend : ' + from.map(f => f.split('/').pop()).join(', ');
   $('#m-brief').value = '';
   $('#m-brief').placeholder = from?.length ? 'Ce que tu veux changer. Ex : raccourcis le module 3, ajoute un exercice sur les webhooks' : ac.placeholder;
-  $('#m-model').value = a.model || 'claude-sonnet-5';
+  // opens on the model set in Réglages; picking another one here wins for this run
+  const mm = $('#m-model'), want = a.model || 'claude-sonnet-5';
+  if (![...mm.options].some(o => o.value === want)) mm.add(new Option(modelName(want), want));
+  mm.value = want;
   $('#modal').hidden = false; $('#m-brief').focus();
 }
 $('#m-close').onclick = () => $('#modal').hidden = true;
@@ -1469,7 +1567,7 @@ async function openFile(p, run) {
   else if (f.ext === 'html') body.innerHTML = `<iframe src="/${esc(p)}" title="${esc(f.name)}"></iframe>`;
   else if (f.text != null) body.innerHTML = md(f.text);
   else body.innerHTML = `<p class="lbl">Aperçu indisponible pour ce format. Utilise « Ouvrir » ou « Finder ».</p>`;
-  body.classList.toggle('log', false);
+  body.className = 'doc';
   renderVFiles();
   viewer.hidden = false;
 }
@@ -1491,6 +1589,7 @@ function renderVFiles() {
   $('#v-reveal').style.display = vCtx.path ? '' : 'none';
   $('#v-iterate').style.display = vCtx.run ? '' : 'none';
   $('#v-reply').hidden = !vCtx.agent;
+  $('.vw').classList.toggle('agent', !!vCtx.agent);
 }
 $('#v-close').onclick = () => viewer.hidden = true;
 viewer.addEventListener('click', e => { if (e.target === viewer) viewer.hidden = true; });
@@ -3092,46 +3191,56 @@ async function dgAct(id, what) {
   else if (what === 'close') toast('Délégation close. Pense à cocher la tâche si elle est faite.');
   loadDelegations();
 }
-// the agent's report when there is one, then what it did step by step
-let dgOpenId = null, dgOpenTimer = null;
+// One thread in order: the task, each pass of the agent and each answer, the report
+// card after the last finished pass, then the reply box.
+let dgOpenId = null, dgOpenTimer = null, dgReportOpen = false;
 async function dgOpen(id, toBottom) {
   const d = await api('/api/delegations/' + encodeURIComponent(id));
   if (d.error) { toast(d.error, true); return; }
   // the reply box keeps what was typed when the same agent is redrawn
-  if (dgOpenId !== id) $('#v-reply-text').value = '';
+  if (dgOpenId !== id) { $('#v-reply-text').value = ''; dgReportOpen = false; }
   const body = $('#v-body');
   const same = dgOpenId === id && !viewer.hidden;
   const atBottom = same && body.scrollHeight - body.scrollTop - body.clientHeight < 40;
   const keep = same ? body.scrollTop : 0;
-  const traceOpen = same && !!body.querySelector('details.act[open]');
   dgOpenId = id;
-  vCtx = { path: null, run: null, files: d.livrables, agent: id };
+  vCtx = { path: null, run: null, files: [], agent: id };
   const box = $('#v-reply-text');
   box.disabled = d.enCours;
   $('#v-reply-send').disabled = d.enCours;
   box.placeholder = d.enCours ? "L'agent travaille… tu pourras lui répondre quand il aura fini."
-    : d.statut === 'bloque' ? 'Ta réponse à sa question…'
-    : "Précisions, corrections, brouillons à modifier… L'agent reprend avec tout son contexte.";
+    : d.statut === 'bloque' ? 'Ta réponse à sa question… « / » pour une skill'
+    : "Précisions, corrections, une skill avec « / »… L'agent reprend avec tout son contexte.";
   $('#v-name').textContent = d.tache;
   $('#v-ext').textContent = DG_ST[d.statut] ?? d.statut;
-  $('#v-meta').textContent = `${d.model} · lancé il y a ${rel(d.creeLe)}${d.cout ? ` · ${d.cout.toFixed(2)} $` : ''} · ${d.dossier}`;
-  body.className = 'doc';
+  $('#v-meta').textContent = '';
+  for (const [sel, v] of [['#v-model', d.model], ['#v-effort', d.effort]]) {
+    const el = $(sel);
+    if (![...el.options].some(o => o.value === v)) el.add(new Option(v, v));
+    el.value = v;
+  }
+  body.className = 'doc thread';
   const hm = iso => iso ? new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
-  const bubble = (who, html, at, cls = '') => `<div class="cv ${who} ${cls}"><small>${who === 'me' ? 'Toi' : 'Agent'} · ${hm(at)}</small><div class="cv-t">${html}</div></div>`;
-  // one exchange per pass: what was asked, then what the agent answered
-  const conv = d.etapes.map((e, i) => {
+  const bubble = (who, html, at, cls = '') => `<div class="cv ${who === 'me' ? 'me' : 'them'} ${cls}"><small>${who === 'me' ? 'Toi' : 'Agent'} · ${hm(at)}</small><div class="cv-t">${html}</div></div>`;
+  const files = d.livrables.filter(f => !f.endsWith('/RAPPORT.md'));
+  const card = d.rapport || files.length || d.brouillons.length ? `<section class="rep" aria-label="Rapport">
+      <header><b>Rapport</b>${d.rapport ? `<button class="btn sm" id="dg-rep" aria-expanded="${dgReportOpen}">${dgReportOpen ? 'Replier' : 'Ouvrir'}</button>` : ''}</header>
+      ${dgReportOpen ? `<div class="rep-full">${md(d.rapport)}</div>` : d.resume ? `<p>${esc(d.resume)}</p>` : ''}
+      ${files.length ? `<div class="rep-files">${files.map(f => `<a href="/${esc(f)}" target="_blank" rel="noopener">${esc(f.split('/').pop())}</a>`).join('')}</div>` : ''}
+      ${d.brouillons.length ? `<p class="rep-mail">Brouillons Gmail : ${d.brouillons.map(b => `${esc(b.to)} « ${esc(b.subject)} »`).join(' ; ')}</p>` : ''}
+    </section>` : '';
+  const lastDone = d.etapes.map(e => !!e.fin).lastIndexOf(true);
+  const cardAt = lastDone === -1 ? d.etapes.length - 1 : lastDone;
+  const thread = d.etapes.map((e, i) => {
     const asked = i === 0 ? d.tache : e.consigne === 'reprise' ? '(reprendre là où tu t\'étais arrêté)' : e.consigne;
     const me = bubble('me', esc(asked).replace(/\n/g, '<br>'), e.debut);
-    if (!e.fin) return me + bubble('ag', `<span class="lbl">Travaille… ${esc(d.activite ?? '')}</span>`, null, 'live');
-    const q = e.question ? `<p class="cv-q">${esc(e.question)}</p>` : '';
-    const text = e.reponse ? md(e.reponse) : `<p>${esc(e.resume ?? e.raison ?? '—')}</p>`;
-    return me + bubble('ag', text + q, e.fin, e.raison && !e.reponse ? 'err' : '');
+    const ag = !e.fin ? bubble('ag', `<span class="lbl">Travaille… ${esc(d.activite ?? '')}</span>`, null, 'live')
+      : bubble('ag', (e.reponse ? md(e.reponse) : `<p>${esc(e.resume ?? e.raison ?? '—')}</p>`) + (e.question ? `<p class="cv-q">${esc(e.question)}</p>` : ''), e.fin, e.raison && !e.reponse ? 'err' : '');
+    return me + ag + (i === cardAt ? card : '');
   }).join('');
-  const tr = d.trace.slice().reverse().map(x => `<div class="tr ${x.kind}"><b>${hm(x.at)}</b>${esc(x.text)}</div>`).join('');
-  body.innerHTML = (d.rapport ? md(d.rapport) + '<hr>' : '')
-    + (d.brouillons.length ? `<p><b>Brouillons Gmail :</b> ${d.brouillons.map(b => `${esc(b.to)} « ${esc(b.subject)} »${b.modifie ? ' (modifié)' : ''}`).join(' ; ')}</p>` : '')
-    + `<details class="act"${traceOpen ? ' open' : ''}><summary>Activité détaillée</summary><div class="doc trace">${tr || '<span class="lbl">Rien pour le moment.</span>'}</div></details>`
-    + `<h3>Échanges</h3><div class="conv">${conv}</div>`;
+  body.innerHTML = `<div class="conv">${thread}</div>`;
+  const rep = $('#dg-rep');
+  if (rep) rep.onclick = () => { dgReportOpen = !dgReportOpen; dgOpen(id); };
   renderVFiles();
   viewer.hidden = false;
   body.scrollTop = toBottom || atBottom ? body.scrollHeight : keep;
@@ -3139,6 +3248,42 @@ async function dgOpen(id, toBottom) {
   clearTimeout(dgOpenTimer);
   if (d.statut === 'en_cours') dgOpenTimer = setTimeout(() => { if (!viewer.hidden && dgOpenId === id) dgOpen(id); }, 4000);
 }
+// the next pass's model and effort, kept on the delegation as soon as they change
+for (const [sel, key] of [['#v-model', 'model'], ['#v-effort', 'effort']]) {
+  $(sel).onchange = async e => {
+    if (!vCtx?.agent) return;
+    const r = await dgPost(`/${encodeURIComponent(vCtx.agent)}/settings`, { [key]: e.target.value });
+    if (r.error) toast(r.error, true);
+  };
+}
+
+/* "/" in the reply box lists the second brain's skills and inserts /name */
+let dgSkills = null, skList = [], skSel = 0;
+const skToken = ta => ta.value.slice(0, ta.selectionStart).match(/(^|\s)\/([\w-]*)$/);
+const skShort = t => String(t ?? '').split(/(?<=\.)\s| - /)[0].slice(0, 120);
+async function skUpdate() {
+  const ta = $('#v-reply-text'), pop = $('#v-skills'), m = skToken(ta);
+  if (!m) { pop.hidden = true; return; }
+  dgSkills ??= await api('/api/delegations/skills').catch(() => null);
+  const q = m[2].toLowerCase(), starts = s => s.name.toLowerCase().startsWith(q);
+  skList = (dgSkills ?? []).filter(s => s.name.toLowerCase().includes(q)).sort((a, b) => starts(b) - starts(a)).slice(0, 8);
+  if (!skList.length) { pop.hidden = true; return; }
+  skSel = Math.min(skSel, skList.length - 1);
+  pop.innerHTML = skList.map((s, i) => `<button type="button" role="option" aria-selected="${i === skSel}" data-i="${i}"><b>/${esc(s.name)}</b><small>${esc(skShort(s.description))}</small></button>`).join('');
+  pop.hidden = false;
+}
+function skPick(i) {
+  const ta = $('#v-reply-text'), m = skToken(ta), sk = skList[i];
+  if (!m || !sk) return;
+  const start = ta.selectionStart - m[2].length - 1;
+  ta.value = ta.value.slice(0, start) + `/${sk.name} ` + ta.value.slice(ta.selectionStart);
+  ta.selectionStart = ta.selectionEnd = start + sk.name.length + 2;
+  $('#v-skills').hidden = true;
+  ta.focus();
+}
+$('#v-reply-text').addEventListener('input', () => { skSel = 0; skUpdate(); });
+$('#v-reply-text').addEventListener('blur', () => setTimeout(() => { $('#v-skills').hidden = true; }, 150));
+$('#v-skills').addEventListener('mousedown', e => { const b = e.target.closest('button'); if (b) { e.preventDefault(); skPick(+b.dataset.i); } });
 
 async function dgReply() {
   const id = vCtx?.agent;
@@ -3146,6 +3291,7 @@ async function dgReply() {
   const r = await dgPost(`/${encodeURIComponent(id)}/reply`, { texte: $('#v-reply-text').value.trim() });
   if (r.error) { toast(r.error, true); return; }
   $('#v-reply-text').value = '';
+  $('#v-skills').hidden = true;
   loadDelegations();
   dgOpen(id, true);
 }
@@ -3160,7 +3306,14 @@ $('#dg-new').onsubmit = async e => {
   toast('Tâche confiée à un agent');
   loadDelegations();
 };
-$('#v-reply-text').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); dgReply(); } });
+$('#v-reply-text').addEventListener('keydown', e => {
+  if (!$('#v-skills').hidden) {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); skSel = (skSel + (e.key === 'ArrowDown' ? 1 : skList.length - 1)) % skList.length; skUpdate(); return; }
+    if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); skPick(skSel); return; }
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); $('#v-skills').hidden = true; return; }
+  }
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); dgReply(); }
+});
 
 /* ---------- boot ---------- */
 /* ---------- LinkedIn: the editorial plan (#linkedin[/<plan>/<Jxx>]) ---------- */
@@ -3604,8 +3757,118 @@ $('#cx-body').addEventListener('click', async e => {
 });
 addEventListener('hashchange', () => { if (cxRoute()) loadCx(true); });
 
+/* ---------- réglages: model, effort and prompt of each function, the skills (#reglages) ---------- */
+let rg = null, rgTab = 'prompts', rgFn = 'assistant', rgSk = null;
+const rgDraft = {};   // text typed and not saved yet, by 'fn:<id>' or 'sk:<name>'
+const RG_EFFORT = { low: 'Faible', medium: 'Moyen', high: 'Élevé' };
+// claude-opus-5-5 → Opus 5.5
+const modelName = id => { const [n = '', ...v] = String(id).replace(/^claude-/, '').split('-'); return `${n.charAt(0).toUpperCase()}${n.slice(1)} ${v.join('.')}`.trim(); };
+const rgCur = () => rgTab === 'prompts' ? rg.functions.find(f => f.id === rgFn) : rg.skills.find(s => s.name === rgSk);
+const rgKey = () => rgTab === 'prompts' ? `fn:${rgFn}` : `sk:${rgSk}`;
+const rgSaved = x => rgTab === 'prompts' ? x.prompt : x.text;
+const rgSend = (url, method, body) => api(url, { method, headers: { 'content-type': 'application/json' }, body: body && JSON.stringify(body) }).catch(e => ({ error: e.message }));
+function rgSet(r) {
+  if ('id' in r) rg.functions = rg.functions.map(f => f.id === r.id ? r : f);
+  else rg.skills = rg.skills.map(s => s.name === r.name ? r : s);
+}
+async function loadReglages() {
+  const r = await api('/api/reglages').catch(e => ({ error: e.message }));
+  if (r.error) { $('#rg-list').innerHTML = `<span class="lbl">${esc(r.error)}</span>`; return; }
+  rg = r;
+  if (!rg.skills.some(s => s.name === rgSk)) rgSk = rg.skills[0]?.name ?? null;
+  renderReglages();
+}
+function renderRgList() {
+  for (const b of $('#rg-tabs').children) b.setAttribute('aria-selected', String(b.dataset.t === rgTab));
+  const meta = f => [modelName(f.model), f.effort && RG_EFFORT[f.effort].toLowerCase(), f.skill && `skill ${f.skill}`].filter(Boolean).join(' · ');
+  const item = (on, id, cls, title, sub, badge) => `<button class="rg-li${cls}${on ? ' on' : ''}"${on ? ' aria-current="true"' : ''} data-id="${esc(id)}"><span><b>${esc(title)}</b><small>${esc(sub)}</small></span>${badge}</button>`;
+  $('#rg-list').innerHTML = rgTab === 'prompts'
+    ? rg.functions.map(f => item(f.id === rgFn, f.id, '', f.name, meta(f), f.modified ? '<span class="rg-badge mod">modifié</span>' : '')).join('')
+    : rg.skills.map(s => item(s.name === rgSk, s.name, ' sk', s.name, skShort(s.description), s.pending ? '<span class="rg-badge wait">en attente</span>' : '')).join('');
+}
+function renderRgDetail() {
+  const x = rgCur(), d = $('#rg-detail');
+  if (!x) { d.innerHTML = ''; return; }
+  if (rgTab === 'prompts') {
+    const models = [...rg.models];
+    for (const m of [x.fallback.model, x.model]) if (m && !models.includes(m)) models.unshift(m);
+    const efforts = [...(x.fallback.effort ? [] : [['', 'Par défaut']]), ...rg.efforts.map(e => [e, RG_EFFORT[e]])];
+    d.innerHTML = `<div class="rg-title"><h2>${esc(x.name)}</h2>${x.modified ? '<span class="rg-badge mod">modifié</span>' : ''}</div>
+      <div class="rg-sels">
+        <label><span class="lbl">Modèle</span><select id="rg-model">${models.map(m => `<option value="${esc(m)}">${esc(modelName(m))}</option>`).join('')}</select></label>
+        <label><span class="lbl">Effort</span><select id="rg-effort">${efforts.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select></label>
+      </div>
+      ${x.prompt != null ? `<label class="rg-ed"><span class="lbl">Prompt</span><textarea id="rg-text" rows="20" spellcheck="false"></textarea></label>
+      <div class="rg-acts"><button class="btn acc" id="rg-save">Enregistrer</button>${x.modified ? '<button class="btn" id="rg-reset">Revenir au texte d’origine</button>' : ''}<span id="rg-status"></span></div>` : ''}
+      ${x.skill ? `<div class="rg-skill"><span>Suit la skill <b>${esc(x.skill)}</b></span>${rg.skills.some(s => s.name === x.skill) ? '<button id="rg-open">Ouvrir la skill →</button>' : ''}</div>` : ''}`;
+    $('#rg-model').value = x.model;
+    $('#rg-effort').value = x.effort ?? '';
+  } else {
+    d.innerHTML = `<div><div class="rg-title"><h2 class="mono">${esc(x.name)}</h2></div><p class="rg-desc">${esc(x.description)}</p></div>
+      ${x.usedBy.length ? `<div class="rg-used"><span class="lbl">Utilisée par</span>${x.usedBy.map(u => `<span class="rg-chip">${esc(u)}</span>`).join('')}</div>` : ''}
+      <div class="rg-sw"><button id="rg-agents" role="switch" aria-checked="${x.agents}" aria-labelledby="rg-agents-l"><i></i></button><span id="rg-agents-l">Proposée aux agents dans le menu « / »</span></div>
+      <label class="rg-ed"><span class="lbl">SKILL.md</span><textarea id="rg-text" rows="18" spellcheck="false"></textarea></label>
+      <div class="rg-acts"><button class="btn acc" id="rg-save">Enregistrer</button><span id="rg-status"></span></div>`;
+  }
+  const ta = $('#rg-text');
+  if (ta) { ta.value = rgDraft[rgKey()] ?? rgSaved(x); ta.oninput = () => { rgDraft[rgKey()] = ta.value; rgStatus(); }; }
+  rgStatus();
+}
+function renderReglages() { if (!rg) return; renderRgList(); renderRgDetail(); }
+function rgStatus() {
+  const x = rgCur(), st = $('#rg-status');
+  if (!x || !st) return;
+  const draft = rgDraft[rgKey()], dirty = draft != null && draft !== rgSaved(x);
+  $('#rg-save').disabled = !dirty;
+  st.textContent = dirty ? 'Modifications non enregistrées'
+    : rgTab === 'prompts' ? (x.modified ? 'Ta version remplace le texte d’origine' : '')
+    : x.pending ? 'Envoyé au second brain, appliqué au prochain passage du curateur' : '';
+}
+$('#rg-tabs').onclick = e => { const b = e.target.closest('button'); if (!b || !rg) return; rgTab = b.dataset.t; renderReglages(); };
+$('#rg-list').onclick = e => {
+  const b = e.target.closest('.rg-li');
+  if (!b) return;
+  if (rgTab === 'prompts') rgFn = b.dataset.id; else rgSk = b.dataset.id;
+  renderReglages();
+};
+// model and effort apply as soon as they are picked
+$('#rg-detail').onchange = async e => {
+  const key = { 'rg-model': 'model', 'rg-effort': 'effort' }[e.target.id];
+  if (!key) return;
+  const r = await rgSend(`/api/reglages/functions/${encodeURIComponent(rgFn)}`, 'PUT', { [key]: e.target.value });
+  if (r.error) { toast(r.error, true); renderRgDetail(); return; }
+  rgSet(r);
+  const a = cfg?.apps?.find(x => x.id === r.id);
+  if (a) a.model = r.model;   // the micro app window opens on it
+  renderRgList();
+};
+$('#rg-detail').onclick = async e => {
+  const id = e.target.closest('button')?.id, x = rg && rgCur();
+  if (!id || !x) return;
+  if (id === 'rg-open') { rgTab = 'skills'; rgSk = x.skill; renderReglages(); return; }
+  let r;
+  if (id === 'rg-save') {
+    const text = $('#rg-text').value;
+    r = rgTab === 'prompts'
+      ? await rgSend(`/api/reglages/prompts/${encodeURIComponent(x.id)}`, 'PUT', { text })
+      : await rgSend(`/api/reglages/skills/${encodeURIComponent(x.name)}`, 'PUT', { text });
+  } else if (id === 'rg-reset') {
+    if (!confirm('Supprimer ta version et revenir au texte d’origine ?')) return;
+    r = await rgSend(`/api/reglages/prompts/${encodeURIComponent(x.id)}`, 'DELETE');
+  } else if (id === 'rg-agents') {
+    r = await rgSend(`/api/reglages/skills/${encodeURIComponent(x.name)}`, 'PUT', { agents: !x.agents });
+    dgSkills = null;   // the "/" menu of the agents reads them again
+  } else return;
+  if (r.error) { toast(r.error, true); return; }
+  if (id !== 'rg-agents') delete rgDraft[rgKey()];
+  rgSet(r);
+  renderReglages();
+};
+function onRgHash() { if (shellTab() === 'reglages') loadReglages(); }
+addEventListener('hashchange', onRgHash);
+
 /* ---------- shell: tabs routed by the hash, the assistant one keystroke away ---------- */
-const TAB_OF = { projets: 'projets', portefeuille: 'projets', finances: 'finances', linkedin: 'linkedin', 'second-brain': 'brain', outils: 'outils', connexions: 'outils' };
+const TAB_OF = { projets: 'projets', portefeuille: 'projets', finances: 'finances', linkedin: 'linkedin', 'second-brain': 'brain', outils: 'outils', reglages: 'reglages', connexions: 'outils' };
 // a page of its own that still lights up its parent tab
 const VIEW_OF = { connexions: 'connexions' };
 const shellTab = () => TAB_OF[location.hash.slice(1).split('/')[0]] ?? 'today';
@@ -3616,6 +3879,8 @@ function onShellHash() {
     if (a.dataset.tab === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
   document.querySelectorAll('.view').forEach(v => { v.hidden = v.dataset.view !== view; });
+  $('#gear').classList.toggle('on', tab === 'reglages');
+  if (tab === 'reglages') $('#gear').setAttribute('aria-current', 'page'); else $('#gear').removeAttribute('aria-current');
 }
 addEventListener('hashchange', onShellHash);
 onShellHash();
@@ -3635,6 +3900,7 @@ function setDemo(on) {
   demoOn = on;
   try { localStorage.setItem('demo', on ? '1' : '0'); } catch (e) {}
   renderDemo();
+  rvRender();
   fin = null;
   renderFinWidget();
   if (!$('#finview').hidden) renderFinview();
@@ -3663,6 +3929,7 @@ renderDemo();
   loadLinkedin();
   setInterval(loadLinkedin, 60e3);
   onLiHash();
+  onRgHash();
 })();
 </script>
 </body>
