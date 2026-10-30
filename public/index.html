@@ -129,14 +129,6 @@ ul.rv-sum { padding-left: 18px; }
 .rv-list > .sg-h:first-child { margin-top: 0; }
 .sg-x { width: 28px; height: 28px; flex-shrink: 0; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--ink-3); font: 400 18px/1 var(--font); cursor: pointer; }
 .sg-x:hover, .sg-x:focus-visible { color: var(--ink); background: color-mix(in srgb, var(--accent) 14%, transparent); }
-.sg-chev { width: 16px; height: 22px; flex-shrink: 0; padding: 0; border: 0; border-radius: 5px; background: transparent; display: grid; place-items: center; cursor: pointer; }
-.sg-chev svg { transform: rotate(-90deg); transition: transform .15s; }
-.sg.open .sg-chev svg { transform: none; }
-.sg.unfold { cursor: pointer; }
-.sg-more { padding: 0 0 12px 32px; display: grid; gap: 4px; font-size: 13px; color: var(--ink); }
-.sg-more h4 { margin: 6px 0 0; font: 600 12px/1.3 var(--font); color: var(--ink-2); }
-.sg-more ol, .sg-more ul { margin: 0; padding-left: 18px; line-height: 1.5; }
-.sg-more p { margin: 0; color: var(--ink-2); }
 .rv-err { margin: 6px 0 0; font-size: 12px; color: var(--crit); }
 .rv-list { margin-top: 10px; display: grid; grid-template-columns: minmax(0, 1fr); }
 .sg { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid color-mix(in srgb, var(--accent) 18%, transparent); }
@@ -209,6 +201,11 @@ ul.rv-sum { padding-left: 18px; }
 .doc .rep-full { min-width: 0; overflow-x: auto; overflow-wrap: anywhere; border-top: 1px solid var(--line-soft); padding-top: 10px; font-size: 14px; }
 .doc .rep-files { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; }
 .doc .rep-mail { font-size: 13px; color: var(--ink-3); }
+.doc .rep.ctx { padding: 8px 14px; }
+.doc .ctx-line { display: flex; align-items: center; gap: 8px; width: 100%; padding: 0; border: 0; background: none; font: 600 14px/1.3 var(--font); color: var(--ink); text-align: left; cursor: pointer; }
+.doc .ctx-line span { font-weight: 400; color: var(--ink-3); }
+.doc .ctx-line svg { width: 14px; height: 14px; flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transform: rotate(-90deg); transition: transform .15s; }
+.doc .rep.ctx.open .ctx-line svg { transform: none; }
 .w-head { display: flex; align-items: center; gap: 10px; }
 .w-head h2 {
   margin: 0; font: 600 15px/1.2 var(--font); letter-spacing: -.01em; white-space: nowrap;
@@ -1326,7 +1323,9 @@ function rvRender() {
   const row = p => p.type === 'finance'
     ? `<div class="sg" data-id="${esc(p.id)}"><svg><use href="#i-euro"/></svg><div class="sg-t"><b>${esc(p.title)}</b><small>${meta(p)}</small></div>
       <button class="btn sm acc" data-do="accept">Ajouter aux finances</button>${x}</div>`
-    : p.source === 'revue' ? rvRow(p, x, input, meta)
+    : p.source === 'revue'
+    ? `<div class="sg" data-id="${esc(p.id)}"><svg><use href="#i-agent"/></svg><div class="sg-t">${input(p)}<small>${meta(p)}</small></div>
+      <button class="btn sm acc" data-do="launch" title="Un agent s'en charge tout de suite">Lancer</button>${x}</div>`
     : `<div class="sg" data-id="${esc(p.id)}"><svg><use href="#i-plus"/></svg>
       <div class="sg-t">${input(p)}<small>${meta(p)}</small></div>
       <button class="btn sm acc" data-do="accept">Ajouter</button><button class="btn sm ghost" data-do="later">Plus tard</button><button class="btn sm ghost" data-do="dismiss">Ignorer</button></div>`;
@@ -1343,22 +1342,6 @@ function rvRender() {
     ${failed ? `<p class="rv-err">La dernière revue a échoué : ${esc(String(r.error).slice(0, 160))}</p>` : ''}
     ${shown.length ? `<div class="rv-list">${list}</div>` : ''}
   </section>`;
-}
-// A review task unfolds into what the agent will do and what it will have at hand
-const rvOpen = new Set();
-function rvRow(p, x, input, meta) {
-  const sources = [...new Set([p.project && `Projet : ${p.project}`, ...(p.refs ?? []).map(r => r.label)].filter(Boolean))];
-  const can = !!(p.etapes?.length || sources.length), open = can && rvOpen.has(p.id);
-  return `<div class="sg${can ? ' unfold' : ''}${open ? ' open' : ''}" data-id="${esc(p.id)}">${can
-      ? `<button class="sg-chev" data-do="more" aria-expanded="${open}" aria-label="${open ? 'Replier' : "Voir ce que l'agent va faire"}"><svg><use href="#i-chev"/></svg></button>`
-      : '<svg><use href="#i-agent"/></svg>'}<div class="sg-t">${input(p)}<small>${meta(p)}</small></div>
-      <button class="btn sm acc" data-do="launch" title="Un agent s'en charge tout de suite">Lancer</button>${x}</div>
-    ${open ? `<div class="sg-more">
-      ${p.etapes?.length ? `<h4>Ce que l'agent va faire</h4><ol>${p.etapes.map(e => `<li>${esc(e)}</li>`).join('')}</ol>` : ''}
-      ${p.objectif ? `<p>Fini quand : ${esc(p.objectif)}</p>` : ''}
-      ${sources.length ? `<h4>Ce qu'il aura sous les yeux</h4><ul>${sources.map(s => `<li>${esc(s)}</li>`).join('')}</ul>` : ''}
-      ${p.project ? '<p>Avec les notes client et finance, l\'agenda et le journal liés au projet.</p>' : ''}
-    </div>` : ''}`;
 }
 function rvAgent() {
   const r = review ?? {};
@@ -1402,9 +1385,8 @@ async function rvDecide(id, act) {
   else if (act === 'later') toast('Ajoutée à « Plus tard »');
 }
 $('#propositions').addEventListener('click', e => {
-  const b = e.target.closest('button'), sg = e.target.closest('.sg.unfold');
+  const b = e.target.closest('button');
   if (b?.id === 'rv-run') rvRun();
-  else if (sg && (b?.dataset.do === 'more' || (!b && !e.target.closest('input')))) { rvOpen.has(sg.dataset.id) ? rvOpen.delete(sg.dataset.id) : rvOpen.add(sg.dataset.id); rvRender(); }
   else if (b?.dataset.do) rvDecide(b.closest('.sg').dataset.id, b.dataset.do);
 });
 $('#propositions').addEventListener('input', e => { const sg = e.target.closest('.sg'); if (sg) rvEdits[sg.dataset.id] = e.target.value; });
@@ -3205,9 +3187,10 @@ async function dgOpen(id, toBottom) {
     </section>` : '';
   // what the agent was handed at launch, readable as it got it
   if (dgCtx.id !== id) dgCtx = { id, open: false, text: null };
-  const ctxCard = d.contexte ? `<section class="rep" aria-label="Contexte transmis">
-      <header><b>Contexte transmis${d.contexteTaille ? ` · ${Math.max(1, Math.round(d.contexteTaille / 1000))} k caractères` : ''}</b><a href="/${esc(d.contexte)}" target="_blank" rel="noopener">CONTEXTE.md</a><button class="btn sm" id="dg-ctx" aria-expanded="${dgCtx.open}">${dgCtx.open ? 'Replier' : 'Ouvrir'}</button></header>
-      ${dgCtx.open && dgCtx.text != null ? `<div class="rep-full">${md(dgCtx.text)}</div>` : ''}
+  // folded by default: one line, the whole of it opens the file in place
+  const ctxCard = d.contexte ? `<section class="rep ctx${dgCtx.open ? ' open' : ''}" aria-label="Contexte transmis">
+      <button class="ctx-line" id="dg-ctx" aria-expanded="${dgCtx.open}"><svg><use href="#i-chev"/></svg>Contexte transmis${d.contexteTaille ? `<span>· ${Math.max(1, Math.round(d.contexteTaille / 1000))} k caractères</span>` : ''}</button>
+      ${dgCtx.open && dgCtx.text != null ? `<div class="rep-full">${md(dgCtx.text)}</div><div class="rep-files"><a href="/${esc(d.contexte)}" target="_blank" rel="noopener">CONTEXTE.md</a></div>` : ''}
     </section>` : '';
   const lastDone = d.etapes.map(e => !!e.fin).lastIndexOf(true);
   const cardAt = lastDone === -1 ? d.etapes.length - 1 : lastDone;
