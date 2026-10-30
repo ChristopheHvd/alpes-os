@@ -938,9 +938,21 @@ a.pf-card.res-cours p { color: var(--accent); }
 .rg-used .lbl { font-size: 12px; }
 .rg-chip { font: 500 12px/1.4 var(--font); padding: 3px 10px; border-radius: 20px; border: 1px solid var(--line); color: var(--ink-2); background: var(--surface); white-space: nowrap; }
 .rg-sw { display: flex; align-items: center; gap: 12px; font-size: 13.5px; }
-.rg-sw button { width: 40px; height: 24px; border-radius: 12px; border: 0; padding: 2px; background: var(--line); display: flex; justify-content: flex-start; flex-shrink: 0; cursor: pointer; }
-.rg-sw button i { width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
-.rg-sw button[aria-checked="true"] { background: var(--good); justify-content: flex-end; }
+.rg-sw button, .rg-tg { width: 40px; height: 24px; border-radius: 12px; border: 0; padding: 2px; background: var(--line); display: flex; justify-content: flex-start; flex-shrink: 0; cursor: pointer; }
+.rg-sw button i, .rg-tg i { width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+.rg-sw button[aria-checked="true"], .rg-tg[aria-checked="true"] { background: var(--good); justify-content: flex-end; }
+.rg-lirow { display: flex; align-items: center; gap: 4px; }
+.rg-lirow .rg-li { flex: 1; min-width: 0; }
+.rg-lirow .rg-tg { margin-right: 6px; }
+.rg-grp.hd { display: flex; justify-content: space-between; gap: 8px; padding-right: 6px; }
+.rg-cn { display: flex; align-items: center; gap: 14px; padding: 12px 2px; border-top: 1px solid var(--line-soft); }
+.rg-cn:first-of-type { border-top: 0; }
+.rg-cn > span { flex: 1; min-width: 0; }
+.rg-cn b { display: block; font: 500 14px/1.4 var(--mono); }
+.rg-cn small { display: block; font-size: 12.5px; color: var(--ink-3); }
+.rg-cn em { font: 500 12px var(--font); color: var(--ink-3); font-style: normal; }
+.rg-detail.cn { max-width: 760px; }
+.rg-cnh { display: flex; justify-content: flex-end; font-size: 12px; margin-bottom: 2px; }
 @media (max-width: 860px) { .rg-list { max-width: none; } }
 
 </style>
@@ -1063,7 +1075,7 @@ a.pf-card.res-cours p { color: var(--accent); }
 <main class="view page" data-view="reglages" hidden>
   <div class="rg-h">
     <h1 class="ptitle">Réglages</h1>
-    <div class="rg-tabs" id="rg-tabs" role="tablist" aria-label="Réglages"><button role="tab" data-t="prompts">Prompts</button><button role="tab" data-t="skills">Skills</button></div>
+    <div class="rg-tabs" id="rg-tabs" role="tablist" aria-label="Réglages"><button role="tab" data-t="prompts">Prompts</button><button role="tab" data-t="skills">Skills</button><button role="tab" data-t="connectors">Connecteurs</button></div>
   </div>
   <div class="rg-body">
     <nav class="pane rg-list" id="rg-list" aria-label="Liste"><span class="lbl">Chargement…</span></nav>
@@ -3595,16 +3607,25 @@ async function loadReglages() {
 }
 function renderRgList() {
   for (const b of $('#rg-tabs').children) b.setAttribute('aria-selected', String(b.dataset.t === rgTab));
+  $('#rg-list').hidden = rgTab === 'connectors';
+  if (rgTab === 'connectors') return;
+  const sw = s => `<button class="rg-tg" role="switch" aria-checked="${s.agents}" aria-label="Proposée aux agents : ${esc(s.name)}" title="Proposée aux agents" data-sk="${esc(s.name)}"><i></i></button>`;
   const meta = f => [modelName(f.model), f.effort && RG_EFFORT[f.effort].toLowerCase(), f.skill && `skill ${f.skill}`].filter(Boolean).join(' · ');
   const item = (on, id, cls, title, sub, badge) => `<button class="rg-li${cls}${on ? ' on' : ''}"${on ? ' aria-current="true"' : ''} data-id="${esc(id)}"><span><b>${esc(title)}</b><small>${esc(sub)}</small></span>${badge}</button>`;
   $('#rg-list').innerHTML = rgTab === 'prompts'
     ? rg.functions.map(f => item(f.id === rgFn, f.id, '', f.name, meta(f), f.modified ? '<span class="rg-badge mod">modifié</span>' : '')).join('')
-    : Object.entries(RG_ORIGIN).map(([o, label]) => {
-      const list = rg.skills.filter(s => s.origin === o);
-      return list.length ? `<span class="lbl rg-grp">${label}</span>` + list.map(s => item(s.name === rgSk, s.name, ' sk', s.name, skShort(s.description), s.pending ? '<span class="rg-badge wait">en attente</span>' : '')).join('') : '';
-    }).join('');
+    : Object.entries(RG_ORIGIN).filter(([o]) => rg.skills.some(s => s.origin === o)).map(([o, label], i) =>
+      `<span class="lbl rg-grp${i ? '' : ' hd'}"><span>${label}</span>${i ? '' : '<span>Aux agents</span>'}</span>`
+      + rg.skills.filter(s => s.origin === o).map(s => `<div class="rg-lirow">${item(s.name === rgSk, s.name, ' sk', s.name, skShort(s.description), s.pending ? '<span class="rg-badge wait">en attente</span>' : '')}${sw(s)}</div>`).join('')).join('');
 }
 function renderRgDetail() {
+  $('#rg-detail').classList.toggle('cn', rgTab === 'connectors');
+  if (rgTab === 'connectors') {
+    $('#rg-detail').innerHTML = `<div class="rg-cnh lbl">Proposé aux agents</div>` + rg.connectors.map(c => `<div class="rg-cn"><span><b>${esc(c.name)}</b><small>${esc(c.does)}</small></span>${c.fixed
+      ? '<em>toujours</em>'
+      : `<button class="rg-tg" role="switch" aria-checked="${c.agents}" aria-label="Proposé aux agents : ${esc(c.name)}" data-cn="${esc(c.name)}"><i></i></button>`}</div>`).join('');
+    return;
+  }
   const x = rgCur(), d = $('#rg-detail');
   if (!x) { d.innerHTML = ''; return; }
   if (rgTab === 'prompts') {
@@ -3643,7 +3664,17 @@ function rgStatus() {
     : x.pending ? 'Envoyé au second brain, appliqué au prochain passage du curateur' : '';
 }
 $('#rg-tabs').onclick = e => { const b = e.target.closest('button'); if (!b || !rg) return; rgTab = b.dataset.t; renderReglages(); };
-$('#rg-list').onclick = e => {
+$('#rg-list').onclick = async e => {
+  const t = e.target.closest('.rg-tg');
+  if (t) {
+    const s = rg.skills.find(x => x.name === t.dataset.sk);
+    const r = await rgSend(`/api/reglages/skills/${encodeURIComponent(s.name)}`, 'PUT', { agents: !s.agents });
+    if (r.error) { toast(r.error, true); return; }
+    dgSkills = null;   // the "/" menu of the agents reads them again
+    rgSet(r);
+    renderReglages();
+    return;
+  }
   const b = e.target.closest('.rg-li');
   if (!b) return;
   if (rgTab === 'prompts') rgFn = b.dataset.id; else rgSk = b.dataset.id;
@@ -3661,6 +3692,15 @@ $('#rg-detail').onchange = async e => {
   renderRgList();
 };
 $('#rg-detail').onclick = async e => {
+  const cn = e.target.closest('.rg-tg[data-cn]');
+  if (cn) {
+    const c = rg.connectors.find(x => x.name === cn.dataset.cn);
+    const r = await rgSend(`/api/reglages/connectors/${encodeURIComponent(c.name)}`, 'PUT', { agents: !c.agents });
+    if (r.error) { toast(r.error, true); return; }
+    rg.connectors = rg.connectors.map(x => x.name === r.name ? r : x);
+    renderRgDetail();
+    return;
+  }
   const id = e.target.closest('button')?.id, x = rg && rgCur();
   if (!id || !x) return;
   if (id === 'rg-open') { rgTab = 'skills'; rgSk = x.skill; renderReglages(); return; }
