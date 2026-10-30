@@ -944,7 +944,7 @@ async function reviewContext({ since } = {}) {
   // paused, finished or archived: his decision, in `next`, rules out suggestions about it
   const projects = listProjects(cfg.secondBrain, { all: true }), notes = listFinance(cfg.secondBrain);
   const isStopped = p => STOPPED.includes(p.stage);
-  const clientsOf = p => [p.client, ...notes.filter(n => n.projet === p.slug).map(clientOf)].filter(Boolean);
+  const clientsOf = p => [...new Set([p.client, ...notes.filter(n => n.projet === p.slug).map(clientOf)].filter(Boolean))];
   const live = new Set(projects.filter(p => !isStopped(p)).flatMap(clientsOf));
   const closed = new Set(projects.filter(p => ['terminé', 'archivé'].includes(p.stage)).map(p => p.slug));
   const noteClosed = n => n.projet ? closed.has(n.projet) : n.projects.length > 0 && n.projects.every(s => closed.has(s));
