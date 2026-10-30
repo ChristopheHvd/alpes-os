@@ -20,7 +20,7 @@ import { makeCalendarState } from './lib/calendarstate.js';
 import { makeProjectsOrder } from './lib/projectsorder.js';
 import { searchBrain } from './lib/search.js';
 import { makeChat, SYSTEM as CHAT_SYSTEM } from './lib/chat.js';
-import { makeDelegations, listSkills, userSkillsDir, RULES as AGENT_RULES } from './lib/delegations.js';
+import { makeDelegations, listSkills, listMcp, userSkillsDir, RULES as AGENT_RULES } from './lib/delegations.js';
 import { makeMeetings, MEETINGS_TOOLS, BRIEF as MEETINGS_BRIEF } from './lib/meetings.js';
 import { makeStandup, slotNow } from './lib/standup.js';
 import { makeChatLog } from './lib/chatlog.js';
@@ -128,6 +128,7 @@ const delegations = makeDelegations(ROOT, {
   get effort() { return setting('agents').effort; },
   get rules() { return reglages.prompt('agents', AGENT_RULES); },
   skillOn: name => reglages.skillOn(name),
+  mcpOn: name => reglages.mcpOn(name),
   denyRead: [path.join(ROOT, 'credentials'), path.join(ROOT, 'config')],
 }, {
   onChange(d, event) {
@@ -1115,7 +1116,7 @@ function skillView(s) {
     ...(own ? { text: bundle.read(skillFile(s)), pending: bundle.isPending(skillFile(s)) } : {}) };
 }
 app.get('/api/reglages', (req, res) => {
-  try { res.json({ models: MODELS, efforts: EFFORTS, functions: FUNCTIONS.map(fnView), skills: allSkills().map(skillView) }); }
+  try { res.json({ models: MODELS, efforts: EFFORTS, functions: FUNCTIONS.map(fnView), skills: allSkills().map(skillView), connectors: connectors() }); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 app.put('/api/reglages/functions/:id', (req, res) => {
@@ -1140,6 +1141,19 @@ app.delete('/api/reglages/prompts/:id', (req, res) => {
   if (!f) return res.status(404).json({ error: 'fonction sans prompt' });
   reglages.resetPrompt(f.id);
   res.json(fnView(f));
+});
+// the MCP servers of ~/.claude.json the agents may get; only switched off here, never removed
+// from there. dashboard is AlpesOS itself: always given.
+const connectors = () => [
+  { name: 'dashboard', does: 'lecture (second brain, todo, agenda, mails) et brouillons Gmail', fixed: true },
+  ...listMcp().filter(c => c.name !== 'dashboard').map(c => ({ ...c, agents: reglages.mcpOn(c.name) })),
+];
+app.put('/api/reglages/connectors/:name', (req, res) => {
+  const c = connectors().find(x => x.name === req.params.name && !x.fixed);
+  if (!c) return res.status(404).json({ error: 'connecteur introuvable' });
+  if (typeof req.body?.agents !== 'boolean') return res.status(400).json({ error: 'agents attendu' });
+  reglages.setMcp(c.name, req.body.agents);
+  res.json({ ...c, agents: req.body.agents });
 });
 app.put('/api/reglages/skills/:name', (req, res) => {
   const s = allSkills().find(x => x.name === req.params.name);
