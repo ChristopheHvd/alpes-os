@@ -20,7 +20,7 @@ import { makeCalendarState } from './lib/calendarstate.js';
 import { makeProjectsOrder } from './lib/projectsorder.js';
 import { searchBrain } from './lib/search.js';
 import { makeChat, SYSTEM as CHAT_SYSTEM } from './lib/chat.js';
-import { makeDelegations, listSkills, RULES as AGENT_RULES } from './lib/delegations.js';
+import { makeDelegations, listSkills, userSkillsDir, RULES as AGENT_RULES } from './lib/delegations.js';
 import { makeMeetings, MEETINGS_TOOLS, BRIEF as MEETINGS_BRIEF } from './lib/meetings.js';
 import { makeStandup, slotNow } from './lib/standup.js';
 import { makeChatLog } from './lib/chatlog.js';
@@ -1019,21 +1019,25 @@ app.post('/api/review/run', async (req, res) => {
   catch (e) { res.status(500).json({ ...review.status(), error: e.message }); }
 });
 
-// Réglages screen — model, effort and prompt of each function; the second brain's
-// skills, offered or not to the agents. A SKILL.md is edited through the curator's queue.
+// Réglages screen — model, effort and prompt of each function; the skills of the second
+// brain, Claude Code and claude.ai, offered or not to the agents. Only a second brain
+// SKILL.md is edited here, through the curator's queue.
 const fnView = f => ({
   id: f.id, name: f.name, skill: f.skill ?? null, ...setting(f.id),
   fallback: { model: pick(...f.model), effort: pick(...(f.effort ?? [])) ?? null },
   ...(f.prompt ? { prompt: reglages.prompt(f.id, f.prompt), original: f.prompt, modified: reglages.modified(f.id) } : {}),
 });
 const skillFile = s => path.join(s.dir, 'SKILL.md');
+const allSkills = () => listSkills(cfg.secondBrain, userSkillsDir());
 function skillView(s) {
   const agents = reglages.skillOn(s.name);
   const usedBy = FUNCTIONS.filter(f => f.skill === s.name || f.uses?.some(u => path.basename(u) === s.name)).map(f => f.name);
-  return { name: s.name, description: s.description, agents, usedBy: agents ? [...usedBy, 'Agents'] : usedBy, text: bundle.read(skillFile(s)), pending: bundle.isPending(skillFile(s)) };
+  const own = s.origin === 'second-brain';
+  return { name: s.name, description: s.description, origin: s.origin, agents, usedBy: agents ? [...usedBy, 'Agents'] : usedBy,
+    ...(own ? { text: bundle.read(skillFile(s)), pending: bundle.isPending(skillFile(s)) } : {}) };
 }
 app.get('/api/reglages', (req, res) => {
-  try { res.json({ models: MODELS, efforts: EFFORTS, functions: FUNCTIONS.map(fnView), skills: listSkills(cfg.secondBrain).map(skillView) }); }
+  try { res.json({ models: MODELS, efforts: EFFORTS, functions: FUNCTIONS.map(fnView), skills: allSkills().map(skillView) }); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 app.put('/api/reglages/functions/:id', (req, res) => {
@@ -1060,9 +1064,10 @@ app.delete('/api/reglages/prompts/:id', (req, res) => {
   res.json(fnView(f));
 });
 app.put('/api/reglages/skills/:name', (req, res) => {
-  const s = listSkills(cfg.secondBrain).find(x => x.name === req.params.name);
+  const s = allSkills().find(x => x.name === req.params.name);
   if (!s) return res.status(404).json({ error: 'skill introuvable' });
   const b = req.body ?? {};
+  if (typeof b.text === 'string' && s.origin !== 'second-brain') return res.status(400).json({ error: 'seules les skills du second brain se modifient ici' });
   if (typeof b.text === 'string' && !b.text.trim()) return res.status(400).json({ error: 'SKILL.md vide' });
   try {
     if (typeof b.agents === 'boolean') reglages.setSkill(s.name, b.agents);
