@@ -28,7 +28,8 @@ import { readCredo, shuffleForDay } from './lib/credo.js';
 import { bundle } from './lib/sbqueue.js';
 import { makeLinkedin, checkPost } from './lib/linkedin.js';
 import { loadLinkedin, updatePost, visualFor, localToday, dueForPreparation, toProduce, planFrame, parsePrepared, planFile } from './lib/linkedin-plan.js';
-import { makePropositions, moneyKey } from './lib/propositions.js';
+import { makePropositions, moneyKey, same } from './lib/propositions.js';
+import { assemble, namesOf, mentions, journalEntries } from './lib/dossier.js';
 import { makeReview, SYSTEM as REVIEW_SYSTEM } from './lib/review.js';
 import { makeReglages, pick, MODELS, EFFORTS } from './lib/reglages.js';
 import { claudeActivity } from './lib/activity.js';
@@ -554,8 +555,13 @@ app.get('/api/delegations/:id', (req, res) => {
   const d = delegations.get(req.params.id);
   d ? res.json({ ...d, rapport: delegations.report(d.id) }) : res.status(404).json({ error: 'délégation introuvable' });
 });
-app.post('/api/delegations', (req, res) => {
-  try { res.json(delegations.create({ tache: req.body?.tache, contexte: req.body?.contexte, source: req.body?.source ?? null })); }
+// a todo task filed under a project gets the same CONTEXTE.md as a launched proposition
+app.post('/api/delegations', async (req, res) => {
+  try {
+    const slug = String(req.body?.tache ?? '').trim() ? projectSlug(req.body?.projet) : '';
+    const dossier = slug ? await dossierFor({ tache: String(req.body.tache).trim(), slug }) : '';
+    res.json(delegations.create({ tache: req.body?.tache, contexte: req.body?.contexte, source: req.body?.source ?? null, projet: slug || null, dossier }));
+  }
   catch (e) { res.status(400).json({ error: e.message }); }
 });
 app.post('/api/delegations/:id/:act', (req, res) => {
@@ -885,7 +891,8 @@ app.post('/api/propositions', (req, res) => {
   try { res.json(propositions.add(req.body ?? {})); }
   catch (e) { res.status(400).json({ error: e.message }); }
 });
-app.post('/api/propositions/:id/:act', (req, res) => {
+const launching = new Set();   // a double click must not start two agents
+app.post('/api/propositions/:id/:act', async (req, res) => {
   const { id, act } = req.params;
   try {
     const p = propositions.get(id);
@@ -894,9 +901,15 @@ app.post('/api/propositions/:id/:act', (req, res) => {
     let todo = null, finance = null, delegation = null;   // writeTodo drops a task already on the list
     if (p?.status === 'pending' && act === 'accept') { if (money) finance = toFinance(p.echeance); else todo = addItem(todoFile, { t, s: p.project }); }
     if (p?.status === 'pending' && act === 'later' && !money) { const cur = readTodo(todoFile); todo = writeTodo(todoFile, cur.items, [...cur.later, { t, s: p.project }]); }
-    // Lancer: an agent takes the task straight away, it never joins the todo
+    // Lancer: an agent takes the task straight away with its CONTEXTE.md, it never joins the todo
     if (p?.status === 'pending' && act === 'launch' && !money) {
-      delegation = delegations.create({ tache: t, contexte: [p.project && `Projet : ${p.project}`, p.why && `Proposée par la revue horaire : ${p.why}`].filter(Boolean).join('. '), source: p.id });
+      if (launching.has(id)) return res.status(409).json({ error: 'agent déjà en cours de lancement' });
+      launching.add(id);
+      try {
+        const slug = p.slug || projectSlug(p.project);
+        const dossier = await dossierFor({ tache: t, slug, objectif: p.objectif, etapes: p.etapes, why: p.why, refs: p.refs, revue: p.source === 'revue' });
+        delegation = delegations.create({ tache: t, contexte: [p.project && `Projet : ${p.project}`, p.why && `Proposée par la revue horaire : ${p.why}`].filter(Boolean).join('. '), source: p.id, projet: slug || null, dossier });
+      } finally { launching.delete(id); }
     }
     res.json({ proposition: propositions.decide(id, act, req.body?.title), todo: todo ?? readTodo(todoFile), finance, delegation });
   } catch (e) { res.status(e.status ?? 400).json({ error: e.message }); }
@@ -991,7 +1004,7 @@ async function moneyContext(since) {
         const c = mailClient(t, clients);
         let messages;
         try { messages = await gmail.threadText(t.id); } catch (e) { messages = [{ de: t.from, date: t.date, texte: t.snippet }]; }
-        mails.push({ de: t.from, objet: t.subject, date: t.date, ...(c ? { client: c.slug } : {}), messages });
+        mails.push({ id: t.id, de: t.from, objet: t.subject, date: t.date, ...(c ? { client: c.slug } : {}), messages });
         if (c && !extraits[c.slug]) extraits[c.slug] = [...priceLines(bundle.read(path.join(cfg.secondBrain, c.id))),
           ...notes.filter(n => clientOf(n) === c.slug).flatMap(n => priceLines(bundle.read(path.join(cfg.secondBrain, n.id))).map(l => `${n.id} : ${l}`))].slice(0, 20);
       }
@@ -1018,6 +1031,71 @@ app.post('/api/review/run', async (req, res) => {
   try { await review.run('demandée').done; res.json(review.status()); }
   catch (e) { res.status(500).json({ ...review.status(), error: e.message }); }
 });
+
+// CONTEXTE.md for a task an agent takes on: the project's note, its clients' and
+// finance notes in full, the facts the review cited, the meetings ahead, recent
+// journal entries and earlier agents' reports on the same project.
+const projectSlug = v => v ? listProjects(cfg.secondBrain, { all: true }).find(p => p.slug === v || same(p.title) === same(v))?.slug ?? '' : '';
+async function dossierFor({ tache, slug = '', objectif = '', etapes = [], why = '', refs = [], revue = false }) {
+  const sb = cfg.secondBrain, abs = id => path.join(sb, id);
+  const project = slug ? listProjects(sb, { all: true }).find(p => p.slug === slug) : null;
+  const notes = listFinance(sb);
+  const clientSlugs = [...new Set([project?.client, ...notes.filter(n => project && n.projet === slug).map(clientOf),
+    ...refs.filter(r => r.type === 'client').map(r => r.id)].filter(Boolean))];
+  const clients = listClients(sb).filter(c => clientSlugs.includes(c.slug));
+  const names = namesOf([project?.title, ...clients.map(c => c.title)]);
+  const sections = [];
+  const note = (titre, id) => { if (!sections.some(s => s.chemin === abs(id))) sections.push({ titre, texte: bundle.read(abs(id)), chemin: abs(id) }); };
+  if (project) note(`Projet : ${project.title}`, project.id);
+  for (const c of clients) note(`Client : ${c.title}`, c.id);
+  for (const n of notes.filter(n => (project && (n.projet === slug || (!n.projet && n.projects.includes(slug)))) || clientSlugs.includes(clientOf(n)))) note(`Finance : ${n.title}`, n.id);
+  for (const r of refs) {
+    if (r.type === 'note' && /^brain\/[\w./-]+\.md$/.test(r.id) && !r.id.includes('..') && bundle.exists(abs(r.id))) note(r.label, r.id);
+    if (r.type === 'projet') { const p = listProjects(sb, { all: true }).find(p => p.slug === r.id); if (p) note(`Projet : ${p.title}`, p.id); }
+  }
+  for (const r of refs.filter(r => r.type === 'mail')) {
+    try {
+      const msgs = await gmail.threadText(r.id, { last: 10, maxChars: 8000 });
+      sections.push({ titre: r.label, texte: msgs.map(m => `**${m.de}** · ${m.date.slice(0, 16).replace('T', ' ')}\n\n${m.texte}`).join('\n\n---\n\n'), chemin: `fil Gmail ${r.id} (outil lister_mails)` });
+    } catch (e) { /* a mail out of reach leaves the rest of the file */ }
+  }
+  if (names.length) {
+    try {
+      const { events } = await calendar.upcoming({ ...calOpts(), days: 30, max: 60 });
+      const mine = events.filter(e => mentions([e.title, ...(e.attendees ?? []), e.location].join(' '), names));
+      if (mine.length) sections.push({ titre: 'Agenda à venir', chemin: 'agenda Google (outil lister_agenda)', texte: mine.map(e => `- ${new Date(e.start).toLocaleString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · ${e.title}${e.attendees?.length ? ` · avec ${e.attendees.join(', ')}` : ''}${e.location ? ` · ${e.location}` : ''}`).join('\n') });
+    } catch (e) { /* no agenda, no section */ }
+  }
+  const cited = refs.filter(r => r.type === 'session').map(r => r.id);
+  if (cited.length) {
+    const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
+    const act = (await claudeActivity({ since: midnight.getTime() })).filter(s => cited.includes(s.id));
+    if (act.length) sections.push({ titre: "Activité Claude Code d'aujourd'hui", chemin: '~/.claude/projects (transcripts)', texte: act.map(s => `### ${s.worktree ?? s.dossier}${s.branche ? ` (${s.branche})` : ''}, ${s.de}–${s.a}\n\n${s.extraits.map(x => `- ${x}`).join('\n')}`).join('\n\n') });
+  }
+  if (names.length) {
+    const dir = path.join(sb, 'brain', 'journal');
+    bundle.list(dir).filter(f => f.endsWith('.md') && !['index.md', 'todo.md', 'delegations.md'].includes(f))
+      .flatMap(f => journalEntries(bundle.read(path.join(dir, f)), names, path.join(dir, f)))
+      .sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5).forEach(e => sections.push(e));
+  }
+  for (const d of delegations.list({ all: true }).filter(d => project && (d.projet === slug || mentions(d.tache, names))).slice(0, 3)) {
+    const txt = delegations.report(d.id);
+    if (txt) sections.push({ titre: `Rapport d'un agent précédent · ${d.tache}`.slice(0, 140), texte: txt, chemin: path.join(ROOT, d.dossier, 'RAPPORT.md') });
+  }
+  if (!sections.length && !objectif && !etapes.length) return '';
+  const r = review.status();
+  const bullets = revue && rvToday(r.at) ? [r.summary ?? []].flat() : [];
+  const head = [
+    '# Contexte de la tâche',
+    `Préparé par AlpesOS le ${new Date().toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}, au lancement. C'est ce que Christophe sait déjà : pars de là et ne cherche ailleurs que ce qui manque. Une partie trop longue est tronquée et donne le chemin de son texte complet.`,
+    '## Tâche', `**${tache}**`,
+    [objectif && `- Objectif : ${objectif}`, why && `- Pourquoi : ${why}`, project && `- Projet : ${project.title} (${project.stage}) — prochaine étape notée : ${project.next || '—'}`].filter(Boolean).join('\n'),
+    etapes.length && `### Étapes prévues\n\n${etapes.map((e, i) => `${i + 1}. ${e}`).join('\n')}`,
+    bullets.length && `### Revue horaire de ${new Date(r.at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\n\n${bullets.map(b => `- ${b}`).join('\n')}`,
+  ].filter(Boolean).join('\n\n');
+  return assemble(head, sections) + '\n';
+}
+const rvToday = iso => !!iso && new Date(iso).toDateString() === new Date().toDateString();
 
 // Réglages screen — model, effort and prompt of each function; the second brain's
 // skills, offered or not to the agents. A SKILL.md is edited through the curator's queue.
