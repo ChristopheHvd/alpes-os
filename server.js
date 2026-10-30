@@ -915,6 +915,12 @@ app.delete('/api/connexions/:id', async (req, res) => {
 app.get('/api/connexions/:id/activite', (req, res) => {
   try { res.json(partenaires.activite(req.params.id)); } catch (e) { res.status(e.status ?? 400).json({ error: e.message }); }
 });
+app.post('/api/connexions/:id/missions', async (req, res) => {
+  try { res.json(await partenaires.confier(req.params.id, req.body ?? {})); } catch (e) { relaisErr(res, e); }
+});
+app.post('/api/connexions/:id/messages', async (req, res) => {
+  try { res.json(await partenaires.envoyerMessage(req.params.id, req.body ?? {})); } catch (e) { relaisErr(res, e); }
+});
 app.post('/api/connexions/missions/:id/terminer', async (req, res) => {
   try { res.json(await partenaires.terminer(req.params.id, req.body?.message)); } catch (e) { res.status(e.status ?? 400).json({ error: e.message }); }
 });
@@ -933,7 +939,7 @@ app.post('/api/propositions/:id/:act', (req, res) => {
     // a mission on "Demander avant" starts the partner's work instead of adding a task
     const tache = p?.source !== 'mission' || partenaires.ajouteTache(id);
     let todo = null, finance = null;   // writeTodo drops a task already on the list
-    if (p?.status === 'pending' && act === 'accept') { if (money) finance = toFinance(p.echeance); else if (tache) todo = addItem(todoFile, { t, s: p.project }); }
+    if (p?.status === 'pending' && act === 'accept') { if (money) finance = toFinance(p.echeance); else if (tache && p.source !== 'partenaire') todo = addItem(todoFile, { t, s: p.project }); }
     if (p?.status === 'pending' && act === 'later' && !money) { const cur = readTodo(todoFile); todo = writeTodo(todoFile, cur.items, [...cur.later, { t, s: p.project }]); }
     const proposition = propositions.decide(id, act, req.body?.title);
     // the partner hears back: accepted, postponed or rejected
