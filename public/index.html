@@ -3243,11 +3243,14 @@ let dgSkills = null, skList = [], skSel = 0;
 const skToken = ta => ta.value.slice(0, ta.selectionStart).match(/(^|\s)\/([\w-]*)$/);
 const skShort = t => String(t ?? '').split(/(?<=\.)\s| - /)[0].slice(0, 120);
 async function skUpdate() {
-  const ta = $('#v-reply-text'), pop = $('#v-skills'), m = skToken(ta);
-  if (!m) { pop.hidden = true; return; }
+  const ta = $('#v-reply-text'), pop = $('#v-skills');
+  if (!skToken(ta)) { pop.hidden = true; return; }
   dgSkills ??= await api('/api/delegations/skills').catch(() => null);
+  // read the caret again: the text may have moved on while the list loaded
+  const m = skToken(ta);
+  if (!m || document.activeElement !== ta) { pop.hidden = true; return; }
   const q = m[2].toLowerCase(), starts = s => s.name.toLowerCase().startsWith(q);
-  skList = (dgSkills ?? []).filter(s => s.name.toLowerCase().includes(q)).sort((a, b) => starts(b) - starts(a)).slice(0, 8);
+  skList = (dgSkills ?? []).filter(s => s.name.toLowerCase().includes(q)).sort((a, b) => starts(b) - starts(a));
   if (!skList.length) { pop.hidden = true; return; }
   skSel = Math.min(skSel, skList.length - 1);
   pop.innerHTML = skList.map((s, i) => `<button type="button" role="option" aria-selected="${i === skSel}" data-i="${i}"><b>/${esc(s.name)}</b><small>${esc(skShort(s.description))}</small></button>`).join('');
@@ -3264,6 +3267,9 @@ function skPick(i) {
 }
 $('#v-reply-text').addEventListener('input', () => { skSel = 0; skUpdate(); });
 $('#v-reply-text').addEventListener('blur', () => setTimeout(() => { $('#v-skills').hidden = true; }, 150));
+// moving the caret off the /token closes the list
+$('#v-reply-text').addEventListener('click', skUpdate);
+$('#v-reply-text').addEventListener('keyup', e => { if (!['ArrowDown', 'ArrowUp', 'Enter', 'Tab', 'Escape'].includes(e.key)) skUpdate(); });
 $('#v-skills').addEventListener('mousedown', e => { const b = e.target.closest('button'); if (b) { e.preventDefault(); skPick(+b.dataset.i); } });
 
 async function dgReply() {
