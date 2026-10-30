@@ -1066,6 +1066,13 @@ a.pf-card.res-cours p { color: var(--accent); }
 .rg-cn small { display: block; font-size: 12.5px; color: var(--ink-3); }
 .rg-cn em { font: 500 12px var(--font); color: var(--ink-3); font-style: normal; }
 .rg-detail.cn { max-width: 760px; }
+.rg-rl h3 { margin: 18px 0 2px; font: 600 12px var(--font); text-transform: uppercase; letter-spacing: .04em; color: var(--ink-3); }
+.rg-rl h3:first-child { margin-top: 0; }
+.rg-rl .rg-cn b { font-family: var(--font); }
+.rg-rl .rg-cn .btn { flex: none; }
+.rg-rl .rg-cn.ask { flex-wrap: wrap; }
+.rg-rl .rg-none { margin: 6px 2px; font-size: 13px; color: var(--ink-3); }
+.rg-rl .rg-none code { font: 12.5px var(--mono); }
 .rg-cnh { display: flex; justify-content: flex-end; font-size: 12px; margin-bottom: 2px; }
 @media (max-width: 860px) { .rg-list { max-width: none; } }
 
@@ -1196,7 +1203,7 @@ a.pf-card.res-cours p { color: var(--accent); }
 <main class="view page" data-view="reglages" hidden>
   <div class="rg-h">
     <h1 class="ptitle">Réglages</h1>
-    <div class="rg-tabs" id="rg-tabs" role="tablist" aria-label="Réglages"><button role="tab" data-t="prompts">Prompts</button><button role="tab" data-t="skills">Skills</button><button role="tab" data-t="connectors">Connecteurs</button></div>
+    <div class="rg-tabs" id="rg-tabs" role="tablist" aria-label="Réglages"><button role="tab" data-t="prompts">Prompts</button><button role="tab" data-t="skills">Skills</button><button role="tab" data-t="connectors">Connecteurs</button><button role="tab" data-t="relais">Relais</button></div>
   </div>
   <div class="rg-body">
     <nav class="pane rg-list" id="rg-list" aria-label="Liste"><span class="lbl">Chargement…</span></nav>
@@ -4064,7 +4071,7 @@ $('#cx-body').addEventListener('click', async e => {
 addEventListener('hashchange', () => { if (cxRoute()) { if (cxRoute().vue !== 'repondre') cxForm = null; loadCx(true); } });
 
 /* ---------- réglages: model, effort and prompt of each function, the skills (#reglages) ---------- */
-let rg = null, rgTab = 'prompts', rgFn = 'assistant', rgSk = null;
+let rg = null, rgTab = 'prompts', rgFn = 'assistant', rgSk = null, rgRl = null, rgCut = null;
 const rgDraft = {};   // text typed and not saved yet, by 'fn:<id>' or 'sk:<name>'
 const RG_EFFORT = { low: 'Faible', medium: 'Moyen', high: 'Élevé' };
 const RG_ORIGIN = { 'second-brain': 'Second brain', 'claude-code': 'Claude Code', 'claude-ai': 'claude.ai' };
@@ -4082,13 +4089,14 @@ async function loadReglages() {
   const r = await api('/api/reglages').catch(e => ({ error: e.message }));
   if (r.error) { $('#rg-list').innerHTML = `<span class="lbl">${esc(r.error)}</span>`; return; }
   rg = r;
+  rgRl = await api('/api/connexions').catch(e => ({ error: e.message }));
   if (!rg.skills.some(s => s.name === rgSk)) rgSk = rg.skills[0]?.name ?? null;
   renderReglages();
 }
 function renderRgList() {
   for (const b of $('#rg-tabs').children) b.setAttribute('aria-selected', String(b.dataset.t === rgTab));
-  $('#rg-list').hidden = rgTab === 'connectors';
-  if (rgTab === 'connectors') return;
+  $('#rg-list').hidden = rgTab === 'connectors' || rgTab === 'relais';
+  if (rgTab === 'connectors' || rgTab === 'relais') return;
   const sw = s => `<button class="rg-tg" role="switch" aria-checked="${s.agents}" aria-label="Proposée aux agents : ${esc(s.name)}" title="Proposée aux agents" data-sk="${esc(s.name)}"><i></i></button>`;
   const meta = f => [modelName(f.model), f.effort && RG_EFFORT[f.effort].toLowerCase(), f.skill && `skill ${f.skill}`].filter(Boolean).join(' · ');
   const item = (on, id, cls, title, sub, badge) => `<button class="rg-li${cls}${on ? ' on' : ''}"${on ? ' aria-current="true"' : ''} data-id="${esc(id)}"><span><b>${esc(title)}</b><small>${esc(sub)}</small></span>${badge}</button>`;
@@ -4099,7 +4107,9 @@ function renderRgList() {
       + rg.skills.filter(s => s.origin === o).map(s => `<div class="rg-lirow">${item(s.name === rgSk, s.name, ' sk', s.name, skShort(s.description), s.pending ? '<span class="rg-badge wait">en attente</span>' : '')}${sw(s)}</div>`).join('')).join('');
 }
 function renderRgDetail() {
-  $('#rg-detail').classList.toggle('cn', rgTab === 'connectors');
+  $('#rg-detail').classList.remove('rg-rl');
+  $('#rg-detail').classList.toggle('cn', rgTab === 'connectors' || rgTab === 'relais');
+  if (rgTab === 'relais') { renderRgRelais(); return; }
   if (rgTab === 'connectors') {
     $('#rg-detail').innerHTML = `<div class="rg-cnh lbl">Proposé aux agents</div>` + rg.connectors.map(c => `<div class="rg-cn"><span><b>${esc(c.name)}</b><small>${esc(c.does)}</small></span>${c.fixed
       ? '<em>toujours</em>'
@@ -4132,6 +4142,23 @@ function renderRgDetail() {
   const ta = $('#rg-text');
   if (ta) { ta.value = rgDraft[rgKey()] ?? rgSaved(x); ta.oninput = () => { rgDraft[rgKey()] = ta.value; rgStatus(); }; }
   rgStatus();
+}
+const rgDay = iso => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+function renderRgRelais() {
+  const d = $('#rg-detail'), r = rgRl;
+  d.classList.add('rg-rl');
+  if (!r || r.error) { d.innerHTML = `<span class="lbl">${esc(r?.error ?? 'Chargement…')}</span>`; return; }
+  const id = r.identite;
+  const ident = id
+    ? `<div class="rg-cn"><span><b>${esc(id.nom || 'Sans nom')}</b><small>${esc(id.url)}${id.inscritLe ? ` · inscrit le ${rgDay(id.inscritLe)}` : ''}</small></span></div>`
+    : '<p class="rg-none">Pas inscrit au relais. Lance <code>node scripts/relais-inscription.js</code>, puis relance Alpes OS.</p>';
+  const cx = r.connexions.map(c => rgCut === c.id
+    ? `<div class="rg-cn ask"><span><b>Couper avec ${esc(c.court)} ?</b><small>${esc(c.court)} est averti. La copie du suivi commercial est gardée.</small></span><button class="btn acc" data-cut-ok="${esc(c.id)}">Couper</button><button class="btn" data-cut-no>Annuler</button></div>`
+    : `<div class="rg-cn"><span><b>${esc(c.court)}</b><small>depuis le ${rgDay(c.creeLe)} · ${c.dernierEchange ? `dernier échange il y a ${rel(c.dernierEchange)}` : 'aucun échange'}</small></span><button class="btn" data-cut="${esc(c.id)}">Couper</button></div>`).join('');
+  const inv = r.invitations.map(i => `<div class="rg-cn"><span><b>${esc(i.email || 'Sans nom')}</b><small>envoyée le ${rgDay(i.creeLe)} · expire le ${rgDay(i.expireLe)}</small></span></div>`).join('');
+  d.innerHTML = `<h3>Identité</h3>${ident}
+    <h3>Connexions</h3>${cx || '<p class="rg-none">Aucune connexion.</p>'}
+    <h3>Invitations en attente</h3>${inv || '<p class="rg-none">Aucune.</p>'}${inv ? '<p class="rg-none">Une invitation non utilisée expire seule.</p>' : ''}`;
 }
 function renderReglages() { if (!rg) return; renderRgList(); renderRgDetail(); }
 function rgStatus() {
@@ -4172,6 +4199,22 @@ $('#rg-detail').onchange = async e => {
   renderRgList();
 };
 $('#rg-detail').onclick = async e => {
+  if (rgTab === 'relais') {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.cut) rgCut = b.dataset.cut;
+    else if ('cutNo' in b.dataset) rgCut = null;
+    else if (b.dataset.cutOk) {
+      b.disabled = true;
+      const r = await rgSend(`/api/connexions/${encodeURIComponent(b.dataset.cutOk)}`, 'DELETE');
+      if (r.error) { toast(r.error, true); b.disabled = false; return; }
+      rgCut = null;
+      rgRl = await api('/api/connexions').catch(e => ({ error: e.message }));
+      toast('Connexion coupée');
+    } else return;
+    renderRgDetail();
+    return;
+  }
   const cn = e.target.closest('.rg-tg[data-cn]');
   if (cn) {
     const c = rg.connectors.find(x => x.name === cn.dataset.cn);
