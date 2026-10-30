@@ -67,6 +67,23 @@ presse-papiers après la publication. Le jeton dure
 `linkedin.version` suit les versions de l'API LinkedIn (AAAAMM) : à avancer avant que la
 version en cours ne soit retirée, environ un an après sa sortie.
 
+### Connexions (relais d'agents)
+
+Onglet Outils › Connexions : les OS partenaires (SIMATIS OS d'abord) reliés par le relais
+d'agents ([os-agents-relay](https://github.com/ChristopheHvd/os-agents-relay)). Leurs missions
+arrivent dans les Propositions d'Aujourd'hui ou partent chez un agent délégué, selon le niveau
+d'autonomie réglé pour chaque partenaire ; Christophe leur en confie aussi, et échange avec eux des
+messages en Markdown. Le suivi commercial qu'un partenaire partage est gardé en copie dans
+`output/crm/` (onglet Suivi commercial de sa fiche) ; ce que Christophe y change repart chez lui, et
+seuls les faits marquants vont au curateur du second brain. Inscrire AlpesOS une fois, avec la clé
+d'inscription du relais, puis redémarrer :
+
+```bash
+node scripts/relais-inscription.js /chemin/vers/cle-inscription   # écrit credentials/relais.json
+```
+
+Sans `credentials/relais.json`, la page Connexions l'indique et rien ne part vers le relais.
+
 ### Les skills
 
 Le dashboard lance ses skills en headless : `devis`, `formation`, `standup`, `linkedin-post`.
@@ -98,6 +115,8 @@ lib/calendar.js      événements à venir
 lib/todo.js          lecture et écriture de la todo markdown
 lib/projects.js      projets au long cours
 lib/runs.js          exécutions headless et leur historique
+lib/partenaires.js   connexions aux OS partenaires : missions, messages et suivi commercial par le relais d'agents
+lib/suivi.js         copie du suivi commercial d'un partenaire (profil crm/1) et ses modifications
 public/index.html    toute l'interface, sans framework
 templates/           gabarit A4 des documents générés
 ```

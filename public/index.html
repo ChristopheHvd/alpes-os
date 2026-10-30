@@ -94,6 +94,120 @@ button, input, textarea, select { font-family: inherit; }
 .tools { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; align-items: start; }
 #apps, #decks { display: flex; flex-direction: column; gap: 10px; }
 
+/* ---------- connexions: partner OSes through the agents relay (Outils) ---------- */
+#cx-tool { display: flex; flex-direction: column; gap: 2px; }
+.cx-tool-it { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-radius: 6px; color: var(--ink); text-decoration: none; }
+.cx-tool-it:hover { background: var(--sunken); }
+.cx-tool-it span { flex: 1; min-width: 0; font: 500 13.5px/1.3 var(--font); }
+.cx { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+.cx-side { flex: 1 1 280px; min-width: 0; padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+.cx-it { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; color: var(--ink); text-decoration: none; }
+.cx-it:hover, .cx-it[aria-current] { background: var(--sunken); }
+.cx-it > span:first-child { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
+.cx-it b { font: 600 14.5px/1.35 var(--font); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cx-it.inv b { font-weight: 500; font-size: 14px; }
+.cx-sub, .cx-it small { font-size: 12.5px; color: var(--ink-2); }
+.cx-st { display: flex; align-items: center; gap: 6px; font: 500 12px/1 var(--font); color: var(--ink-2); white-space: nowrap; }
+.cx-st i { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--ink-3); }
+.cx-st.on { color: #2f7448; font-weight: 600; }
+.cx-st.on i { background: var(--good); border-color: var(--good); }
+.cx-add { margin: 10px 2px 2px; padding-top: 14px; border-top: 1px solid var(--line-soft); display: flex; flex-direction: column; gap: 8px; }
+.cx-add div, .cx-link { display: flex; gap: 8px; }
+.cx-add input, .cx-link input { flex: 1 1 auto; min-width: 0; min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); color: var(--ink); font-size: 13px; }
+.cx-link input { font: 400 12.5px var(--mono); }
+.cx-add .btn, .cx-link .btn, .cx-ask .btn { min-height: 36px; font-size: 13px; padding: 0 14px; border-radius: 7px; }
+.cx-detail { flex: 999 1 680px; min-width: 0; padding: 22px 26px 26px; display: flex; flex-direction: column; gap: 26px; }
+.cx-head { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 18px; }
+.cx-head > div { display: flex; flex-direction: column; gap: 4px; flex: 1 1 auto; }
+.cx-h2 { margin: 0; font: 600 26px/1.15 var(--display); letter-spacing: -.015em; }
+.cx-h2.sm { font-size: 20px; line-height: 1.2; }
+.cx-h3 { margin: 0; font: 600 15px/1.3 var(--font); color: var(--ink); }
+.cx-cut { border: 0; background: none; padding: 6px 0; color: var(--ink-2); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.cx-cut:hover { color: var(--crit); }
+.cx-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 20px 36px; }
+.cx-cols > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cx-h3row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.cx-row { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line-soft); }
+.cx-list > :first-child { border-top: 0; }
+.cx-row.top { align-items: flex-start; }
+.cx-main { display: flex; flex-direction: column; flex: 1 1 180px; min-width: 0; }
+.cx-main b { font: 600 14px/1.4 var(--font); }
+.cx-when { font-size: 12.5px; color: var(--ink-2); white-space: nowrap; }
+.cx-who { font: 600 11px/1.5 var(--font); padding: 2px 8px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; background: #e3edf5; color: #24597f; }
+.cx-who.moi { background: var(--sunken); color: var(--ink-2); }
+.cx-badge { font: 500 12px/1.4 var(--font); padding: 4px 10px; border-radius: 20px; border: 1px solid var(--line); color: var(--ink-2); text-decoration: none; white-space: nowrap; }
+.cx-badge.acc { border-color: transparent; background: var(--accent-soft); color: #9a3c15; font-weight: 600; }
+.cx-row details, details.cx-row { display: block; }
+details.cx-row summary { cursor: pointer; font: 500 13px/1.4 var(--font); color: var(--ink-2); }
+.cx-older { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; font-size: 13px; color: var(--ink-2); }
+.cx-empty { margin: 8px 0 0; font-size: 13px; color: var(--ink-3); }
+.cx-params { display: flex; flex-direction: column; gap: 22px; padding-top: 22px; border-top: 1px solid var(--line); }
+.cx-params > div { display: flex; flex-direction: column; gap: 12px; }
+.cx-seg { align-self: flex-start; display: flex; flex-wrap: wrap; gap: 2px; padding: 3px; border: 1px solid var(--line-soft); border-radius: 20px; background: var(--surface); }
+.cx-seg button { border: 0; background: transparent; color: var(--ink-3); border-radius: 16px; padding: 0 14px; min-height: 36px; font: 500 13px/1 var(--font); white-space: nowrap; cursor: pointer; }
+.cx-seg button:hover { color: var(--ink); }
+.cx-seg button.on { background: var(--sunken); color: var(--ink); font-weight: 600; }
+.cx-note { margin: 0; font-size: 13.5px; color: var(--ink-2); }
+.cx-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cx-chips .lbl { font-size: 12.5px; margin-right: 4px; }
+.cx-chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: 20px; padding: 0 12px; min-height: 32px; font: 500 12.5px/1 var(--font); color: var(--ink-2); }
+button.cx-chip { cursor: pointer; }
+button.cx-chip:hover { border-color: var(--ink-3); }
+.cx-chip.on { border-color: var(--ink); color: var(--ink); }
+.cx-chip svg { width: 12px; height: 12px; stroke: var(--ink-3); }
+.cx-chip.on svg { width: 13px; height: 13px; stroke: var(--accent); }
+.cx-ask { display: flex; flex-direction: column; gap: 10px; max-width: 640px; }
+.cx-ask p { margin: 0; font-size: 13.5px; color: var(--ink-2); }
+.cx-ask code { font: 400 12.5px var(--mono); background: var(--sunken); padding: 1px 5px; border-radius: 4px; }
+.cx-tabs { display: flex; gap: 2px; padding: 3px; border: 1px solid var(--line-soft); border-radius: 20px; background: var(--surface); }
+.cx-tabs a { display: inline-flex; align-items: center; min-height: 32px; padding: 0 14px; border-radius: 16px; color: var(--ink-3); text-decoration: none; font: 500 13px/1 var(--font); white-space: nowrap; }
+.cx-tabs a:hover { color: var(--ink); }
+.cx-tabs a[aria-current] { background: var(--sunken); color: var(--ink); font-weight: 600; }
+.cx-h3row .sp { flex: 1; }
+.cx-h3row .btn, .cx-form .btn, .cx-row > .btn { min-height: 32px; font-size: 12.5px; padding: 0 12px; border-radius: 7px; }
+.cx .btn.ghost { background: transparent; }
+.cx-form { display: flex; flex-direction: column; gap: 8px; padding: 12px 0 14px; border-top: 1px solid var(--line-soft); }
+.cx-form input, .cx-form textarea, .cx-form select { box-sizing: border-box; width: 100%; min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); color: var(--ink); font: 400 13.5px/1.4 var(--font); }
+.cx-form textarea { padding: 8px 12px; min-height: 96px; resize: vertical; line-height: 1.5; }
+.cx-form input:focus, .cx-form textarea:focus, .cx-form select:focus { outline: none; border-color: var(--accent); }
+.cx-form .cx-act { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cx-form .cx-act .sp { flex: 1; }
+.cx-form .cx-act input[type="date"] { width: auto; }
+.cx-form .cx-seg button { min-height: 30px; }
+.cx-md { margin-top: 4px; font-size: 13.5px; line-height: 1.55; color: var(--ink); overflow-wrap: anywhere; }
+.cx-md p, .cx-md ul, .cx-md ol { margin: 0 0 6px; }
+.cx-md ul, .cx-md ol { padding-left: 20px; }
+.cx-md > :last-child { margin-bottom: 0; }
+.cx-md code { font: 400 12.5px var(--mono); background: var(--sunken); padding: 1px 4px; border-radius: 4px; }
+.cx-md a { color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.cx-res { font-size: 12.5px; color: var(--ink-2); }
+/* suivi commercial: the partner's deals by stage, then one deal */
+.cx-board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(210px, 1fr); gap: 12px; overflow-x: auto; padding-bottom: 6px; }
+.cx-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 10px; border-radius: 10px; background: var(--sunken); }
+.cx-col h4 { margin: 0; padding: 2px 4px 4px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font: 600 13px/1.3 var(--font); color: var(--ink); }
+.cx-col h4 span { font-weight: 500; font-size: 12px; color: var(--ink-2); }
+.cx-card { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line-soft); background: var(--surface); color: var(--ink); text-decoration: none; }
+.cx-card:hover { border-color: var(--ink-3); }
+.cx-card b { font: 600 13.5px/1.35 var(--font); }
+.cx-card small { font-size: 12.5px; color: var(--ink-2); }
+.cx-card .cx-num { font-variant-numeric: tabular-nums; color: var(--ink); }
+.cx-flag { align-self: flex-start; margin-top: 4px; font: 600 11px/1.5 var(--font); padding: 1px 8px; border-radius: 20px; background: var(--accent-soft); color: #9a3c15; }
+.cx-alert { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 14px; border-radius: 10px; background: var(--accent-soft); font-size: 13.5px; color: var(--ink); }
+.cx-alert > span { flex: 1 1 260px; min-width: 0; }
+.cx-alert .btn { min-height: 32px; font-size: 12.5px; padding: 0 12px; border-radius: 7px; }
+.cx-alert .btn.ghost { border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+.cx-back { align-self: flex-start; font-size: 13px; color: var(--ink-2); text-decoration: none; }
+.cx-back:hover { color: var(--ink); }
+.cx-aff { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 14px; align-items: end; border: 0; padding: 0; }
+.cx-aff label { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--ink-2); min-width: 0; }
+.cx-aff .cx-wide { grid-column: 1 / -1; }
+.cx-aff .cx-act { grid-column: 1 / -1; padding-top: 0; }
+.cx-facts { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; font-size: 12.5px; color: var(--ink-2); }
+.cx-facts b { font-weight: 500; color: var(--ink); }
+.cx-done b { text-decoration: line-through; color: var(--ink-3); }
+.cx-list + .cx-h3row { margin-top: 20px; }
+@media (max-width: 640px) { .cx-board { grid-auto-flow: row; grid-auto-columns: auto; overflow-x: visible; } .cx-col:not(:has(.cx-card)) { display: none; } .cx-detail { padding: 18px 16px 20px; } }
+
 /* ---------- today: money band, the day's tasks, a glance column ---------- */
 .finband { padding: 16px 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 36px; }
 .fb-title { display: flex; align-items: center; gap: 9px; }
@@ -985,6 +1099,7 @@ a.pf-card.res-cours p { color: var(--accent); }
     <symbol id="i-post" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 11v6M8 7.5v.01M12 17v-6M12 13.5a2.5 2.5 0 0 1 5 0V17"/></symbol>
     <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
     <symbol id="i-list" viewBox="0 0 24 24"><path d="M4 6h2M9 6h11M4 12h2M9 12h11M4 18h2M9 18h11"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
   </defs>
 </svg>
 
@@ -1069,7 +1184,13 @@ a.pf-card.res-cours p { color: var(--accent); }
   <div class="tools">
     <section class="pane gl" aria-labelledby="h-apps"><div class="gl-head"><svg><use href="#i-grid"/></svg><h2 id="h-apps">Micro apps</h2></div><div id="apps"></div></section>
     <section class="pane gl" aria-labelledby="h-decks"><div class="gl-head"><svg><use href="#i-course"/></svg><h2 id="h-decks">Supports de formation</h2></div><div id="decks"></div></section>
+    <section class="pane gl" aria-labelledby="h-cx"><div class="gl-head"><svg><use href="#i-link"/></svg><h2 id="h-cx">Connexions</h2><span class="sp"></span><a class="more" href="#connexions">Ouvrir →</a></div><div id="cx-tool"><span class="lbl">Chargement…</span></div></section>
   </div>
+</main>
+
+<main class="view page" data-view="connexions" hidden>
+  <h1 class="ptitle">Connexions</h1>
+  <div class="cx" id="cx-body"><span class="lbl">Chargement…</span></div>
 </main>
 
 <main class="view page" data-view="reglages" hidden>
@@ -1327,12 +1448,17 @@ function rvRender() {
   const r = review ?? {};
   const failed = r.error && (!r.at || r.errorAt > r.at);
   const head = r.running ? 'Revue en cours…' : rvToday(r.at) ? `Revue de ${rvHour(r.at)}` : r.at ? `Dernière revue ${rvWhen(r.at)}` : 'Revue horaire';
-  const meta = p => [p.source === 'mission' ? `Mission de ${p.from}` : '', p.why].filter(Boolean).map(esc).join(' · ');
+  const meta = p => [p.source === 'mission' ? `Mission de ${p.from}` : p.type === 'question' ? 'Question' : '', p.why].filter(Boolean).map(esc).join(' · ');
   // real amounts never show in demo mode
   const shown = props.filter(p => !(demoOn && p.type === 'finance'));
   const x = '<button class="sg-x" data-do="dismiss" title="Écarter : la revue ne la reproposera pas" aria-label="Écarter cette proposition">×</button>';
   const input = p => `<input value="${esc(rvEdits[p.id] ?? p.title)}" aria-label="Titre de la tâche, modifiable" title="Modifiable avant de valider">`;
-  const row = p => p.type === 'finance'
+  // a partner's notice or question: seen here, answered on its page
+  const go = p => (p.type === 'question' ? `#${p.lien}/repondre/${encodeURIComponent(p.ref.replace(/^message:/, ''))}` : `#${p.lien}`);
+  const row = p => p.source === 'partenaire'
+    ? `<div class="sg" data-id="${esc(p.id)}"><svg><use href="#i-link"/></svg><div class="sg-t"><b>${esc(p.title)}</b><small>${meta(p)}</small></div>
+      <button class="btn sm${p.type === 'question' ? ' acc' : ''}" data-go="${esc(go(p))}">${p.type === 'question' ? 'Répondre' : 'Ouvrir'}</button><button class="btn sm ghost" data-do="dismiss">Vu</button></div>`
+    : p.type === 'finance'
     ? `<div class="sg" data-id="${esc(p.id)}"><svg><use href="#i-euro"/></svg><div class="sg-t"><b>${esc(p.title)}</b><small>${meta(p)}</small></div>
       <button class="btn sm acc" data-do="accept">Ajouter aux finances</button>${x}</div>`
     : p.source === 'revue'
@@ -1400,6 +1526,12 @@ $('#propositions').addEventListener('click', e => {
   const b = e.target.closest('button');
   if (b?.id === 'rv-run') rvRun();
   else if (b?.dataset.do) rvDecide(b.closest('.sg').dataset.id, b.dataset.do);
+  else if (b?.dataset.go) {
+    // opening a notice is seeing it; a question stays until it is answered
+    const p = props.find(x => x.id === b.closest('.sg').dataset.id);
+    if (p?.type === 'avis') rvDecide(p.id, 'dismiss');
+    location.hash = b.dataset.go;
+  }
 });
 $('#propositions').addEventListener('input', e => { const sg = e.target.closest('.sg'); if (sg) rvEdits[sg.dataset.id] = e.target.value; });
 $('#propositions').addEventListener('keydown', e => { const sg = e.target.closest('.sg'); if (sg && e.target.matches('input') && e.key === 'Enter') rvDecide(sg.dataset.id, sg.querySelector('.acc').dataset.do); });
@@ -2954,6 +3086,12 @@ const CHAT_TOOLS = {
   creer_evenement: ['Prépare un événement', a => `Proposition : événement « ${esc(a.titre)} »`],
   lancer_micro_app: ['Prépare un lancement', a => `Proposition : micro-app ${esc(a.app)}`],
   maj_echeance: ['Prépare la mise à jour des finances', a => `Proposition : échéances ${esc(a.ref || a.note)}`],
+  lister_partenaires: ['Regarde les partenaires', () => 'Missions et messages des partenaires', 'les partenaires'],
+  confier_mission: ['Prépare une mission', a => `Proposition : mission « ${esc(a.titre)} »`],
+  envoyer_message: ['Prépare un message', a => `Proposition : message « ${esc(a.sujet || 'réponse')} »`],
+  lire_suivi_commercial: ['Regarde le suivi commercial', a => `Suivi commercial de ${esc(a.partenaire)}`, 'le suivi commercial'],
+  maj_affaire: ["Prépare la mise à jour d'une affaire", () => "Proposition : mise à jour d'une affaire"],
+  ajouter_au_suivi: ['Prépare un ajout au suivi', a => `Proposition : ${esc({ note: 'note', tache: 'tâche', contact: 'contact', compte_rendu: 'compte rendu' }[a.quoi] ?? 'ajout')}`],
   WebSearch: ['Cherche sur le web', a => `Recherche web « ${esc(a.query)} »`, 'le web'],
   WebFetch: ['Lit une page web', a => `Lecture ${chatPath(a.url)}`, 'le web'],
   Read: ['Lit un fichier', a => `Lecture ${chatPath(a.file_path)}`, 'des fichiers'],
@@ -3589,6 +3727,342 @@ addEventListener('keydown', e => {
   closeLiview();
 }, true);
 
+/* ---------- connexions: partner OSes through the agents relay ---------- */
+// #connexions, #connexions/<connection id>[/suivi[/<deal ref>] | /repondre/<message id>], #connexions/invitation/<code>
+let cx = null, cxAct = null, cxSig = '', cxForm = null;
+const cxRoute = () => {
+  const m = location.hash.match(/^#connexions(?:\/invitation\/([A-Z2-7]+)|\/([\w-]+)(?:\/(suivi|repondre)(?:\/([^/]+))?)?)?$/);
+  return m && { invitation: m[1] ?? null, id: m[2] ?? null, vue: m[3] ?? null, cle: m[4] ? decodeURIComponent(m[4]) : null };
+};
+const CX_ETAT = { submitted: 'reçue', working: 'en cours', 'input-required': 'en attente', completed: 'faite', failed: 'échouée', canceled: 'annulée', rejected: 'refusée' };
+const CX_TYPE = { question: 'Question', info: 'Info', reponse: 'Réponse' };
+const CX_NOTE = {
+  montrer: () => 'Ses missions arrivent dans Aujourd\'hui, rien ne démarre sans toi.',
+  demander_avant: p => `Ton agent te demande avant de commencer, puis répond seul à ${p}.`,
+  faire_puis_valider: p => `Rien ne repart chez ${p} sans ton accord.`,
+  faire_seul: p => `Ton agent fait la mission et répond seul à ${p}.`,
+};
+function cxWhen(iso) {
+  if (!iso) return '';
+  const d = new Date(iso), hm = `${d.getHours()} h ${String(d.getMinutes()).padStart(2, '0')}`;
+  const days = Math.round((new Date(new Date().toDateString()) - new Date(d.toDateString())) / 864e5);
+  if (days === 0) return `${d.getHours() < 12 ? 'Ce matin' : 'Aujourd\'hui'}, ${hm}`;
+  if (days === 1) return `Hier, ${hm}`;
+  if (days < 7) { const w = d.toLocaleDateString('fr-FR', { weekday: 'long' }); return w[0].toUpperCase() + w.slice(1); }
+  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+}
+const cxDate = iso => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+const cxSend = (url, body, method = 'POST') => api(url, { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body ?? {}) });
+function cxSel() {
+  const r = cxRoute();
+  if (!r || !cx || r.invitation) return null;
+  return cx.connexions.find(c => c.id === r.id) ?? (r.id ? null : cx.connexions[0] ?? null);
+}
+// redrawn only when something changed, so an open <details> or a typed address survives the polling
+async function loadCx(force) {
+  try { cx = await api('/api/connexions'); } catch (e) { return; }
+  renderCxTool();
+  if (!cxRoute()) return;
+  const sel = cxSel();
+  const r = cxRoute(), url = sel && `/api/connexions/${encodeURIComponent(sel.id)}`;
+  cxAct = sel ? await api(`${url}/activite`).catch(() => null) : null;
+  cxSv = sel && r.vue === 'suivi' && !r.cle ? await api(`${url}/suivi`).catch(() => null) : null;
+  cxAff = sel && r.vue === 'suivi' && r.cle ? await api(`${url}/suivi/affaires/${encodeURIComponent(r.cle)}`).then(x => (x.error ? undefined : x)).catch(() => undefined) : null;
+  const sig = JSON.stringify([cx, cxAct, cxSv, cxAff, location.hash]);
+  if (force || sig !== cxSig) { cxSig = sig; renderCx(); }
+}
+function renderCxTool() {
+  const el = $('#cx-tool');
+  if (!cx.actif) { el.innerHTML = '<span class="lbl">Relais non configuré.</span>'; return; }
+  el.innerHTML = cx.connexions.map(c => `<a class="cx-tool-it" href="#connexions/${esc(c.id)}"><span>${esc(c.court)}</span><span class="cx-st on"><i></i>Connecté</span></a>`).join('')
+    + cx.invitations.map(i => `<a class="cx-tool-it" href="#connexions/invitation/${esc(i.code)}"><span>${esc(i.email || 'Invitation')}</span><span class="cx-st"><i></i>En attente</span></a>`).join('')
+    || '<span class="lbl">Aucun partenaire pour l\'instant.</span>';
+}
+const cxInvitation = i => `<section class="pane cx-detail cx-ask" aria-labelledby="cx-t"><h2 class="cx-h2" id="cx-t">Invitation${i.email ? ` pour ${esc(i.email)}` : ''}</h2>
+  <p>Transmets ce lien à ton partenaire : il le colle dans son OS pour se connecter. Valable jusqu'au ${esc(cxDate(i.expireLe))}. AlpesOS n'envoie aucun mail.</p>
+  <div class="cx-link"><input readonly id="cx-lien" value="${esc(i.lien)}" aria-label="Lien d'invitation"><button type="button" class="btn acc" id="cx-copy">Copier</button></div></section>`;
+const cxFirst = p => p.split(/\s/)[0];
+// a bare address in a message becomes a link, like the Markdown ones
+const cxLiens = t => String(t).replace(/(^|\s)(https?:\/\/[^\s<>()]+[^\s<>().,;:!?])/g, '$1[$2]($2)');
+function cxMissions(c, act) {
+  const p = c.court, enCours = act?.enCours ?? [], faites = act?.terminees ?? [];
+  const who = m => (m.sens === 'recue' ? `<span class="cx-who">${esc(cxFirst(p))}</span>` : '<span class="cx-who moi">Toi</span>');
+  const chez = { submitted: 'Envoyée', working: `Chez ${cxFirst(p)}`, 'input-required': `${cxFirst(p)} attend ta réponse` };
+  const badge = m => (m.sens === 'envoyee' ? `<span class="cx-badge${m.etat === 'input-required' ? ' acc' : ''}">${esc(chez[m.etat] ?? CX_ETAT[m.etat] ?? m.etat)}</span>`
+    : m.attente ? '<a class="cx-badge acc" href="#">À valider dans Aujourd\'hui</a>'
+      : m.agent?.statut === 'en_cours' ? '<span class="cx-badge">Ton agent y travaille</span>'
+        : m.agent?.statut === 'bloque' ? '<a class="cx-badge acc" href="#">Ton agent a une question</a>'
+          : m.plusTard ? '<span class="cx-badge">Plus tard</span>'
+            : m.etat === 'working' ? `<button type="button" class="btn sm" data-terminer="${esc(m.id)}">Marquer faite</button>`
+              : `<span class="cx-badge">${esc(CX_ETAT[m.etat] ?? m.etat)}</span>`);
+  const sub = m => [cxWhen(m.recueLe), m.echeance && `pour le ${cxDate(m.echeance)}`].filter(Boolean).join(' · ');
+  const fin = m => `<span>${esc(m.titre)} · ${esc(CX_ETAT[m.etat] ?? m.etat)}${m.sens === 'envoyee' ? ` par ${esc(p)}` : ''}, ${esc(cxWhen(m.majLe).toLowerCase())}${m.sens === 'envoyee' && m.resume ? `<br><small class="cx-res">${esc(m.resume)}</small>` : ''}</span>`;
+  return `<div><div class="cx-h3row"><h3 class="cx-h3">Missions</h3><span class="sp"></span>${cxForm === 'mission' ? '' : `<button type="button" class="btn" data-form="mission">Confier une mission</button>`}</div>
+    ${cxForm === 'mission' ? `<form class="cx-form" id="cx-mission">
+      <input data-k="m-titre" name="titre" maxlength="120" required placeholder="Titre" aria-label="Titre de la mission">
+      <textarea data-k="m-consigne" name="consigne" required placeholder="Consigne pour l'agent de ${esc(p)}" aria-label="Consigne"></textarea>
+      <div class="cx-act"><label class="lbl" for="cx-m-e">Pour le</label><input type="date" id="cx-m-e" data-k="m-echeance" name="echeance"><span class="sp"></span>
+        <button type="button" class="btn ghost" data-form="">Annuler</button><button type="submit" class="btn acc">Confier à ${esc(p)}</button></div></form>` : ''}
+    <div class="cx-list">
+      ${enCours.map(m => `<div class="cx-row">${who(m)}<span class="cx-main"><b>${esc(m.titre)}</b><small class="cx-sub">${esc(sub(m))}</small></span>${badge(m)}</div>`).join('') || (cxForm === 'mission' ? '' : '<p class="cx-empty">Aucune mission en cours.</p>')}
+      ${faites.length ? `<details class="cx-row" data-k="d-faites"><summary>Missions terminées</summary><div class="cx-older">${faites.map(fin).join('')}</div></details>` : ''}
+    </div></div>`;
+}
+function cxMessages(c, act, repondre) {
+  const p = c.court, fil = act?.messages ?? [];
+  const who = x => (x.sens === 'recu' ? `<span class="cx-who">${esc(cxFirst(p))}</span>` : '<span class="cx-who moi">Toi</span>');
+  const open = id => cxForm === `rep:${id}` || (repondre === id && !fil.find(y => y.id === id)?.repondu);
+  const rep = x => `<form class="cx-form" data-rep="${esc(x.id)}">
+      <textarea data-k="rep-${esc(x.id)}" name="texte" required placeholder="Ta réponse, en Markdown" aria-label="Réponse à ${esc(x.sujet)}"></textarea>
+      <div class="cx-act"><span class="sp"></span><button type="button" class="btn ghost" data-form="">Annuler</button><button type="submit" class="btn acc">Répondre</button></div></form>`;
+  const row = x => `<div class="cx-row top">${who(x)}<span class="cx-main"><b>${esc(x.sujet)}</b>
+      <small class="cx-sub">${esc([x.type === 'reponse' && x.enReponseA?.sujet ? '' : CX_TYPE[x.type], cxWhen(x.quand)].filter(Boolean).join(' · '))}</small>
+      <div class="cx-md">${md(cxLiens(x.texte))}</div></span>
+      ${x.sens === 'recu' && !x.repondu && !open(x.id) ? `<button type="button" class="btn${x.type === 'question' ? ' acc' : ''}" data-form="rep:${esc(x.id)}">Répondre</button>` : ''}
+    </div>${x.sens === 'recu' && open(x.id) ? rep(x) : ''}`;
+  return `<div><div class="cx-h3row"><h3 class="cx-h3">Messages</h3><span class="sp"></span>${cxForm === 'message' ? '' : `<button type="button" class="btn" data-form="message">Écrire</button>`}</div>
+    ${cxForm === 'message' ? `<form class="cx-form" id="cx-message">
+      <div class="cx-seg" role="group" aria-label="Type de message">${['question', 'info'].map(t => `<button type="button" data-type="${t}"${t === 'question' ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"'}>${CX_TYPE[t]}</button>`).join('')}</div>
+      <input data-k="msg-sujet" name="sujet" maxlength="160" required placeholder="Sujet" aria-label="Sujet">
+      <textarea data-k="msg-texte" name="texte" required placeholder="Message en Markdown, liens compris" aria-label="Message"></textarea>
+      <div class="cx-act"><span class="sp"></span><button type="button" class="btn ghost" data-form="">Annuler</button><button type="submit" class="btn acc">Envoyer à ${esc(p)}</button></div></form>` : ''}
+    <div class="cx-list">
+      ${fil.slice(0, 5).map(row).join('') || (cxForm === 'message' ? '' : '<p class="cx-empty">Aucun message.</p>')}
+      ${fil.length > 5 ? `<details class="cx-row" data-k="d-messages"><summary>Plus anciens</summary><div class="cx-list">${fil.slice(5).map(row).join('')}</div></details>` : ''}
+    </div></div>`;
+}
+function cxFiche(c, act, r) {
+  const p = c.court, base = `#connexions/${esc(c.id)}`, suivi = r.vue === 'suivi';
+  return `<section class="pane cx-detail" aria-labelledby="cx-t">
+    <div class="cx-head"><div><h2 class="cx-h2" id="cx-t">${esc(p)}</h2><span class="cx-sub">${esc(c.partenaire.nom)}${c.dernierEchange ? ` · dernier échange il y a ${esc(rel(c.dernierEchange))}` : ''}</span></div>
+      <nav class="cx-tabs" aria-label="${esc(p)}"><a href="${base}"${suivi ? '' : ' aria-current="page"'}>Échanges</a><a href="${base}/suivi"${suivi ? ' aria-current="page"' : ''}>Suivi commercial</a></nav>
+      <button type="button" class="cx-cut" id="cx-cut">Couper la connexion</button></div>
+    ${suivi ? cxSuivi(c, r) : `<div class="cx-cols">${cxMissions(c, act)}${cxMessages(c, act, r.vue === 'repondre' ? r.cle : null)}</div>
+    <div class="cx-params"><h3 class="cx-h2 sm">Paramètres</h3>
+      <div><h4 id="cx-auto" class="cx-h3">Quand ${esc(p)} confie une mission à ton agent</h4>
+        <div class="cx-seg" role="group" aria-labelledby="cx-auto">${cx.niveaux.map(n => `<button type="button" data-niveau="${n.id}"${n.id === c.niveau ? ' class="on"' : ''} aria-pressed="${n.id === c.niveau}">${esc(n.libelle)}</button>`).join('')}</div>
+        <p class="cx-note">${esc(CX_NOTE[c.niveau](p))}</p>
+        <div class="cx-chips"><span class="lbl">Toujours avec ton accord</span>${cx.gardeFous.map(g => `<span class="cx-chip"><svg aria-hidden="true"><use href="#i-lock"/></svg>${esc(g)}</span>`).join('')}</div>
+      </div>
+      <div><h4 class="cx-h3">${esc(p)} voit</h4>
+        <p class="cx-note">Tes missions, tes messages et ce que tu changes dans son suivi commercial. Rien d'autre ne quitte AlpesOS.</p>
+      </div>
+    </div>`}
+  </section>`;
+}
+// the suivi commercial tab: deals by stage, or one deal with its contacts, meetings, tasks and activities
+let cxSv = null, cxAff = null;
+const cxEur = n => (n == null ? '' : `${Number(n).toLocaleString('fr-FR')} €`);
+const cxJour = iso => (iso ? new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '');
+const cxHeure = iso => { const d = new Date(iso); return `${d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}, ${d.getHours()} h ${String(d.getMinutes()).padStart(2, '0')}`; };
+const CX_ACT = { note: 'Note', appel: 'Appel', email: 'E-mail', reunion: 'Réunion' };
+const CX_TACHE = { appel: 'Appel', email: 'E-mail', tache: 'Tâche', reunion: 'Réunion', echeance: 'Échéance', dejeuner: 'Déjeuner' };
+function cxSuiviAlertes(c) {
+  const p = c.court;
+  return [
+    ...(cxSv?.suppressions ?? []).map(s => `<div class="cx-alert"><span>${esc(p)} a supprimé « ${esc(s.titre ?? 'une fiche')} » de son suivi : supprimer aussi ici ?</span>
+      <button type="button" class="btn ghost" data-garder="${esc(s.id)}">Garder</button><button type="button" class="btn acc" data-supprimer="${esc(s.id)}">Supprimer</button></div>`),
+    ...(cxSv?.notes ?? []).map(n => `<div class="cx-alert"><span>${esc(n.texte)}</span><button type="button" class="btn ghost" data-vu="${esc(n.id)}">Vu</button></div>`),
+  ].join('');
+}
+function cxCarte(c, a) {
+  return `<a class="cx-card" href="#connexions/${esc(c.id)}/suivi/${encodeURIComponent(a.ref)}"><b>${esc(a.titre)}</b>
+    ${a.entreprise ? `<small>${esc(a.entreprise)}</small>` : ''}
+    ${a.montant != null || a.echeance ? `<small>${a.montant != null ? `<span class="cx-num">${esc(cxEur(a.montant))}</span>` : ''}${a.montant != null && a.echeance ? ' · ' : ''}${a.echeance ? `pour le ${esc(cxJour(a.echeance))}` : ''}</small>` : ''}
+    ${a.detachee ? '<span class="cx-flag">Plus partagée</span>' : ''}</a>`;
+}
+function cxTableau(c) {
+  const sv = cxSv;
+  if (!sv) return '<p class="cx-empty">Chargement…</p>';
+  if (!sv.affaires.length) return `${cxSuiviAlertes(c)}<p class="cx-empty">${esc(c.court)} n'a encore rien partagé de son suivi commercial.</p>`;
+  const ouvertes = sv.etapes.filter(e => !e.clos), connues = new Set(sv.etapes.map(e => e.id));
+  const encours = sv.affaires.filter(a => !a.issue);
+  const cols = [...ouvertes.map(e => ({ libelle: e.libelle, affaires: encours.filter(a => a.etape === e.id) })),
+    { libelle: 'Autres', affaires: encours.filter(a => !connues.has(a.etape)) }].filter((x, i, all) => x.affaires.length || i < all.length - 1);
+  const closes = sv.affaires.filter(a => a.issue), gagnees = closes.filter(a => a.issue === 'gagne');
+  const somme = l => l.reduce((t, a) => t + (a.montant ?? 0), 0);
+  return `${cxSuiviAlertes(c)}
+    <div class="cx-board">${cols.map(k => `<section class="cx-col" aria-label="${esc(k.libelle)}"><h4>${esc(k.libelle)}<span>${k.affaires.length}${somme(k.affaires) ? ` · ${esc(cxEur(somme(k.affaires)))}` : ''}</span></h4>
+      ${k.affaires.map(a => cxCarte(c, a)).join('')}</section>`).join('')}</div>
+    ${closes.length ? `<details class="cx-row" data-k="d-closes"><summary>Affaires closes : ${gagnees.length} gagnée${gagnees.length > 1 ? 's' : ''}, ${closes.length - gagnees.length} perdue${closes.length - gagnees.length > 1 ? 's' : ''}</summary>
+      <div class="cx-list">${closes.map(a => `<a class="cx-row" href="#connexions/${esc(c.id)}/suivi/${encodeURIComponent(a.ref)}" style="text-decoration:none;color:inherit"><span class="cx-main"><b>${esc(a.titre)}</b><small class="cx-sub">${esc([a.entreprise, cxEur(a.montant)].filter(Boolean).join(' · '))}</small></span><span class="cx-badge">${a.issue === 'gagne' ? 'Gagnée' : 'Perdue'}</span></a>`).join('')}</div></details>` : ''}`;
+}
+function cxAffaire(c) {
+  const a = cxAff, base = `#connexions/${esc(c.id)}/suivi`;
+  if (!a) return `<a class="cx-back" href="${base}">← Suivi commercial</a><p class="cx-empty">${cxAff === null ? 'Chargement…' : 'Affaire introuvable.'}</p>`;
+  const ch = a.champs, p = c.court, f = cxForm;
+  const facts = [['Propriétaire', ch.proprietaire], ['Origine', ch.origine], ['Facturation', ch.mode_facturation === 'recurrent' ? `récurrente${ch.duree_engagement_mois ? `, ${ch.duree_engagement_mois} mois` : ''}` : ch.mode_facturation === 'spot' ? 'ponctuelle' : null],
+    ['Probabilité', ch.probabilite_manuelle != null ? `${ch.probabilite_manuelle} %` : null], ['Motif', ch.motif]].filter(([, v]) => v != null && v !== '');
+  const head = (titre, form, bouton) => `<div class="cx-h3row"><h3 class="cx-h3">${titre}</h3><span class="sp"></span>${bouton && f !== form ? `<button type="button" class="btn" data-form="${form}">${bouton}</button>` : ''}</div>`;
+  const actes = (form, ok) => `<div class="cx-act"><span class="sp"></span><button type="button" class="btn ghost" data-form="">Annuler</button><button type="submit" class="btn acc">${ok}</button></div>`;
+  const rdv = r => `<div class="cx-row top"><span class="cx-main"><b>${esc(r.titre)}</b><small class="cx-sub">${esc([r.debut && cxHeure(r.debut), r.lieu].filter(Boolean).join(' · '))}</small>
+      ${r.compte_rendu ? `<div class="cx-md">${md(cxLiens(r.compte_rendu))}</div>` : ''}</span>
+      ${!r.compte_rendu && f !== `cr:${r.ref}` ? `<button type="button" class="btn" data-form="cr:${esc(r.ref)}">Compte rendu</button>` : ''}</div>
+    ${f === `cr:${r.ref}` ? `<form class="cx-form" data-cr="${esc(r.ref)}"><textarea data-k="cr-${esc(r.ref)}" name="texte" required placeholder="Compte rendu, en Markdown" aria-label="Compte rendu de ${esc(r.titre)}"></textarea>${actes('', 'Enregistrer')}</form>` : ''}`;
+  const tache = t => `<div class="cx-row${t.fait_at ? ' cx-done' : ''}"><span class="cx-main"><b>${esc(t.titre)}</b><small class="cx-sub">${esc([CX_TACHE[t.type], t.echeance && (t.avec_heure ? cxHeure(t.echeance) : `pour le ${cxJour(t.echeance)}`), t.fait_at && 'faite'].filter(Boolean).join(' · '))}</small></span></div>`;
+  const act = x => `<div class="cx-row top"><span class="cx-main"><b>${esc(x.titre || CX_ACT[x.type] || 'Activité')}</b><small class="cx-sub">${esc([x.titre && CX_ACT[x.type], cxWhen(x.at), x.local ? 'par toi' : ''].filter(Boolean).join(' · '))}</small>
+      ${x.resume ? `<div class="cx-md">${md(cxLiens(x.resume))}</div>` : ''}</span></div>`;
+  const contact = k => `<div class="cx-row"><span class="cx-main"><b>${esc(k.nom)}</b><small class="cx-sub">${esc([k.fonction, k.email, k.telephone].filter(Boolean).join(' · '))}</small></span></div>`;
+  return `<a class="cx-back" href="${base}">← Suivi commercial</a>
+    <div class="cx-head"><div><h3 class="cx-h2 sm">${esc(a.titre)}</h3><span class="cx-sub">${esc([a.entreprises.map(e => e.nom).join(', '), a.issue === 'gagne' ? 'gagnée' : a.issue === 'perdue' ? 'perdue' : '', a.modifie_le && `modifiée ${cxWhen(a.modifie_le).toLowerCase()}`].filter(Boolean).join(' · '))}</span></div></div>
+    ${a.detachee ? `<div class="cx-alert"><span>Supprimée chez ${esc(p)} : gardée ici, elle n'est plus partagée.</span></div>` : ''}
+    <form class="cx-form cx-aff" id="cx-aff">
+      <label>Étape<select name="etape" data-k="a-etape">${a.etapes.map(e => `<option value="${esc(e.id)}"${e.id === a.etape ? ' selected' : ''}>${esc(e.libelle)}</option>`).join('')}${a.etapes.some(e => e.id === a.etape) ? '' : `<option value="" selected disabled>${esc(a.etape ?? '—')}</option>`}</select></label>
+      <label>Montant (€)<input name="montant" data-k="a-montant" inputmode="numeric" value="${esc(a.montant ?? '')}"></label>
+      <label>Échéance<input type="date" name="echeance" data-k="a-echeance" value="${esc(a.echeance ?? '')}"></label>
+      <label class="cx-wide">Prochaine étape<input name="prochaine_etape" data-k="a-prochaine" maxlength="200" value="${esc(a.prochaine_etape ?? '')}"></label>
+      <div class="cx-act"><span class="sp"></span><button type="submit" class="btn acc" id="cx-aff-ok" disabled>Enregistrer</button></div>
+    </form>
+    ${facts.length ? `<p class="cx-facts">${facts.map(([k, v]) => `<span>${esc(k)} <b>${esc(v)}</b></span>`).join('')}</p>` : ''}
+    <div class="cx-cols">
+      <div>${head('Activités', 'note', 'Ajouter une note')}
+        ${f === 'note' ? `<form class="cx-form" id="cx-note"><textarea data-k="note" name="texte" required placeholder="Note, en Markdown" aria-label="Note"></textarea>${actes('', 'Ajouter')}</form>` : ''}
+        <div class="cx-list">${a.activites.map(act).join('') || (f === 'note' ? '' : '<p class="cx-empty">Aucune activité.</p>')}</div>
+        ${a.rendez_vous.length ? `${head('Rendez-vous')}<div class="cx-list">${a.rendez_vous.map(rdv).join('')}</div>` : ''}
+      </div>
+      <div>${head('Contacts', 'contact', 'Ajouter un contact')}
+        ${f === 'contact' ? `<form class="cx-form" id="cx-contact"><input data-k="k-nom" name="nom" required placeholder="Nom" aria-label="Nom"><input data-k="k-fonction" name="fonction" placeholder="Fonction" aria-label="Fonction">
+          <input data-k="k-email" name="email" type="email" placeholder="E-mail" aria-label="E-mail"><input data-k="k-tel" name="telephone" type="tel" placeholder="Téléphone" aria-label="Téléphone">${actes('', 'Ajouter')}</form>` : ''}
+        <div class="cx-list">${a.contacts.map(contact).join('') || (f === 'contact' ? '' : '<p class="cx-empty">Aucun contact.</p>')}</div>
+        ${head('Tâches', 'tache', 'Ajouter une tâche')}
+        ${f === 'tache' ? `<form class="cx-form" id="cx-tache"><input data-k="t-titre" name="titre" required placeholder="Tâche" aria-label="Tâche">
+          <div class="cx-act"><select name="type" data-k="t-type" aria-label="Type">${Object.entries(CX_TACHE).map(([k, v]) => `<option value="${k}"${k === 'tache' ? ' selected' : ''}>${v}</option>`).join('')}</select>
+            <label class="lbl" for="cx-t-e">Pour le</label><input type="date" id="cx-t-e" data-k="t-echeance" name="echeance"></div>${actes('', 'Ajouter')}</form>` : ''}
+        <div class="cx-list">${a.taches.map(tache).join('') || (f === 'tache' ? '' : '<p class="cx-empty">Aucune tâche.</p>')}</div>
+      </div>
+    </div>`;
+}
+const cxSuivi = (c, r) => (r.cle ? cxAffaire(c) : cxTableau(c));
+// typed text, open <details> and focus survive a redraw by the polling
+function cxKeep(el, draw) {
+  const vals = {}, open = {};
+  const tape = x => (x.tagName === 'SELECT' ? !x.selectedOptions[0]?.defaultSelected : x.value !== x.defaultValue);
+  el.querySelectorAll('[data-k]').forEach(x => { if (x.tagName === 'DETAILS') open[x.dataset.k] = x.open; else if (tape(x)) vals[x.dataset.k] = x.value; });
+  const f = document.activeElement?.dataset?.k, sel = f && [document.activeElement.selectionStart, document.activeElement.selectionEnd];
+  draw();
+  el.querySelectorAll('[data-k]').forEach(x => { if (x.tagName === 'DETAILS') { if (x.dataset.k in open) x.open = open[x.dataset.k]; } else if (x.dataset.k in vals) x.value = vals[x.dataset.k]; });
+  cxAffSale();
+  const back = f && el.querySelector(`[data-k="${CSS.escape(f)}"]`);
+  if (back) { back.focus(); try { back.setSelectionRange(...sel); } catch (e) { /* date inputs */ } }
+}
+// Enregistrer wakes up once a field of the deal differs from what the partner shared
+function cxAffSale() {
+  const f = $('#cx-aff');
+  if (f) $('#cx-aff-ok').disabled = ![...f.elements].some(x => (x.tagName === 'SELECT' ? !x.selectedOptions[0]?.defaultSelected : x.name && x.value !== x.defaultValue));
+}
+$('#cx-body').addEventListener('input', e => { if (e.target.closest('#cx-aff')) cxAffSale(); });
+function renderCx() {
+  const r = cxRoute(), el = $('#cx-body');
+  if (!r || !cx) return;
+  if (!cx.actif) {
+    el.innerHTML = `<section class="pane cx-detail cx-ask"><h2 class="cx-h2">Relais non configuré</h2>
+      <p>Pour relier AlpesOS à ses partenaires, inscris-le une fois au relais avec <code>node scripts/relais-inscription.js &lt;fichier de la clé&gt;</code>, puis redémarre AlpesOS.</p></section>`;
+    return;
+  }
+  const inv = r.invitation ? cx.invitations.find(i => i.code === r.invitation) : null, sel = cxSel();
+  cxKeep(el, () => {
+    el.innerHTML = `<nav class="pane cx-side" aria-label="Partenaires">
+    ${cx.connexions.map(c => `<a class="cx-it" href="#connexions/${esc(c.id)}"${c === sel ? ' aria-current="page"' : ''}><span><b>${esc(c.court)}</b><small>${esc(c.partenaire.nom)}</small></span><span class="cx-st on"><i></i>Connecté</span></a>`).join('')}
+    ${cx.invitations.map(i => `<a class="cx-it inv" href="#connexions/invitation/${esc(i.code)}"${i === inv ? ' aria-current="page"' : ''}><span><b>${esc(i.email || 'Invitation sans e-mail')}</b><small>Invitation du ${esc(cxDate(i.creeLe))}</small></span><span class="cx-st"><i></i>En attente</span></a>`).join('')}
+    <form class="cx-add" id="cx-add"><label for="cx-in" class="lbl">Ajouter un partenaire</label>
+      <div><input id="cx-in" data-k="cx-in" type="text" placeholder="Adresse de son OS ou e-mail" autocomplete="off"><button type="submit" class="btn">Ajouter</button></div></form>
+  </nav>${inv ? cxInvitation(inv) : sel ? cxFiche(sel, cxAct, r)
+      : r.invitation ? '<section class="pane cx-detail cx-ask"><h2 class="cx-h2">Invitation utilisée ou expirée</h2><p>Si ton partenaire l\'a acceptée, il apparaît dans la liste.</p></section>'
+        : '<section class="pane cx-detail cx-ask"><h2 class="cx-h2">Aucun partenaire connecté</h2><p>Colle le lien d\'invitation reçu d\'un partenaire, ou son e-mail pour créer une invitation à lui transmettre.</p></section>'}`;
+  });
+  if (r.vue === 'repondre' && cxForm !== `rep:${r.cle}`) { cxForm = `rep:${r.cle}`; el.querySelector(`[data-k="rep-${CSS.escape(r.cle)}"]`)?.focus(); }
+}
+function cxOpen(form) {
+  cxForm = form || null;
+  const r = cxRoute();
+  // leaving a reply opened from Aujourd'hui: back to the plain page
+  if (r?.vue === 'repondre' && cxForm !== `rep:${r.cle}`) { window.history.replaceState(null, '', `#connexions/${r.id}`); }
+  renderCx();
+  const first = $('#cx-body').querySelector('.cx-form:not(#cx-aff) :is(input:not([type="date"]), textarea)');
+  if (cxForm) first?.focus();
+}
+$('#cx-body').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.target, btn = f.querySelector('button[type="submit"]'), sel = cxSel(), url = sel && `/api/connexions/${encodeURIComponent(sel.id)}`;
+  const v = Object.fromEntries(new FormData(f));
+  btn.disabled = true;
+  try {
+    if (f.id === 'cx-add') {
+      const lien = $('#cx-in').value.trim();
+      if (/^https?:\/\//i.test(lien)) {
+        const r = await cxSend('/api/connexions/rejoindre', { lien });
+        if (r.error) throw new Error(r.error);
+        $('#cx-in').value = '';
+        toast(`Connecté à ${r.partenaire?.nom ?? 'ton partenaire'}`);
+        location.hash = `connexions/${r.id}`;
+      } else if (!lien || /^[^\s@]+@[^\s@]+$/.test(lien)) {
+        const r = await cxSend('/api/connexions/invitations', lien ? { email: lien } : {});
+        if (r.error) throw new Error(r.error);
+        $('#cx-in').value = '';
+        location.hash = `connexions/invitation/${r.code}`;
+      } else throw new Error('Colle le lien d\'invitation de son OS, ou son e-mail');
+    } else if (f.id === 'cx-mission') {
+      const r = await cxSend(`${url}/missions`, v);
+      if (r.error) throw new Error(r.error);
+      f.reset();
+      toast(`Mission confiée à ${sel.court}`);
+      cxForm = null;
+    } else if (f.id === 'cx-aff' || f.id === 'cx-note' || f.id === 'cx-contact' || f.id === 'cx-tache' || f.dataset.cr) {
+      const aff = `${url}/suivi/affaires/${encodeURIComponent(cxRoute().cle)}`;
+      const r = f.id === 'cx-aff' ? await cxSend(aff, Object.fromEntries([...f.elements].filter(x => x.name && (x.tagName === 'SELECT' ? !x.selectedOptions[0]?.defaultSelected : x.value !== x.defaultValue)).map(x => [x.name, x.value])), 'PATCH')
+        : f.dataset.cr ? await cxSend(`${aff}/rendez-vous/${encodeURIComponent(f.dataset.cr)}`, v)
+          : await cxSend(`${aff}/${{ 'cx-note': 'notes', 'cx-contact': 'contacts', 'cx-tache': 'taches' }[f.id]}`, v);
+      if (r.error) throw new Error(r.error);
+      f.reset();
+      cxForm = null;
+      toast(`Enregistré, envoyé à ${sel.court}`);
+    } else if (f.id === 'cx-message' || f.dataset.rep) {
+      const type = f.querySelector('[data-type].on')?.dataset.type;
+      const r = await cxSend(`${url}/messages`, { ...v, type, enReponseA: f.dataset.rep });
+      if (r.error) throw new Error(r.error);
+      f.reset();
+      toast(`Message envoyé à ${sel.court}`);
+      cxForm = null;
+      if (cxRoute()?.vue === 'repondre') window.history.replaceState(null, '', `#connexions/${sel.id}`);
+      loadProps().then(rvRender);
+    } else return;
+    await loadCx(true);
+  } catch (err) { toast(err.message, true); } finally { btn.disabled = false; }
+});
+$('#cx-body').addEventListener('click', async e => {
+  const link = e.target.closest('.cx-md a[data-link]');
+  if (link) { if (/^https?:\/\//i.test(link.dataset.link)) window.open(link.dataset.link, '_blank', 'noopener'); return; }
+  const b = e.target.closest('button');
+  if (!b) return;
+  const sel = cxSel(), url = sel && `/api/connexions/${encodeURIComponent(sel.id)}`;
+  let r = null;
+  if (b.id === 'cx-copy') {
+    try { await navigator.clipboard.writeText($('#cx-lien').value); toast('Lien copié'); } catch (err) { $('#cx-lien').select(); }
+    return;
+  }
+  if ('form' in b.dataset) return cxOpen(b.dataset.form);
+  if (b.dataset.type) { b.parentElement.querySelectorAll('button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); return; }
+  if (b.dataset.vu && sel) r = await cxSend(`${url}/suivi/notes/${encodeURIComponent(b.dataset.vu)}/vu`);
+  else if ((b.dataset.garder || b.dataset.supprimer) && sel) {
+    const supprimer = !!b.dataset.supprimer;
+    if (supprimer && !confirm('Supprimer cette fiche de ta copie du suivi commercial ?')) return;
+    r = await cxSend(`${url}/suivi/suppressions/${encodeURIComponent(b.dataset.garder || b.dataset.supprimer)}`, { supprimer });
+  } else if (b.dataset.niveau && sel) r = await cxSend(url, { niveau: b.dataset.niveau }, 'PATCH');
+  else if (b.id === 'cx-cut' && sel) {
+    if (!confirm(`Couper la connexion avec ${sel.court} ? Plus rien ne passera entre vos deux OS ; l'historique reste ici.`)) return;
+    r = await api(url, { method: 'DELETE' });
+    if (!r.error) { toast('Connexion coupée'); location.hash = 'connexions'; }
+  } else if (b.dataset.terminer) {
+    const message = prompt(`Message pour ${sel?.court ?? 'ton partenaire'} (un lien vers le livrable, par exemple)`, 'Terminée.');
+    if (message === null) return;
+    r = await cxSend(`/api/connexions/missions/${encodeURIComponent(b.dataset.terminer)}/terminer`, { message });
+    if (!r.error) toast(`Mission close, ${sel?.court ?? 'ton partenaire'} est prévenu`);
+  } else return;
+  if (r?.error) toast(r.error, true);
+  loadCx(true);
+});
+addEventListener('hashchange', () => { if (cxRoute()) { if (cxRoute().vue !== 'repondre') cxForm = null; loadCx(true); } });
+
 /* ---------- réglages: model, effort and prompt of each function, the skills (#reglages) ---------- */
 let rg = null, rgTab = 'prompts', rgFn = 'assistant', rgSk = null;
 const rgDraft = {};   // text typed and not saved yet, by 'fn:<id>' or 'sk:<name>'
@@ -3732,15 +4206,17 @@ function onRgHash() { if (shellTab() === 'reglages') loadReglages(); }
 addEventListener('hashchange', onRgHash);
 
 /* ---------- shell: tabs routed by the hash, the assistant one keystroke away ---------- */
-const TAB_OF = { projets: 'projets', portefeuille: 'projets', finances: 'finances', linkedin: 'linkedin', 'second-brain': 'brain', outils: 'outils', reglages: 'reglages' };
+const TAB_OF = { projets: 'projets', portefeuille: 'projets', finances: 'finances', linkedin: 'linkedin', 'second-brain': 'brain', outils: 'outils', reglages: 'reglages', connexions: 'outils' };
+// a page of its own that still lights up its parent tab
+const VIEW_OF = { connexions: 'connexions' };
 const shellTab = () => TAB_OF[location.hash.slice(1).split('/')[0]] ?? 'today';
 function onShellHash() {
-  const tab = shellTab();
+  const tab = shellTab(), view = VIEW_OF[location.hash.slice(1).split('/')[0]] ?? tab;
   document.querySelectorAll('#nav a').forEach(a => {
     a.classList.toggle('on', a.dataset.tab === tab);
     if (a.dataset.tab === tab) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
-  document.querySelectorAll('.view').forEach(v => { v.hidden = v.dataset.view !== tab; });
+  document.querySelectorAll('.view').forEach(v => { v.hidden = v.dataset.view !== view; });
   $('#gear').classList.toggle('on', tab === 'reglages');
   if (tab === 'reglages') $('#gear').setAttribute('aria-current', 'page'); else $('#gear').removeAttribute('aria-current');
 }
@@ -3776,7 +4252,8 @@ renderDemo();
   cfg = await api('/api/config');
   chatBoot();
   draw();
-  await Promise.all([loadGraph(), loadTodo(), loadRuns(), loadProjects(), loadDecks(), loadDelegations(), loadReview()]);
+  await Promise.all([loadGraph(), loadTodo(), loadRuns(), loadProjects(), loadDecks(), loadDelegations(), loadReview(), loadCx()]);
+  setInterval(loadCx, 30e3);
   setInterval(loadGraph, 30e3);      // second brain edits show up within 30 s
   setInterval(loadProjects, 60e3);
   loadSb();

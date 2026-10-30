@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "express": "^4.21.2",
-    "google-auth-library": "^9.15.0"
+    "google-auth-library": "^9.15.0",
+    "os-agents-relay": "github:ChristopheHvd/os-agents-relay#6663723f06556bc6bb2912413d023e760f1c9c08"
   },
   "engines": {
     "node": ">=20"

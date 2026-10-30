@@ -32,6 +32,7 @@ import { makePropositions, moneyKey, same } from './lib/propositions.js';
 import { assemble, namesOf, mentions, journalEntries } from './lib/dossier.js';
 import { makeReview, SYSTEM as REVIEW_SYSTEM } from './lib/review.js';
 import { makeReglages, pick, MODELS, EFFORTS } from './lib/reglages.js';
+import { makePartenaires, evenementFait, deposerEvenement } from './lib/partenaires.js';
 import { claudeActivity } from './lib/activity.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -132,6 +133,8 @@ const delegations = makeDelegations(ROOT, {
   denyRead: [path.join(ROOT, 'credentials'), path.join(ROOT, 'config')],
 }, {
   onChange(d, event) {
+    // a partner's mission run by an agent: its end decides what goes back (lib/partenaires.js)
+    if (d.source?.type === 'mission') partenaires.surDelegation(d, event).catch(e => console.error('partenaires', e.message));
     if (event !== 'pret' && event !== 'bloque') return;
     const report = delegations.report(d.id).trim().slice(0, 12000);
     const block = [`## ${new Date().toISOString().slice(0, 10)} · ${d.tache}`, '',
@@ -887,6 +890,56 @@ if (MEET_AUTO) setTimeout(() => collectMeetings('au démarrage'), 2 * 60e3).unre
 // Propositions — tasks suggested for today (hourly review, SIMATIS missions) waiting
 // on Christophe: accepted they join today's todo, "plus tard" goes to Plus tard
 const propositions = makePropositions(path.join(ROOT, 'output', 'propositions.json'));
+
+// Connexions — partner OSes (SIMATIS OS first) linked through the agents relay. Their
+// missions become propositions or delegations depending on the level set per connection;
+// the sales follow-up they share is kept as a copy in output/crm/ (lib/suivi.js).
+// Off until credentials/relais.json exists (scripts/relais-inscription.js).
+const partenaires = makePartenaires({
+  dir: path.join(ROOT, 'output'), credentials: path.join(ROOT, 'credentials', 'relais.json'),
+  propositions, delegations,
+  // only the notable facts of the shared sales follow-up reach the curator; the rest lives in output/crm/
+  marquant: fait => deposerEvenement(sbQueue, evenementFait(fait)),
+});
+partenaires.demarrer();
+const relaisErr = (res, e) => res.status(e.status >= 400 && e.status < 600 ? e.status : 502).json({ error: e.message });
+app.get('/api/connexions', (req, res) => res.json(partenaires.etat()));
+app.post('/api/connexions/invitations', async (req, res) => {
+  try { res.json(await partenaires.inviter({ email: req.body?.email })); } catch (e) { relaisErr(res, e); }
+});
+app.post('/api/connexions/rejoindre', async (req, res) => {
+  try { res.json(await partenaires.rejoindre(req.body?.lien)); } catch (e) { relaisErr(res, e); }
+});
+app.patch('/api/connexions/:id', (req, res) => {
+  try { res.json(partenaires.regler(req.params.id, req.body ?? {})); } catch (e) { res.status(e.status ?? 400).json({ error: e.message }); }
+});
+app.delete('/api/connexions/:id', async (req, res) => {
+  try { res.json(await partenaires.couper(req.params.id)); } catch (e) { relaisErr(res, e); }
+});
+app.get('/api/connexions/:id/activite', (req, res) => {
+  try { res.json(partenaires.activite(req.params.id)); } catch (e) { res.status(e.status ?? 400).json({ error: e.message }); }
+});
+app.post('/api/connexions/:id/missions', async (req, res) => {
+  try { res.json(await partenaires.confier(req.params.id, req.body ?? {})); } catch (e) { relaisErr(res, e); }
+});
+app.post('/api/connexions/:id/messages', async (req, res) => {
+  try { res.json(await partenaires.envoyerMessage(req.params.id, req.body ?? {})); } catch (e) { relaisErr(res, e); }
+});
+// Suivi commercial: the copy of what the partner shares, and the few changes Christophe may make
+const suiviOk = (res, f) => { try { res.json(f()); } catch (e) { res.status(e.status ?? 400).json({ error: e.message }); } };
+app.get('/api/connexions/:id/suivi', (req, res) => suiviOk(res, () => partenaires.suivi.vue(req.params.id)));
+app.get('/api/connexions/:id/suivi/affaires/:ref', (req, res) => suiviOk(res, () => partenaires.suivi.affaire(req.params.id, req.params.ref)));
+app.patch('/api/connexions/:id/suivi/affaires/:ref', (req, res) => suiviOk(res, () => partenaires.suivi.modifierAffaire(req.params.id, req.params.ref, req.body ?? {})));
+app.post('/api/connexions/:id/suivi/affaires/:ref/notes', (req, res) => suiviOk(res, () => partenaires.suivi.ajouterNote(req.params.id, req.params.ref, req.body?.texte)));
+app.post('/api/connexions/:id/suivi/affaires/:ref/taches', (req, res) => suiviOk(res, () => partenaires.suivi.ajouterTache(req.params.id, req.params.ref, req.body ?? {})));
+app.post('/api/connexions/:id/suivi/affaires/:ref/contacts', (req, res) => suiviOk(res, () => partenaires.suivi.ajouterContact(req.params.id, req.params.ref, req.body ?? {})));
+app.post('/api/connexions/:id/suivi/affaires/:ref/rendez-vous/:rdv', (req, res) => suiviOk(res, () => partenaires.suivi.compteRendu(req.params.id, req.params.ref, req.params.rdv, req.body?.texte)));
+app.post('/api/connexions/:id/suivi/notes/:note/vu', (req, res) => suiviOk(res, () => partenaires.suivi.vu(req.params.id, req.params.note)));
+app.post('/api/connexions/:id/suivi/suppressions/:sid', (req, res) => suiviOk(res, () => partenaires.suivi.repondreSuppression(req.params.id, req.params.sid, !!req.body?.supprimer)));
+app.post('/api/connexions/missions/:id/terminer', async (req, res) => {
+  try { res.json(await partenaires.terminer(req.params.id, req.body?.message)); } catch (e) { res.status(e.status ?? 400).json({ error: e.message }); }
+});
+
 app.get('/api/propositions', (req, res) => res.json(propositions.pending()));
 app.post('/api/propositions', (req, res) => {
   try { res.json(propositions.add(req.body ?? {})); }
@@ -899,11 +952,13 @@ app.post('/api/propositions/:id/:act', async (req, res) => {
     const p = propositions.get(id);
     const t = String(req.body?.title ?? '').trim() || p?.title;
     const money = p?.type === 'finance';
+    // a mission on "Demander avant" starts the partner's work instead of adding a task
+    const tache = p?.source !== 'mission' || partenaires.ajouteTache(id);
     let todo = null, finance = null, delegation = null;   // writeTodo drops a task already on the list
-    if (p?.status === 'pending' && act === 'accept') { if (money) finance = toFinance(p.echeance); else todo = addItem(todoFile, { t, s: p.project }); }
-    if (p?.status === 'pending' && act === 'later' && !money) { const cur = readTodo(todoFile); todo = writeTodo(todoFile, cur.items, [...cur.later, { t, s: p.project }]); }
+    if (p?.status === 'pending' && act === 'accept') { if (money) finance = toFinance(p.echeance); else if (tache && p.source !== 'partenaire') todo = addItem(todoFile, { t, s: p.project }); }
+    if (p?.status === 'pending' && act === 'later' && !money && p.source !== 'partenaire') { const cur = readTodo(todoFile); todo = writeTodo(todoFile, cur.items, [...cur.later, { t, s: p.project }]); }
     // Lancer: an agent takes the task straight away with its CONTEXTE.md, it never joins the todo
-    if (p?.status === 'pending' && act === 'launch' && !money) {
+    if (p?.status === 'pending' && act === 'launch' && !money && p.source !== 'partenaire') {
       if (launching.has(id)) return res.status(409).json({ error: 'agent déjà en cours de lancement' });
       launching.add(id);
       try {
@@ -912,7 +967,10 @@ app.post('/api/propositions/:id/:act', async (req, res) => {
         delegation = delegations.create({ tache: t, contexte: [p.project && `Projet : ${p.project}`, p.why && `Proposée par la revue horaire : ${p.why}`].filter(Boolean).join('. '), source: p.id, projet: slug || null, dossier });
       } finally { launching.delete(id); }
     }
-    res.json({ proposition: propositions.decide(id, act, req.body?.title), todo: todo ?? readTodo(todoFile), finance, delegation });
+    const proposition = propositions.decide(id, act, req.body?.title);
+    // the partner hears back: accepted, postponed or rejected
+    if (proposition.source === 'mission') partenaires.surDecision(proposition).catch(e => console.error('partenaires', e.message));
+    res.json({ proposition, todo: todo ?? readTodo(todoFile), finance, delegation });
   } catch (e) { res.status(e.status ?? 400).json({ error: e.message }); }
 });
 
