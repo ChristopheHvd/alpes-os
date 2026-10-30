@@ -3965,10 +3965,10 @@ function renderCx() {
     ${cx.connexions.map(c => `<a class="cx-it" href="#connexions/${esc(c.id)}"${c === sel ? ' aria-current="page"' : ''}><span><b>${esc(c.court)}</b><small>${esc(c.partenaire.nom)}</small></span><span class="cx-st on"><i></i>Connecté</span></a>`).join('')}
     ${cx.invitations.map(i => `<a class="cx-it inv" href="#connexions/invitation/${esc(i.code)}"${i === inv ? ' aria-current="page"' : ''}><span><b>${esc(i.email || 'Invitation sans e-mail')}</b><small>Invitation du ${esc(cxDate(i.creeLe))}</small></span><span class="cx-st"><i></i>En attente</span></a>`).join('')}
     <form class="cx-add" id="cx-add"><label for="cx-in" class="lbl">Ajouter un partenaire</label>
-      <div><input id="cx-in" data-k="cx-in" type="text" placeholder="Adresse de son OS ou e-mail" autocomplete="off"><button type="submit" class="btn">Ajouter</button></div></form>
+      <div><input id="cx-in" data-k="cx-in" type="text" placeholder="Lien reçu, ou pour qui ?" autocomplete="off"><button type="submit" class="btn">Ajouter</button></div></form>
   </nav>${inv ? cxInvitation(inv) : sel ? cxFiche(sel, cxAct, r)
       : r.invitation ? '<section class="pane cx-detail cx-ask"><h2 class="cx-h2">Invitation utilisée ou expirée</h2><p>Si ton partenaire l\'a acceptée, il apparaît dans la liste.</p></section>'
-        : '<section class="pane cx-detail cx-ask"><h2 class="cx-h2">Aucun partenaire connecté</h2><p>Colle le lien d\'invitation reçu d\'un partenaire, ou son e-mail pour créer une invitation à lui transmettre.</p></section>'}`;
+        : '<section class="pane cx-detail cx-ask"><h2 class="cx-h2">Aucun partenaire connecté</h2><p>Colle le lien d\'invitation reçu d\'un partenaire. Pour l\'inviter, clique sur Ajouter, avec son e-mail si tu veux t\'y retrouver : aucun mail n\'est envoyé.</p></section>'}`;
   });
   if (r.vue === 'repondre' && cxForm !== `rep:${r.cle}`) { cxForm = `rep:${r.cle}`; el.querySelector(`[data-k="rep-${CSS.escape(r.cle)}"]`)?.focus(); }
 }
