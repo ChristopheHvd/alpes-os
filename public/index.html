@@ -159,6 +159,28 @@ button.cx-chip:hover { border-color: var(--ink-3); }
 .cx-ask { display: flex; flex-direction: column; gap: 10px; max-width: 640px; }
 .cx-ask p { margin: 0; font-size: 13.5px; color: var(--ink-2); }
 .cx-ask code { font: 400 12.5px var(--mono); background: var(--sunken); padding: 1px 5px; border-radius: 4px; }
+.cx-tabs { display: flex; gap: 2px; padding: 3px; border: 1px solid var(--line-soft); border-radius: 20px; background: var(--surface); }
+.cx-tabs a { display: inline-flex; align-items: center; min-height: 32px; padding: 0 14px; border-radius: 16px; color: var(--ink-3); text-decoration: none; font: 500 13px/1 var(--font); white-space: nowrap; }
+.cx-tabs a:hover { color: var(--ink); }
+.cx-tabs a[aria-current] { background: var(--sunken); color: var(--ink); font-weight: 600; }
+.cx-h3row .sp { flex: 1; }
+.cx-h3row .btn, .cx-form .btn, .cx-row > .btn { min-height: 32px; font-size: 12.5px; padding: 0 12px; border-radius: 7px; }
+.cx .btn.ghost { background: transparent; }
+.cx-form { display: flex; flex-direction: column; gap: 8px; padding: 12px 0 14px; border-top: 1px solid var(--line-soft); }
+.cx-form input, .cx-form textarea, .cx-form select { box-sizing: border-box; width: 100%; min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); color: var(--ink); font: 400 13.5px/1.4 var(--font); }
+.cx-form textarea { padding: 8px 12px; min-height: 96px; resize: vertical; line-height: 1.5; }
+.cx-form input:focus, .cx-form textarea:focus, .cx-form select:focus { outline: none; border-color: var(--accent); }
+.cx-form .cx-act { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cx-form .cx-act .sp { flex: 1; }
+.cx-form .cx-act input[type="date"] { width: auto; }
+.cx-form .cx-seg button { min-height: 30px; }
+.cx-md { margin-top: 4px; font-size: 13.5px; line-height: 1.55; color: var(--ink); overflow-wrap: anywhere; }
+.cx-md p, .cx-md ul, .cx-md ol { margin: 0 0 6px; }
+.cx-md ul, .cx-md ol { padding-left: 20px; }
+.cx-md > :last-child { margin-bottom: 0; }
+.cx-md code { font: 400 12.5px var(--mono); background: var(--sunken); padding: 1px 4px; border-radius: 4px; }
+.cx-md a { color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.cx-res { font-size: 12.5px; color: var(--ink-2); }
 
 /* ---------- today: money band, the day's tasks, a glance column ---------- */
 .finband { padding: 16px 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 36px; }
@@ -1375,10 +1397,16 @@ function rvRender() {
   const r = review ?? {};
   const failed = r.error && (!r.at || r.errorAt > r.at);
   const head = r.running ? 'Revue en cours…' : rvToday(r.at) ? `Revue de ${rvHour(r.at)}` : r.at ? `Dernière revue ${rvWhen(r.at)}` : 'Revue horaire';
-  const meta = p => [p.source === 'mission' ? `Mission de ${p.from}` : '', p.project, p.why].filter(Boolean).map(esc).join(' · ');
+  const meta = p => (p.source === 'partenaire' ? [p.type === 'question' ? `Question de ${p.project}` : '', p.why]
+    : [p.source === 'mission' ? `Mission de ${p.from}` : '', p.project, p.why]).filter(Boolean).map(esc).join(' · ');
   // real amounts never show in demo mode
   const shown = props.filter(p => !(demoOn && p.type === 'finance'));
-  const row = p => p.type === 'finance'
+  // a partner's notice or question: seen here, answered on its page
+  const go = p => (p.type === 'question' ? `#${p.lien}/repondre/${encodeURIComponent(p.ref.replace(/^message:/, ''))}` : `#${p.lien}`);
+  const row = p => p.source === 'partenaire'
+    ? `<div class="sg" data-id="${esc(p.id)}"><svg><use href="#i-link"/></svg><div class="sg-t"><b>${esc(p.title)}</b><small>${meta(p)}</small></div>
+      <button class="btn sm${p.type === 'question' ? ' acc' : ''}" data-go="${esc(go(p))}">${p.type === 'question' ? 'Répondre' : 'Ouvrir'}</button><button class="btn sm ghost" data-do="dismiss">Vu</button></div>`
+    : p.type === 'finance'
     ? `<div class="sg" data-id="${esc(p.id)}"><svg><use href="#i-euro"/></svg><div class="sg-t"><b>${esc(p.title)}</b><small>${meta(p)}</small></div>
       <button class="btn sm acc" data-do="accept">Ajouter aux finances</button><button class="btn sm ghost" data-do="dismiss">Ignorer</button></div>`
     : `<div class="sg" data-id="${esc(p.id)}"><svg><use href="#i-plus"/></svg>
@@ -1436,9 +1464,15 @@ $('#propositions').addEventListener('click', e => {
   const b = e.target.closest('button');
   if (b?.id === 'rv-run') rvRun();
   else if (b?.dataset.do) rvDecide(b.closest('.sg').dataset.id, b.dataset.do);
+  else if (b?.dataset.go) {
+    // opening a notice is seeing it; a question stays until it is answered
+    const p = props.find(x => x.id === b.closest('.sg').dataset.id);
+    if (p?.type === 'avis') rvDecide(p.id, 'dismiss');
+    location.hash = b.dataset.go;
+  }
 });
 $('#propositions').addEventListener('input', e => { const sg = e.target.closest('.sg'); if (sg) rvEdits[sg.dataset.id] = e.target.value; });
-$('#propositions').addEventListener('keydown', e => { const sg = e.target.closest('.sg'); if (sg && e.key === 'Enter') rvDecide(sg.dataset.id, 'accept'); });
+$('#propositions').addEventListener('keydown', e => { const sg = e.target.closest('.sg'); if (sg && e.key === 'Enter' && e.target.tagName === 'INPUT') rvDecide(sg.dataset.id, 'accept'); });
 $('#rv-agent').addEventListener('click', e => { if (e.target.closest('b')) $('#propositions').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
 
 /* ---------- micro apps + runs ---------- */
@@ -2986,6 +3020,9 @@ const CHAT_TOOLS = {
   creer_evenement: ['Prépare un événement', a => `Proposition : événement « ${esc(a.titre)} »`],
   lancer_micro_app: ['Prépare un lancement', a => `Proposition : micro-app ${esc(a.app)}`],
   maj_echeance: ['Prépare la mise à jour des finances', a => `Proposition : échéances ${esc(a.ref || a.note)}`],
+  lister_partenaires: ['Regarde les partenaires', () => 'Missions et messages des partenaires', 'les partenaires'],
+  confier_mission: ['Prépare une mission', a => `Proposition : mission « ${esc(a.titre)} »`],
+  envoyer_message: ['Prépare un message', a => `Proposition : message « ${esc(a.sujet || 'réponse')} »`],
   WebSearch: ['Cherche sur le web', a => `Recherche web « ${esc(a.query)} »`, 'le web'],
   WebFetch: ['Lit une page web', a => `Lecture ${chatPath(a.url)}`, 'le web'],
   Read: ['Lit un fichier', a => `Lecture ${chatPath(a.file_path)}`, 'des fichiers'],
@@ -3603,10 +3640,14 @@ addEventListener('keydown', e => {
 }, true);
 
 /* ---------- connexions: partner OSes through the agents relay ---------- */
-// #connexions, #connexions/<connection id>, #connexions/invitation/<code>
-let cx = null, cxAct = null, cxSig = '';
-const cxRoute = () => { const m = location.hash.match(/^#connexions(?:\/invitation\/([A-Z2-7]+)|\/([\w-]+))?$/); return m && { invitation: m[1] ?? null, id: m[2] ?? null }; };
+// #connexions, #connexions/<connection id>[/suivi[/<deal ref>] | /repondre/<message id>], #connexions/invitation/<code>
+let cx = null, cxAct = null, cxSig = '', cxForm = null;
+const cxRoute = () => {
+  const m = location.hash.match(/^#connexions(?:\/invitation\/([A-Z2-7]+)|\/([\w-]+)(?:\/(suivi|repondre)(?:\/([^/]+))?)?)?$/);
+  return m && { invitation: m[1] ?? null, id: m[2] ?? null, vue: m[3] ?? null, cle: m[4] ? decodeURIComponent(m[4]) : null };
+};
 const CX_ETAT = { submitted: 'reçue', working: 'en cours', 'input-required': 'en attente', completed: 'faite', failed: 'échouée', canceled: 'annulée', rejected: 'refusée' };
+const CX_TYPE = { question: 'Question', info: 'Info', reponse: 'Réponse' };
 const CX_NOTE = {
   montrer: () => 'Ses missions arrivent dans Aujourd\'hui, rien ne démarre sans toi.',
   demander_avant: p => `Ton agent te demande avant de commencer, puis répond seul à ${p}.`,
@@ -3649,30 +3690,63 @@ function renderCxTool() {
 const cxInvitation = i => `<section class="pane cx-detail cx-ask" aria-labelledby="cx-t"><h2 class="cx-h2" id="cx-t">Invitation${i.email ? ` pour ${esc(i.email)}` : ''}</h2>
   <p>Transmets ce lien à ton partenaire : il le colle dans son OS pour se connecter. Valable jusqu'au ${esc(cxDate(i.expireLe))}. AlpesOS n'envoie aucun mail.</p>
   <div class="cx-link"><input readonly id="cx-lien" value="${esc(i.lien)}" aria-label="Lien d'invitation"><button type="button" class="btn acc" id="cx-copy">Copier</button></div></section>`;
-function cxFiche(c, act) {
-  const p = c.court, enCours = act?.enCours ?? [], faites = act?.terminees ?? [], donnees = act?.donnees ?? [];
-  const who = m => (m.sens === 'recue' ? `<span class="cx-who">${esc(p.split(/\s/)[0])}</span>` : '<span class="cx-who moi">Toi</span>');
-  const badge = m => (m.attente ? '<a class="cx-badge acc" href="#">À valider dans Aujourd\'hui</a>'
-    : m.agent?.statut === 'en_cours' ? '<span class="cx-badge">Ton agent y travaille</span>'
-      : m.agent?.statut === 'bloque' ? '<a class="cx-badge acc" href="#">Ton agent a une question</a>'
-        : m.plusTard ? '<span class="cx-badge">Plus tard</span>'
-          : m.etat === 'working' ? `<button type="button" class="btn sm" data-terminer="${esc(m.id)}">Marquer faite</button>`
-            : `<span class="cx-badge">${esc(CX_ETAT[m.etat] ?? m.etat)}</span>`);
-  const lieu = d => [d.champs?.entreprise, d.champs?.ville].filter(Boolean).join(', ');
-  const dRow = d => `<div class="cx-row top"><span class="cx-main"><b>${esc(d.libelle)}</b><small class="cx-sub">${esc([lieu(d), d.champs?.resume || d.champs?.etape || d.champs?.date].filter(Boolean).join(' · '))}</small></span><span class="cx-when">${esc(cxWhen(d.recueLe))}</span></div>`;
+const cxFirst = p => p.split(/\s/)[0];
+// a bare address in a message becomes a link, like the Markdown ones
+const cxLiens = t => String(t).replace(/(^|\s)(https?:\/\/[^\s<>()]+[^\s<>().,;:!?])/g, '$1[$2]($2)');
+function cxMissions(c, act) {
+  const p = c.court, enCours = act?.enCours ?? [], faites = act?.terminees ?? [];
+  const who = m => (m.sens === 'recue' ? `<span class="cx-who">${esc(cxFirst(p))}</span>` : '<span class="cx-who moi">Toi</span>');
+  const chez = { submitted: 'Envoyée', working: `Chez ${cxFirst(p)}`, 'input-required': `${cxFirst(p)} attend ta réponse` };
+  const badge = m => (m.sens === 'envoyee' ? `<span class="cx-badge${m.etat === 'input-required' ? ' acc' : ''}">${esc(chez[m.etat] ?? CX_ETAT[m.etat] ?? m.etat)}</span>`
+    : m.attente ? '<a class="cx-badge acc" href="#">À valider dans Aujourd\'hui</a>'
+      : m.agent?.statut === 'en_cours' ? '<span class="cx-badge">Ton agent y travaille</span>'
+        : m.agent?.statut === 'bloque' ? '<a class="cx-badge acc" href="#">Ton agent a une question</a>'
+          : m.plusTard ? '<span class="cx-badge">Plus tard</span>'
+            : m.etat === 'working' ? `<button type="button" class="btn sm" data-terminer="${esc(m.id)}">Marquer faite</button>`
+              : `<span class="cx-badge">${esc(CX_ETAT[m.etat] ?? m.etat)}</span>`);
+  const sub = m => [cxWhen(m.recueLe), m.echeance && `pour le ${cxDate(m.echeance)}`].filter(Boolean).join(' · ');
+  const fin = m => `<span>${esc(m.titre)} · ${esc(CX_ETAT[m.etat] ?? m.etat)}${m.sens === 'envoyee' ? ` par ${esc(p)}` : ''}, ${esc(cxWhen(m.majLe).toLowerCase())}${m.sens === 'envoyee' && m.resume ? `<br><small class="cx-res">${esc(m.resume)}</small>` : ''}</span>`;
+  return `<div><div class="cx-h3row"><h3 class="cx-h3">Missions</h3><span class="sp"></span>${cxForm === 'mission' ? '' : `<button type="button" class="btn" data-form="mission">Confier une mission</button>`}</div>
+    ${cxForm === 'mission' ? `<form class="cx-form" id="cx-mission">
+      <input data-k="m-titre" name="titre" maxlength="120" required placeholder="Titre" aria-label="Titre de la mission">
+      <textarea data-k="m-consigne" name="consigne" required placeholder="Consigne pour l'agent de ${esc(p)}" aria-label="Consigne"></textarea>
+      <div class="cx-act"><label class="lbl" for="cx-m-e">Pour le</label><input type="date" id="cx-m-e" data-k="m-echeance" name="echeance"><span class="sp"></span>
+        <button type="button" class="btn ghost" data-form="">Annuler</button><button type="submit" class="btn acc">Confier à ${esc(p)}</button></div></form>` : ''}
+    <div class="cx-list">
+      ${enCours.map(m => `<div class="cx-row">${who(m)}<span class="cx-main"><b>${esc(m.titre)}</b><small class="cx-sub">${esc(sub(m))}</small></span>${badge(m)}</div>`).join('') || (cxForm === 'mission' ? '' : '<p class="cx-empty">Aucune mission en cours.</p>')}
+      ${faites.length ? `<details class="cx-row" data-k="d-faites"><summary>Missions terminées</summary><div class="cx-older">${faites.map(fin).join('')}</div></details>` : ''}
+    </div></div>`;
+}
+function cxMessages(c, act, repondre) {
+  const p = c.court, fil = act?.messages ?? [];
+  const who = x => (x.sens === 'recu' ? `<span class="cx-who">${esc(cxFirst(p))}</span>` : '<span class="cx-who moi">Toi</span>');
+  const open = id => cxForm === `rep:${id}` || repondre === id;
+  const rep = x => `<form class="cx-form" data-rep="${esc(x.id)}">
+      <textarea data-k="rep-${esc(x.id)}" name="texte" required placeholder="Ta réponse, en Markdown" aria-label="Réponse à ${esc(x.sujet)}"></textarea>
+      <div class="cx-act"><span class="sp"></span><button type="button" class="btn ghost" data-form="">Annuler</button><button type="submit" class="btn acc">Répondre</button></div></form>`;
+  const row = x => `<div class="cx-row top">${who(x)}<span class="cx-main"><b>${esc(x.sujet)}</b>
+      <small class="cx-sub">${esc([x.type === 'reponse' && x.enReponseA?.sujet ? '' : CX_TYPE[x.type], cxWhen(x.quand)].filter(Boolean).join(' · '))}</small>
+      <div class="cx-md">${md(cxLiens(x.texte))}</div></span>
+      ${x.sens === 'recu' && !x.repondu && !open(x.id) ? `<button type="button" class="btn${x.type === 'question' ? ' acc' : ''}" data-form="rep:${esc(x.id)}">Répondre</button>` : ''}
+    </div>${x.sens === 'recu' && open(x.id) ? rep(x) : ''}`;
+  return `<div><div class="cx-h3row"><h3 class="cx-h3">Messages</h3><span class="sp"></span>${cxForm === 'message' ? '' : `<button type="button" class="btn" data-form="message">Écrire</button>`}</div>
+    ${cxForm === 'message' ? `<form class="cx-form" id="cx-message">
+      <div class="cx-seg" role="group" aria-label="Type de message">${['question', 'info'].map(t => `<button type="button" data-type="${t}"${t === 'question' ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"'}>${CX_TYPE[t]}</button>`).join('')}</div>
+      <input data-k="msg-sujet" name="sujet" maxlength="160" required placeholder="Sujet" aria-label="Sujet">
+      <textarea data-k="msg-texte" name="texte" required placeholder="Message en Markdown, liens compris" aria-label="Message"></textarea>
+      <div class="cx-act"><span class="sp"></span><button type="button" class="btn ghost" data-form="">Annuler</button><button type="submit" class="btn acc">Envoyer à ${esc(p)}</button></div></form>` : ''}
+    <div class="cx-list">
+      ${fil.slice(0, 5).map(row).join('') || (cxForm === 'message' ? '' : '<p class="cx-empty">Aucun message.</p>')}
+      ${fil.length > 5 ? `<details class="cx-row" data-k="d-messages"><summary>Plus anciens</summary><div class="cx-list">${fil.slice(5).map(row).join('')}</div></details>` : ''}
+    </div></div>`;
+}
+function cxFiche(c, act, r) {
+  const p = c.court, base = `#connexions/${esc(c.id)}`, suivi = r.vue === 'suivi';
   return `<section class="pane cx-detail" aria-labelledby="cx-t">
     <div class="cx-head"><div><h2 class="cx-h2" id="cx-t">${esc(p)}</h2><span class="cx-sub">${esc(c.partenaire.nom)}${c.dernierEchange ? ` · dernier échange il y a ${esc(rel(c.dernierEchange))}` : ''}</span></div>
+      <nav class="cx-tabs" aria-label="${esc(p)}"><a href="${base}"${suivi ? '' : ' aria-current="page"'}>Échanges</a><a href="${base}/suivi"${suivi ? ' aria-current="page"' : ''}>Suivi commercial</a></nav>
       <button type="button" class="cx-cut" id="cx-cut">Couper la connexion</button></div>
-    <div class="cx-cols">
-      <div><h3 class="cx-h3">Missions en cours</h3><div class="cx-list">
-        ${enCours.map(m => `<div class="cx-row">${who(m)}<span class="cx-main"><b>${esc(m.titre)}</b><small class="cx-sub">${esc(cxWhen(m.recueLe))}</small></span>${badge(m)}</div>`).join('') || '<p class="cx-empty">Aucune mission en cours.</p>'}
-        ${faites.length ? `<details class="cx-row"><summary>Missions terminées</summary><div class="cx-older">${faites.map(m => `<span>${esc(m.titre)} · ${esc(CX_ETAT[m.etat] ?? m.etat)}, ${esc(cxWhen(m.majLe).toLowerCase())}</span>`).join('')}</div></details>` : ''}
-      </div></div>
-      <div><div class="cx-h3row"><h3 class="cx-h3">Données reçues</h3><span class="lbl">rangées dans ton second brain</span></div><div class="cx-list">
-        ${donnees.slice(0, 4).map(dRow).join('') || '<p class="cx-empty">Rien de reçu pour l\'instant.</p>'}
-        ${donnees.length > 4 ? `<details class="cx-row"><summary>Plus anciennes</summary><div class="cx-older">${donnees.slice(4).map(d => `<span>${esc([d.libelle, lieu(d), cxDate(d.recueLe)].filter(Boolean).join(' · '))}</span>`).join('')}</div></details>` : ''}
-      </div></div>
-    </div>
+    ${suivi ? cxSuivi(c, r) : `<div class="cx-cols">${cxMissions(c, act)}${cxMessages(c, act, r.vue === 'repondre' ? r.cle : null)}</div>
     <div class="cx-params"><h3 class="cx-h2 sm">Paramètres</h3>
       <div><h4 id="cx-auto" class="cx-h3">Quand ${esc(p)} confie une mission à ton agent</h4>
         <div class="cx-seg" role="group" aria-labelledby="cx-auto">${cx.niveaux.map(n => `<button type="button" data-niveau="${n.id}"${n.id === c.niveau ? ' class="on"' : ''} aria-pressed="${n.id === c.niveau}">${esc(n.libelle)}</button>`).join('')}</div>
@@ -3683,8 +3757,19 @@ function cxFiche(c, act) {
         <div class="cx-chips" role="group" aria-labelledby="cx-voit">${cx.partages.map(x => { const on = c.partage.includes(x); return `<button type="button" class="cx-chip${on ? ' on' : ''}" aria-pressed="${on}" data-partage="${esc(x)}">${on ? '<svg aria-hidden="true"><use href="#i-check"/></svg>' : ''}${esc(x)}</button>`; }).join('')}</div>
         <p class="cx-note">Réglage gardé pour la suite : rien n'est encore envoyé automatiquement.</p>
       </div>
-    </div>
+    </div>`}
   </section>`;
+}
+const cxSuivi = () => '<p class="cx-empty">Rien de reçu pour l\'instant.</p>';
+// typed text, open <details> and focus survive a redraw by the polling
+function cxKeep(el, draw) {
+  const vals = {}, open = {};
+  el.querySelectorAll('[data-k]').forEach(x => { if (x.tagName === 'DETAILS') open[x.dataset.k] = x.open; else vals[x.dataset.k] = x.value; });
+  const f = document.activeElement?.dataset?.k, sel = f && [document.activeElement.selectionStart, document.activeElement.selectionEnd];
+  draw();
+  el.querySelectorAll('[data-k]').forEach(x => { if (x.tagName === 'DETAILS') { if (x.dataset.k in open) x.open = open[x.dataset.k]; } else if (x.dataset.k in vals) x.value = vals[x.dataset.k]; });
+  const back = f && el.querySelector(`[data-k="${CSS.escape(f)}"]`);
+  if (back) { back.focus(); try { back.setSelectionRange(...sel); } catch (e) { /* date inputs */ } }
 }
 function renderCx() {
   const r = cxRoute(), el = $('#cx-body');
@@ -3695,40 +3780,69 @@ function renderCx() {
     return;
   }
   const inv = r.invitation ? cx.invitations.find(i => i.code === r.invitation) : null, sel = cxSel();
-  const typed = $('#cx-in')?.value ?? '', focused = document.activeElement?.id === 'cx-in';
-  el.innerHTML = `<nav class="pane cx-side" aria-label="Partenaires">
+  cxKeep(el, () => {
+    el.innerHTML = `<nav class="pane cx-side" aria-label="Partenaires">
     ${cx.connexions.map(c => `<a class="cx-it" href="#connexions/${esc(c.id)}"${c === sel ? ' aria-current="page"' : ''}><span><b>${esc(c.court)}</b><small>${esc(c.partenaire.nom)}</small></span><span class="cx-st on"><i></i>Connecté</span></a>`).join('')}
     ${cx.invitations.map(i => `<a class="cx-it inv" href="#connexions/invitation/${esc(i.code)}"${i === inv ? ' aria-current="page"' : ''}><span><b>${esc(i.email || 'Invitation sans e-mail')}</b><small>Invitation du ${esc(cxDate(i.creeLe))}</small></span><span class="cx-st"><i></i>En attente</span></a>`).join('')}
     <form class="cx-add" id="cx-add"><label for="cx-in" class="lbl">Ajouter un partenaire</label>
-      <div><input id="cx-in" type="text" placeholder="Adresse de son OS ou e-mail" autocomplete="off"><button type="submit" class="btn">Ajouter</button></div></form>
-  </nav>${inv ? cxInvitation(inv) : sel ? cxFiche(sel, cxAct)
-    : r.invitation ? '<section class="pane cx-detail cx-ask"><h2 class="cx-h2">Invitation utilisée ou expirée</h2><p>Si ton partenaire l\'a acceptée, il apparaît dans la liste.</p></section>'
-      : '<section class="pane cx-detail cx-ask"><h2 class="cx-h2">Aucun partenaire connecté</h2><p>Colle le lien d\'invitation reçu d\'un partenaire, ou son e-mail pour créer une invitation à lui transmettre.</p></section>'}`;
-  $('#cx-in').value = typed;
-  if (focused) $('#cx-in').focus();
+      <div><input id="cx-in" data-k="cx-in" type="text" placeholder="Adresse de son OS ou e-mail" autocomplete="off"><button type="submit" class="btn">Ajouter</button></div></form>
+  </nav>${inv ? cxInvitation(inv) : sel ? cxFiche(sel, cxAct, r)
+      : r.invitation ? '<section class="pane cx-detail cx-ask"><h2 class="cx-h2">Invitation utilisée ou expirée</h2><p>Si ton partenaire l\'a acceptée, il apparaît dans la liste.</p></section>'
+        : '<section class="pane cx-detail cx-ask"><h2 class="cx-h2">Aucun partenaire connecté</h2><p>Colle le lien d\'invitation reçu d\'un partenaire, ou son e-mail pour créer une invitation à lui transmettre.</p></section>'}`;
+  });
+  if (r.vue === 'repondre' && cxForm !== `rep:${r.cle}`) { cxForm = `rep:${r.cle}`; el.querySelector(`[data-k="rep-${CSS.escape(r.cle)}"]`)?.focus(); }
+}
+function cxOpen(form) {
+  cxForm = form || null;
+  const r = cxRoute();
+  // leaving a reply opened from Aujourd'hui: back to the plain page
+  if (r?.vue === 'repondre' && cxForm !== `rep:${r.cle}`) { history.replaceState(null, '', `#connexions/${r.id}`); }
+  renderCx();
+  const first = $('#cx-body').querySelector('.cx-form input:not([type="date"]), .cx-form textarea');
+  if (cxForm) first?.focus();
 }
 $('#cx-body').addEventListener('submit', async e => {
-  if (e.target.id !== 'cx-add') return;
   e.preventDefault();
-  const v = $('#cx-in').value.trim(), btn = e.target.querySelector('button');
+  const f = e.target, btn = f.querySelector('button[type="submit"]'), sel = cxSel(), url = sel && `/api/connexions/${encodeURIComponent(sel.id)}`;
+  const v = Object.fromEntries(new FormData(f));
   btn.disabled = true;
   try {
-    if (/^https?:\/\//i.test(v)) {
-      const r = await cxSend('/api/connexions/rejoindre', { lien: v });
+    if (f.id === 'cx-add') {
+      const lien = $('#cx-in').value.trim();
+      if (/^https?:\/\//i.test(lien)) {
+        const r = await cxSend('/api/connexions/rejoindre', { lien });
+        if (r.error) throw new Error(r.error);
+        $('#cx-in').value = '';
+        toast(`Connecté à ${r.partenaire?.nom ?? 'ton partenaire'}`);
+        location.hash = `connexions/${r.id}`;
+      } else if (!lien || /^[^\s@]+@[^\s@]+$/.test(lien)) {
+        const r = await cxSend('/api/connexions/invitations', lien ? { email: lien } : {});
+        if (r.error) throw new Error(r.error);
+        $('#cx-in').value = '';
+        location.hash = `connexions/invitation/${r.code}`;
+      } else throw new Error('Colle le lien d\'invitation de son OS, ou son e-mail');
+    } else if (f.id === 'cx-mission') {
+      const r = await cxSend(`${url}/missions`, v);
       if (r.error) throw new Error(r.error);
-      $('#cx-in').value = '';
-      toast(`Connecté à ${r.partenaire?.nom ?? 'ton partenaire'}`);
-      location.hash = `connexions/${r.id}`;
-    } else if (!v || /^[^\s@]+@[^\s@]+$/.test(v)) {
-      const r = await cxSend('/api/connexions/invitations', v ? { email: v } : {});
+      f.reset();
+      toast(`Mission confiée à ${sel.court}`);
+      cxForm = null;
+    } else if (f.id === 'cx-message' || f.dataset.rep) {
+      const type = f.querySelector('[data-type].on')?.dataset.type;
+      const r = await cxSend(`${url}/messages`, { ...v, type, enReponseA: f.dataset.rep });
       if (r.error) throw new Error(r.error);
-      $('#cx-in').value = '';
-      location.hash = `connexions/invitation/${r.code}`;
-    } else throw new Error('Colle le lien d\'invitation de son OS, ou son e-mail');
+      f.reset();
+      toast(`Message envoyé à ${sel.court}`);
+      cxForm = null;
+      if (cxRoute()?.vue === 'repondre') history.replaceState(null, '', `#connexions/${sel.id}`);
+      loadProps().then(rvRender);
+    } else return;
     await loadCx(true);
   } catch (err) { toast(err.message, true); } finally { btn.disabled = false; }
 });
 $('#cx-body').addEventListener('click', async e => {
+  const link = e.target.closest('.cx-md a[data-link]');
+  if (link) { if (/^https?:\/\//i.test(link.dataset.link)) window.open(link.dataset.link, '_blank', 'noopener'); return; }
   const b = e.target.closest('button');
   if (!b) return;
   const sel = cxSel(), url = sel && `/api/connexions/${encodeURIComponent(sel.id)}`;
@@ -3737,6 +3851,8 @@ $('#cx-body').addEventListener('click', async e => {
     try { await navigator.clipboard.writeText($('#cx-lien').value); toast('Lien copié'); } catch (err) { $('#cx-lien').select(); }
     return;
   }
+  if ('form' in b.dataset) return cxOpen(b.dataset.form);
+  if (b.dataset.type) { b.parentElement.querySelectorAll('button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); return; }
   if (b.dataset.niveau && sel) r = await cxSend(url, { niveau: b.dataset.niveau }, 'PATCH');
   else if (b.dataset.partage && sel) {
     const set = new Set(sel.partage);
@@ -3755,7 +3871,7 @@ $('#cx-body').addEventListener('click', async e => {
   if (r?.error) toast(r.error, true);
   loadCx(true);
 });
-addEventListener('hashchange', () => { if (cxRoute()) loadCx(true); });
+addEventListener('hashchange', () => { if (cxRoute()) { if (cxRoute().vue !== 'repondre') cxForm = null; loadCx(true); } });
 
 /* ---------- réglages: model, effort and prompt of each function, the skills (#reglages) ---------- */
 let rg = null, rgTab = 'prompts', rgFn = 'assistant', rgSk = null;
