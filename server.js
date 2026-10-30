@@ -20,7 +20,7 @@ import { makeCalendarState } from './lib/calendarstate.js';
 import { makeProjectsOrder } from './lib/projectsorder.js';
 import { searchBrain } from './lib/search.js';
 import { makeChat, SYSTEM as CHAT_SYSTEM } from './lib/chat.js';
-import { makeDelegations, listSkills, RULES as AGENT_RULES } from './lib/delegations.js';
+import { makeDelegations, listSkills, listMcp, userSkillsDir, RULES as AGENT_RULES } from './lib/delegations.js';
 import { makeMeetings, MEETINGS_TOOLS, BRIEF as MEETINGS_BRIEF } from './lib/meetings.js';
 import { makeStandup, slotNow } from './lib/standup.js';
 import { makeChatLog } from './lib/chatlog.js';
@@ -28,7 +28,8 @@ import { readCredo, shuffleForDay } from './lib/credo.js';
 import { bundle } from './lib/sbqueue.js';
 import { makeLinkedin, checkPost } from './lib/linkedin.js';
 import { loadLinkedin, updatePost, visualFor, localToday, dueForPreparation, toProduce, planFrame, parsePrepared, planFile } from './lib/linkedin-plan.js';
-import { makePropositions, moneyKey } from './lib/propositions.js';
+import { makePropositions, moneyKey, same } from './lib/propositions.js';
+import { assemble, namesOf, mentions, journalEntries } from './lib/dossier.js';
 import { makeReview, SYSTEM as REVIEW_SYSTEM } from './lib/review.js';
 import { makeReglages, pick, MODELS, EFFORTS } from './lib/reglages.js';
 import { makePartenaires, evenementFait, deposerEvenement } from './lib/partenaires.js';
@@ -128,6 +129,7 @@ const delegations = makeDelegations(ROOT, {
   get effort() { return setting('agents').effort; },
   get rules() { return reglages.prompt('agents', AGENT_RULES); },
   skillOn: name => reglages.skillOn(name),
+  mcpOn: name => reglages.mcpOn(name),
   denyRead: [path.join(ROOT, 'credentials'), path.join(ROOT, 'config')],
 }, {
   onChange(d, event) {
@@ -557,8 +559,13 @@ app.get('/api/delegations/:id', (req, res) => {
   const d = delegations.get(req.params.id);
   d ? res.json({ ...d, rapport: delegations.report(d.id) }) : res.status(404).json({ error: 'délégation introuvable' });
 });
-app.post('/api/delegations', (req, res) => {
-  try { res.json(delegations.create({ tache: req.body?.tache, contexte: req.body?.contexte, source: req.body?.source ?? null })); }
+// a todo task filed under a project gets the same CONTEXTE.md as a launched proposition
+app.post('/api/delegations', async (req, res) => {
+  try {
+    const slug = String(req.body?.tache ?? '').trim() ? projectSlug(req.body?.projet) : '';
+    const dossier = slug ? await dossierFor({ tache: String(req.body.tache).trim(), slug }) : '';
+    res.json(delegations.create({ tache: req.body?.tache, contexte: req.body?.contexte, source: req.body?.source ?? null, projet: slug || null, dossier }));
+  }
   catch (e) { res.status(400).json({ error: e.message }); }
 });
 app.post('/api/delegations/:id/:act', (req, res) => {
@@ -938,7 +945,8 @@ app.post('/api/propositions', (req, res) => {
   try { res.json(propositions.add(req.body ?? {})); }
   catch (e) { res.status(400).json({ error: e.message }); }
 });
-app.post('/api/propositions/:id/:act', (req, res) => {
+const launching = new Set();   // a double click must not start two agents
+app.post('/api/propositions/:id/:act', async (req, res) => {
   const { id, act } = req.params;
   try {
     const p = propositions.get(id);
@@ -946,13 +954,23 @@ app.post('/api/propositions/:id/:act', (req, res) => {
     const money = p?.type === 'finance';
     // a mission on "Demander avant" starts the partner's work instead of adding a task
     const tache = p?.source !== 'mission' || partenaires.ajouteTache(id);
-    let todo = null, finance = null;   // writeTodo drops a task already on the list
+    let todo = null, finance = null, delegation = null;   // writeTodo drops a task already on the list
     if (p?.status === 'pending' && act === 'accept') { if (money) finance = toFinance(p.echeance); else if (tache && p.source !== 'partenaire') todo = addItem(todoFile, { t, s: p.project }); }
-    if (p?.status === 'pending' && act === 'later' && !money) { const cur = readTodo(todoFile); todo = writeTodo(todoFile, cur.items, [...cur.later, { t, s: p.project }]); }
+    if (p?.status === 'pending' && act === 'later' && !money && p.source !== 'partenaire') { const cur = readTodo(todoFile); todo = writeTodo(todoFile, cur.items, [...cur.later, { t, s: p.project }]); }
+    // Lancer: an agent takes the task straight away with its CONTEXTE.md, it never joins the todo
+    if (p?.status === 'pending' && act === 'launch' && !money && p.source !== 'partenaire') {
+      if (launching.has(id)) return res.status(409).json({ error: 'agent déjà en cours de lancement' });
+      launching.add(id);
+      try {
+        const slug = p.slug || projectSlug(p.project);
+        const dossier = await dossierFor({ tache: t, slug, objectif: p.objectif, etapes: p.etapes, why: p.why, refs: p.refs, revue: p.source === 'revue' });
+        delegation = delegations.create({ tache: t, contexte: [p.project && `Projet : ${p.project}`, p.why && `Proposée par la revue horaire : ${p.why}`].filter(Boolean).join('. '), source: p.id, projet: slug || null, dossier });
+      } finally { launching.delete(id); }
+    }
     const proposition = propositions.decide(id, act, req.body?.title);
     // the partner hears back: accepted, postponed or rejected
     if (proposition.source === 'mission') partenaires.surDecision(proposition).catch(e => console.error('partenaires', e.message));
-    res.json({ proposition, todo: todo ?? readTodo(todoFile), finance });
+    res.json({ proposition, todo: todo ?? readTodo(todoFile), finance, delegation });
   } catch (e) { res.status(e.status ?? 400).json({ error: e.message }); }
 });
 
@@ -982,6 +1000,7 @@ const priceLines = txt => txt.split('\n').filter(l => /\d\s?€|€\s?\d|tarif|T
 // and suggests what is missing. A test instance only runs it on demand, unless
 // ALPES_OS_REVIEW_AUTO=1.
 const revCfg = { model: 'claude-haiku-5-5', weekdays: [1, 2, 3, 4, 5], from: 9, to: 19, ...(cfg.review ?? {}) };
+const STOPPED = ['pause', 'terminé', 'archivé'];
 async function reviewContext({ since } = {}) {
   const now = new Date();
   const midnight = new Date(now); midnight.setHours(0, 0, 0, 0);
@@ -994,6 +1013,13 @@ async function reviewContext({ since } = {}) {
     agenda = c.events.map(e => ({ titre: e.title, debut: e.start, fin: e.end, journee_entiere: e.allDay, avec: e.attendees, lieu: e.location }));
   } catch (e) { agendaErreur = e.message.slice(0, 200); }
   const today = localToday(now), horizon = localToday(new Date(now.getTime() + 30 * 864e5));
+  // paused, finished or archived: his decision, in `next`, rules out suggestions about it
+  const projects = listProjects(cfg.secondBrain, { all: true }), notes = listFinance(cfg.secondBrain);
+  const isStopped = p => STOPPED.includes(p.stage);
+  const clientsOf = p => [...new Set([p.client, ...notes.filter(n => n.projet === p.slug).map(clientOf)].filter(Boolean))];
+  const live = new Set(projects.filter(p => !isStopped(p)).flatMap(clientsOf));
+  const closed = new Set(projects.filter(p => ['terminé', 'archivé'].includes(p.stage)).map(p => p.slug));
+  const noteClosed = n => n.projet ? closed.has(n.projet) : n.projects.length > 0 && n.projects.every(s => closed.has(s));
   return {
     maintenant: now.toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }),
     taches_du_jour: open.map((i, n) => ({
@@ -1007,13 +1033,17 @@ async function reviewContext({ since } = {}) {
       .filter(n => n.mtime >= now - 48 * 3600e3 && !n.idx && n.id !== cfg.todoFile)
       .sort((a, b) => b.mtime - a.mtime).slice(0, 25)
       .map(n => ({ chemin: n.id, titre: n.t, description: n.desc, modifiee: new Date(n.mtime).toLocaleString('fr-FR', { weekday: 'short', hour: '2-digit', minute: '2-digit' }) })),
-    projets: listProjects(cfg.secondBrain).filter(p => p.stage !== 'terminé').map(p => ({
+    projets: projects.filter(p => !isStopped(p)).map(p => ({
       slug: p.slug, titre: p.title, stade: p.stage, prochaine_etape: p.next || p.steps[0] || '', revu_le: p.updated, jours_sans_mouvement: daysSince(p.updated),
     })),
+    projets_arretes: projects.filter(isStopped).map(p => ({
+      slug: p.slug, titre: p.title, stade: p.stage, decision: (p.next || '').slice(0, 300), clients: clientsOf(p).filter(c => !live.has(c)),
+    })),
     agenda, agenda_erreur: agendaErreur,
-    echeances: listFinance(cfg.secondBrain)
+    // an unsigned devis is no money owed, so it is never late
+    echeances: notes.filter(n => !noteClosed(n))
       .flatMap(n => n.echeances.filter(e => e.statut !== 'encaisse' && e.date && e.date <= horizon)
-        .map(e => ({ note: n.title, libelle: e.libelle, montant: e.montant, date: e.date, statut: e.statut, ...(e.date < today ? { en_retard: true } : {}) })))
+        .map(e => ({ note: n.title, libelle: e.libelle, montant: e.montant, date: e.date, statut: e.statut, ...(e.date < today && e.statut !== 'devis' ? { en_retard: true } : {}) })))
       .sort((a, b) => a.date.localeCompare(b.date)).slice(0, 10),
     ...await moneyContext(since),
   };
@@ -1033,7 +1063,7 @@ async function moneyContext(since) {
         const c = mailClient(t, clients);
         let messages;
         try { messages = await gmail.threadText(t.id); } catch (e) { messages = [{ de: t.from, date: t.date, texte: t.snippet }]; }
-        mails.push({ de: t.from, objet: t.subject, date: t.date, ...(c ? { client: c.slug } : {}), messages });
+        mails.push({ id: t.id, de: t.from, objet: t.subject, date: t.date, ...(c ? { client: c.slug } : {}), messages });
         if (c && !extraits[c.slug]) extraits[c.slug] = [...priceLines(bundle.read(path.join(cfg.secondBrain, c.id))),
           ...notes.filter(n => clientOf(n) === c.slug).flatMap(n => priceLines(bundle.read(path.join(cfg.secondBrain, n.id))).map(l => `${n.id} : ${l}`))].slice(0, 20);
       }
@@ -1061,21 +1091,90 @@ app.post('/api/review/run', async (req, res) => {
   catch (e) { res.status(500).json({ ...review.status(), error: e.message }); }
 });
 
-// Réglages screen — model, effort and prompt of each function; the second brain's
-// skills, offered or not to the agents. A SKILL.md is edited through the curator's queue.
+// CONTEXTE.md for a task an agent takes on: the project's note, its clients' and
+// finance notes in full, the facts the review cited, the meetings ahead, recent
+// journal entries and earlier agents' reports on the same project.
+const projectSlug = v => v ? listProjects(cfg.secondBrain, { all: true }).find(p => p.slug === v || same(p.title) === same(v))?.slug ?? '' : '';
+async function dossierFor({ tache, slug = '', objectif = '', etapes = [], why = '', refs = [], revue = false }) {
+  const sb = cfg.secondBrain, abs = id => path.join(sb, id);
+  const project = slug ? listProjects(sb, { all: true }).find(p => p.slug === slug) : null;
+  const notes = listFinance(sb);
+  const clientSlugs = [...new Set([project?.client, ...notes.filter(n => project && n.projet === slug).map(clientOf),
+    ...refs.filter(r => r.type === 'client').map(r => r.id)].filter(Boolean))];
+  const clients = listClients(sb).filter(c => clientSlugs.includes(c.slug));
+  const names = namesOf([project?.title, ...clients.map(c => c.title)]);
+  const sections = [];
+  const note = (titre, id) => { if (!sections.some(s => s.chemin === abs(id))) sections.push({ titre, texte: bundle.read(abs(id)), chemin: abs(id) }); };
+  if (project) note(`Projet : ${project.title}`, project.id);
+  for (const c of clients) note(`Client : ${c.title}`, c.id);
+  for (const n of notes.filter(n => (project && n.projet === slug) || clientSlugs.includes(n.client))) note(`Finance : ${n.title}`, n.id);
+  for (const r of refs) {
+    if (r.type === 'note' && /^brain\/[\w./-]+\.md$/.test(r.id) && !r.id.includes('..') && bundle.exists(abs(r.id))) note(r.label, r.id);
+    if (r.type === 'projet') { const p = listProjects(sb, { all: true }).find(p => p.slug === r.id); if (p) note(`Projet : ${p.title}`, p.id); }
+  }
+  for (const r of refs.filter(r => r.type === 'mail')) {
+    try {
+      const msgs = await gmail.threadText(r.id, { last: 10, maxChars: 8000 });
+      sections.push({ titre: r.label, texte: msgs.map(m => `**${m.de}** · ${m.date.slice(0, 16).replace('T', ' ')}\n\n${m.texte}`).join('\n\n---\n\n'), chemin: `fil Gmail ${r.id} (outil lister_mails)` });
+    } catch (e) { /* a mail out of reach leaves the rest of the file */ }
+  }
+  if (names.length) {
+    try {
+      const { events } = await calendar.upcoming({ ...calOpts(), days: 30, max: 60 });
+      const mine = events.filter(e => mentions([e.title, ...(e.attendees ?? []), e.location].join(' '), names));
+      if (mine.length) sections.push({ titre: 'Agenda à venir', chemin: 'agenda Google (outil lister_agenda)', texte: mine.map(e => `- ${new Date(e.start).toLocaleString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · ${e.title}${e.attendees?.length ? ` · avec ${e.attendees.join(', ')}` : ''}${e.location ? ` · ${e.location}` : ''}`).join('\n') });
+    } catch (e) { /* no agenda, no section */ }
+  }
+  const cited = refs.filter(r => r.type === 'session').map(r => r.id);
+  if (cited.length) {
+    const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
+    const act = (await claudeActivity({ since: midnight.getTime() })).filter(s => cited.includes(s.id));
+    if (act.length) sections.push({ titre: "Activité Claude Code d'aujourd'hui", chemin: '~/.claude/projects (transcripts)', texte: act.map(s => `### ${s.worktree ?? s.dossier}${s.branche ? ` (${s.branche})` : ''}, ${s.de}–${s.a}\n\n${s.extraits.map(x => `- ${x}`).join('\n')}`).join('\n\n') });
+  }
+  if (names.length) {
+    const dir = path.join(sb, 'brain', 'journal');
+    bundle.list(dir).filter(f => f.endsWith('.md') && !['index.md', 'todo.md', 'delegations.md'].includes(f))
+      .flatMap(f => journalEntries(bundle.read(path.join(dir, f)), names, path.join(dir, f)))
+      .sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5).forEach(e => sections.push(e));
+  }
+  for (const d of delegations.list({ all: true }).filter(d => project && (d.projet === slug || mentions(d.tache, names))).slice(0, 3)) {
+    const txt = delegations.report(d.id);
+    if (txt) sections.push({ titre: `Rapport d'un agent précédent · ${d.tache}`.slice(0, 140), texte: txt, chemin: path.join(ROOT, d.dossier, 'RAPPORT.md') });
+  }
+  if (!sections.length && !objectif && !etapes.length) return '';
+  const r = review.status();
+  const bullets = revue && rvToday(r.at) ? [r.summary ?? []].flat() : [];
+  const head = [
+    '# Contexte de la tâche',
+    `Préparé par AlpesOS le ${new Date().toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}, au lancement. C'est ce que Christophe sait déjà : pars de là et ne cherche ailleurs que ce qui manque. Une partie trop longue est tronquée et donne le chemin de son texte complet.`,
+    '## Tâche', `**${tache}**`,
+    [objectif && `- Objectif : ${objectif}`, why && `- Pourquoi : ${why}`, project && `- Projet : ${project.title} (${project.stage}) — prochaine étape notée : ${project.next || '—'}`].filter(Boolean).join('\n'),
+    etapes.length && `### Étapes prévues\n\n${etapes.map((e, i) => `${i + 1}. ${e}`).join('\n')}`,
+    bullets.length && `### Revue horaire de ${new Date(r.at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\n\n${bullets.map(b => `- ${b}`).join('\n')}`,
+  ].filter(Boolean).join('\n\n');
+  return assemble(head, sections) + '\n';
+}
+const rvToday = iso => !!iso && new Date(iso).toDateString() === new Date().toDateString();
+
+// Réglages screen — model, effort and prompt of each function; the skills of the second
+// brain, Claude Code and claude.ai, offered or not to the agents. Only a second brain
+// SKILL.md is edited here, through the curator's queue.
 const fnView = f => ({
   id: f.id, name: f.name, skill: f.skill ?? null, ...setting(f.id),
   fallback: { model: pick(...f.model), effort: pick(...(f.effort ?? [])) ?? null },
   ...(f.prompt ? { prompt: reglages.prompt(f.id, f.prompt), original: f.prompt, modified: reglages.modified(f.id) } : {}),
 });
 const skillFile = s => path.join(s.dir, 'SKILL.md');
+const allSkills = () => listSkills(cfg.secondBrain, userSkillsDir());
 function skillView(s) {
   const agents = reglages.skillOn(s.name);
   const usedBy = FUNCTIONS.filter(f => f.skill === s.name || f.uses?.some(u => path.basename(u) === s.name)).map(f => f.name);
-  return { name: s.name, description: s.description, agents, usedBy: agents ? [...usedBy, 'Agents'] : usedBy, text: bundle.read(skillFile(s)), pending: bundle.isPending(skillFile(s)) };
+  const own = s.origin === 'second-brain';
+  return { name: s.name, description: s.description, origin: s.origin, agents, usedBy: agents ? [...usedBy, 'Agents'] : usedBy,
+    ...(own ? { text: bundle.read(skillFile(s)), pending: bundle.isPending(skillFile(s)) } : {}) };
 }
 app.get('/api/reglages', (req, res) => {
-  try { res.json({ models: MODELS, efforts: EFFORTS, functions: FUNCTIONS.map(fnView), skills: listSkills(cfg.secondBrain).map(skillView) }); }
+  try { res.json({ models: MODELS, efforts: EFFORTS, functions: FUNCTIONS.map(fnView), skills: allSkills().map(skillView), connectors: connectors() }); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 app.put('/api/reglages/functions/:id', (req, res) => {
@@ -1101,10 +1200,24 @@ app.delete('/api/reglages/prompts/:id', (req, res) => {
   reglages.resetPrompt(f.id);
   res.json(fnView(f));
 });
+// the MCP servers of ~/.claude.json the agents may get; only switched off here, never removed
+// from there. dashboard is AlpesOS itself: always given.
+const connectors = () => [
+  { name: 'dashboard', does: 'lecture (second brain, todo, agenda, mails) et brouillons Gmail', fixed: true },
+  ...listMcp().filter(c => c.name !== 'dashboard').map(c => ({ ...c, agents: reglages.mcpOn(c.name) })),
+];
+app.put('/api/reglages/connectors/:name', (req, res) => {
+  const c = connectors().find(x => x.name === req.params.name && !x.fixed);
+  if (!c) return res.status(404).json({ error: 'connecteur introuvable' });
+  if (typeof req.body?.agents !== 'boolean') return res.status(400).json({ error: 'agents attendu' });
+  reglages.setMcp(c.name, req.body.agents);
+  res.json({ ...c, agents: req.body.agents });
+});
 app.put('/api/reglages/skills/:name', (req, res) => {
-  const s = listSkills(cfg.secondBrain).find(x => x.name === req.params.name);
+  const s = allSkills().find(x => x.name === req.params.name);
   if (!s) return res.status(404).json({ error: 'skill introuvable' });
   const b = req.body ?? {};
+  if (typeof b.text === 'string' && s.origin !== 'second-brain') return res.status(400).json({ error: 'seules les skills du second brain se modifient ici' });
   if (typeof b.text === 'string' && !b.text.trim()) return res.status(400).json({ error: 'SKILL.md vide' });
   try {
     if (typeof b.agents === 'boolean') reglages.setSkill(s.name, b.agents);
