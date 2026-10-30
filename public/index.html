@@ -906,7 +906,9 @@ a.pf-card.res-cours p { color: var(--accent); }
 .rg-tabs button:hover { color: var(--ink); }
 .rg-tabs button[aria-selected="true"] { background: var(--sunken); color: var(--ink); }
 .rg-body { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; margin-top: 18px; }
-.rg-list { flex: 1 1 280px; max-width: 340px; padding: 8px; }
+.rg-list { flex: 1 1 280px; max-width: 340px; padding: 8px; max-height: min(75vh, calc(100vh - var(--bar-h, 64px) - 120px)); overflow-y: auto; }
+.rg-grp { display: block; padding: 14px 12px 4px; font-size: 12px; }
+.rg-grp:first-child { padding-top: 4px; }
 .rg-li { width: 100%; border: 0; background: transparent; text-align: left; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; color: var(--ink); cursor: pointer; }
 .rg-li:hover { background: var(--sunken); }
 .rg-li.on { background: var(--accent-soft); }
@@ -3590,6 +3592,7 @@ addEventListener('keydown', e => {
 let rg = null, rgTab = 'prompts', rgFn = 'assistant', rgSk = null;
 const rgDraft = {};   // text typed and not saved yet, by 'fn:<id>' or 'sk:<name>'
 const RG_EFFORT = { low: 'Faible', medium: 'Moyen', high: 'Élevé' };
+const RG_ORIGIN = { 'second-brain': 'Second brain', 'claude-code': 'Claude Code', 'claude-ai': 'claude.ai' };
 // claude-opus-5-5 → Opus 5.5
 const modelName = id => { const [n = '', ...v] = String(id).replace(/^claude-/, '').split('-'); return `${n.charAt(0).toUpperCase()}${n.slice(1)} ${v.join('.')}`.trim(); };
 const rgCur = () => rgTab === 'prompts' ? rg.functions.find(f => f.id === rgFn) : rg.skills.find(s => s.name === rgSk);
@@ -3613,7 +3616,10 @@ function renderRgList() {
   const item = (on, id, cls, title, sub, badge) => `<button class="rg-li${cls}${on ? ' on' : ''}"${on ? ' aria-current="true"' : ''} data-id="${esc(id)}"><span><b>${esc(title)}</b><small>${esc(sub)}</small></span>${badge}</button>`;
   $('#rg-list').innerHTML = rgTab === 'prompts'
     ? rg.functions.map(f => item(f.id === rgFn, f.id, '', f.name, meta(f), f.modified ? '<span class="rg-badge mod">modifié</span>' : '')).join('')
-    : rg.skills.map(s => item(s.name === rgSk, s.name, ' sk', s.name, skShort(s.description), s.pending ? '<span class="rg-badge wait">en attente</span>' : '')).join('');
+    : Object.entries(RG_ORIGIN).map(([o, label]) => {
+      const list = rg.skills.filter(s => s.origin === o);
+      return list.length ? `<span class="lbl rg-grp">${label}</span>` + list.map(s => item(s.name === rgSk, s.name, ' sk', s.name, skShort(s.description), s.pending ? '<span class="rg-badge wait">en attente</span>' : '')).join('') : '';
+    }).join('');
 }
 function renderRgDetail() {
   const x = rgCur(), d = $('#rg-detail');
@@ -3633,11 +3639,11 @@ function renderRgDetail() {
     $('#rg-model').value = x.model;
     $('#rg-effort').value = x.effort ?? '';
   } else {
-    d.innerHTML = `<div><div class="rg-title"><h2 class="mono">${esc(x.name)}</h2></div><p class="rg-desc">${esc(x.description)}</p></div>
+    d.innerHTML = `<div><div class="rg-title"><h2 class="mono">${esc(x.name)}</h2><span class="rg-chip">${RG_ORIGIN[x.origin]}</span></div><p class="rg-desc">${esc(x.description)}</p></div>
       ${x.usedBy.length ? `<div class="rg-used"><span class="lbl">Utilisée par</span>${x.usedBy.map(u => `<span class="rg-chip">${esc(u)}</span>`).join('')}</div>` : ''}
       <div class="rg-sw"><button id="rg-agents" role="switch" aria-checked="${x.agents}" aria-labelledby="rg-agents-l"><i></i></button><span id="rg-agents-l">Proposée aux agents dans le menu « / »</span></div>
-      <label class="rg-ed"><span class="lbl">SKILL.md</span><textarea id="rg-text" rows="18" spellcheck="false"></textarea></label>
-      <div class="rg-acts"><button class="btn acc" id="rg-save">Enregistrer</button><span id="rg-status"></span></div>`;
+      ${x.text != null ? `<label class="rg-ed"><span class="lbl">SKILL.md</span><textarea id="rg-text" rows="18" spellcheck="false"></textarea></label>
+      <div class="rg-acts"><button class="btn acc" id="rg-save">Enregistrer</button><span id="rg-status"></span></div>` : ''}`;
   }
   const ta = $('#rg-text');
   if (ta) { ta.value = rgDraft[rgKey()] ?? rgSaved(x); ta.oninput = () => { rgDraft[rgKey()] = ta.value; rgStatus(); }; }
