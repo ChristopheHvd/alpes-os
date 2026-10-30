@@ -99,7 +99,7 @@ status: draft
 `;
 const delegations = makeDelegations(ROOT, {
   port: PORT, bin: cfg.claude.bin, secondBrain: cfg.secondBrain,
-  model: cfg.delegations?.model ?? cfg.chat?.model ?? 'claude-opus-5', maxMinutes: cfg.delegations?.maxMinutes,
+  model: cfg.delegations?.model ?? 'claude-opus-5-5', effort: cfg.delegations?.effort ?? 'medium', maxMinutes: cfg.delegations?.maxMinutes,
   denyRead: [path.join(ROOT, 'credentials'), path.join(ROOT, 'config')],
 }, {
   onChange(d, event) {
@@ -519,6 +519,7 @@ app.post('/api/todo/add', (req, res) => {
 });
 
 app.get('/api/delegations', (req, res) => res.json({ items: delegations.list({ all: req.query.all === '1' }), drafts: gmail.status().hasDrafts }));
+app.get('/api/delegations/skills', (req, res) => res.json(delegations.skills()));
 app.get('/api/delegations/:id', (req, res) => {
   const d = delegations.get(req.params.id);
   d ? res.json({ ...d, rapport: delegations.report(d.id) }) : res.status(404).json({ error: 'délégation introuvable' });
@@ -531,6 +532,7 @@ app.post('/api/delegations/:id/:act', (req, res) => {
   const { id, act } = req.params;
   try {
     if (act === 'reply') return res.json(delegations.reply(id, req.body?.texte));
+    if (act === 'settings') return res.json(delegations.settings(id, { model: req.body?.model, effort: req.body?.effort }));
     if (act === 'stop') return res.json(delegations.stop(id));
     if (act === 'close') return res.json(delegations.close(id));
     res.status(404).json({ error: 'action inconnue' });
