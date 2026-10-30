@@ -131,6 +131,7 @@ button, input, textarea, select { font-family: inherit; }
 .sg-t input:hover { border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
 .sg-t input:focus { border-color: var(--accent); background: var(--surface); }
 .sg-t small { display: block; font-size: 12px; color: var(--ink-2); }
+.sg-t b { display: block; font: 500 13.5px/1.4 var(--font); color: var(--ink); }
 @media (max-width: 640px) { .sg { flex-wrap: wrap; } .sg-t { flex-basis: calc(100% - 26px); } .sg .btn:first-of-type { margin-left: 26px; } }
 #rv-agent + #agents > .ag:first-child { border-top: 1px solid var(--line-soft); }
 .gl { padding: 16px 18px; }
@@ -1238,14 +1239,20 @@ function rvRender() {
   const failed = r.error && (!r.at || r.errorAt > r.at);
   const head = r.running ? 'Revue en cours…' : rvToday(r.at) ? `Revue de ${rvHour(r.at)}` : r.at ? `Dernière revue ${rvWhen(r.at)}` : 'Revue horaire';
   const meta = p => [p.source === 'mission' ? `Mission de ${p.from}` : '', p.project, p.why].filter(Boolean).map(esc).join(' · ');
+  // real amounts never show in demo mode
+  const shown = props.filter(p => !(demoOn && p.type === 'finance'));
+  const row = p => p.type === 'finance'
+    ? `<div class="sg" data-id="${esc(p.id)}"><svg><use href="#i-euro"/></svg><div class="sg-t"><b>${esc(p.title)}</b><small>${meta(p)}</small></div>
+      <button class="btn sm acc" data-do="accept">Ajouter aux finances</button><button class="btn sm ghost" data-do="dismiss">Ignorer</button></div>`
+    : `<div class="sg" data-id="${esc(p.id)}"><svg><use href="#i-plus"/></svg>
+      <div class="sg-t"><input value="${esc(rvEdits[p.id] ?? p.title)}" aria-label="Titre de la tâche, modifiable avant de l'ajouter" title="Modifiable avant d'ajouter"><small>${meta(p)}</small></div>
+      <button class="btn sm acc" data-do="accept">Ajouter</button><button class="btn sm ghost" data-do="later">Plus tard</button><button class="btn sm ghost" data-do="dismiss">Ignorer</button></div>`;
   $('#propositions').innerHTML = `<section class="rv" aria-labelledby="h-rev">
     <div class="rv-head"><svg><use href="#i-agent"/></svg><h2 id="h-rev">${head}</h2>${r.auto && r.next && !r.running ? `<span>· prochaine ${rvWhen(r.next)}</span>` : ''}<span class="sp"></span>
       <button class="btn sm ghost" id="rv-run"${r.running ? ' disabled' : ''}>${r.running ? 'En cours…' : 'Relancer'}</button></div>
     ${rvToday(r.at) && r.summary ? `<p class="rv-sum">${esc(r.summary)}</p>` : ''}
     ${failed ? `<p class="rv-err">La dernière revue a échoué : ${esc(String(r.error).slice(0, 160))}</p>` : ''}
-    ${props.length ? `<div class="rv-list">${props.map(p => `<div class="sg" data-id="${esc(p.id)}"><svg><use href="#i-plus"/></svg>
-      <div class="sg-t"><input value="${esc(rvEdits[p.id] ?? p.title)}" aria-label="Titre de la tâche, modifiable avant de l'ajouter" title="Modifiable avant d'ajouter"><small>${meta(p)}</small></div>
-      <button class="btn sm acc" data-do="accept">Ajouter</button><button class="btn sm ghost" data-do="later">Plus tard</button><button class="btn sm ghost" data-do="dismiss">Ignorer</button></div>`).join('')}</div>` : ''}
+    ${shown.length ? `<div class="rv-list">${shown.map(row).join('')}</div>` : ''}
   </section>`;
 }
 function rvAgent() {
@@ -1275,13 +1282,14 @@ async function rvRun() {
   loadReview();
 }
 async function rvDecide(id, act) {
-  const title = rvEdits[id] ?? props.find(x => x.id === id)?.title;
+  const p = props.find(x => x.id === id), title = rvEdits[id] ?? p?.title;
   const r = await api(`/api/propositions/${encodeURIComponent(id)}/${act}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ title }) });
   if (r.error) { toast(r.error, true); await loadProps(); rvRender(); return; }
   delete rvEdits[id];
   props = props.filter(x => x.id !== id);
   todo = r.todo;
   renderTodo(); rvRender();
+  if (p?.type === 'finance' && act === 'accept') { loadFinance(); toast(r.finance ? 'Ajoutée aux finances : la projection est à jour' : 'Cette échéance était déjà dans les finances'); return; }
   // a full day sends what is added to "Plus tard", as for a task typed by hand
   if (act === 'accept' && todo.later.some(t => rvKey(t.t) === rvKey(title))) toast(`Journée pleine (${todo.max} tâches) : ajoutée dans « Plus tard »`);
   else if (todo.bumped) toast(`Limite de ${todo.max} tâches : ${todo.bumped} passée${todo.bumped > 1 ? 's' : ''} dans « Plus tard »`);
@@ -3483,6 +3491,7 @@ function setDemo(on) {
   demoOn = on;
   try { localStorage.setItem('demo', on ? '1' : '0'); } catch (e) {}
   renderDemo();
+  rvRender();
   fin = null;
   renderFinWidget();
   if (!$('#finview').hidden) renderFinview();
