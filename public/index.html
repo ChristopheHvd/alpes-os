@@ -124,7 +124,7 @@ button, input, textarea, select { font-family: inherit; }
 .cx-h3 { margin: 0; font: 600 15px/1.3 var(--font); color: var(--ink); }
 .cx-cut { border: 0; background: none; padding: 6px 0; color: var(--ink-2); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .cx-cut:hover { color: var(--crit); }
-.cx-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px 36px; }
+.cx-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 20px 36px; }
 .cx-cols > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .cx-h3row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
 .cx-row { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line-soft); }
@@ -181,6 +181,32 @@ button.cx-chip:hover { border-color: var(--ink-3); }
 .cx-md code { font: 400 12.5px var(--mono); background: var(--sunken); padding: 1px 4px; border-radius: 4px; }
 .cx-md a { color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .cx-res { font-size: 12.5px; color: var(--ink-2); }
+/* suivi commercial: the partner's deals by stage, then one deal */
+.cx-board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(210px, 1fr); gap: 12px; overflow-x: auto; padding-bottom: 6px; }
+.cx-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 10px; border-radius: 10px; background: var(--sunken); }
+.cx-col h4 { margin: 0; padding: 2px 4px 4px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font: 600 13px/1.3 var(--font); color: var(--ink); }
+.cx-col h4 span { font-weight: 500; font-size: 12px; color: var(--ink-2); }
+.cx-card { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line-soft); background: var(--surface); color: var(--ink); text-decoration: none; }
+.cx-card:hover { border-color: var(--ink-3); }
+.cx-card b { font: 600 13.5px/1.35 var(--font); }
+.cx-card small { font-size: 12.5px; color: var(--ink-2); }
+.cx-card .cx-num { font-variant-numeric: tabular-nums; color: var(--ink); }
+.cx-flag { align-self: flex-start; margin-top: 4px; font: 600 11px/1.5 var(--font); padding: 1px 8px; border-radius: 20px; background: var(--accent-soft); color: #9a3c15; }
+.cx-alert { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 14px; border-radius: 10px; background: var(--accent-soft); font-size: 13.5px; color: var(--ink); }
+.cx-alert > span { flex: 1 1 260px; min-width: 0; }
+.cx-alert .btn { min-height: 32px; font-size: 12.5px; padding: 0 12px; border-radius: 7px; }
+.cx-alert .btn.ghost { border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+.cx-back { align-self: flex-start; font-size: 13px; color: var(--ink-2); text-decoration: none; }
+.cx-back:hover { color: var(--ink); }
+.cx-aff { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 14px; align-items: end; border: 0; padding: 0; }
+.cx-aff label { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--ink-2); min-width: 0; }
+.cx-aff .cx-wide { grid-column: 1 / -1; }
+.cx-aff .cx-act { grid-column: 1 / -1; padding-top: 0; }
+.cx-facts { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; font-size: 12.5px; color: var(--ink-2); }
+.cx-facts b { font-weight: 500; color: var(--ink); }
+.cx-done b { text-decoration: line-through; color: var(--ink-3); }
+.cx-list + .cx-h3row { margin-top: 20px; }
+@media (max-width: 640px) { .cx-board { grid-auto-flow: row; grid-auto-columns: auto; overflow-x: visible; } .cx-col:not(:has(.cx-card)) { display: none; } .cx-detail { padding: 18px 16px 20px; } }
 
 /* ---------- today: money band, the day's tasks, a glance column ---------- */
 .finband { padding: 16px 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 36px; }
@@ -3023,6 +3049,9 @@ const CHAT_TOOLS = {
   lister_partenaires: ['Regarde les partenaires', () => 'Missions et messages des partenaires', 'les partenaires'],
   confier_mission: ['Prépare une mission', a => `Proposition : mission « ${esc(a.titre)} »`],
   envoyer_message: ['Prépare un message', a => `Proposition : message « ${esc(a.sujet || 'réponse')} »`],
+  lire_suivi_commercial: ['Regarde le suivi commercial', a => `Suivi commercial de ${esc(a.partenaire)}`, 'le suivi commercial'],
+  maj_affaire: ["Prépare la mise à jour d'une affaire", () => "Proposition : mise à jour d'une affaire"],
+  ajouter_au_suivi: ['Prépare un ajout au suivi', a => `Proposition : ${esc({ note: 'note', tache: 'tâche', contact: 'contact', compte_rendu: 'compte rendu' }[a.quoi] ?? 'ajout')}`],
   WebSearch: ['Cherche sur le web', a => `Recherche web « ${esc(a.query)} »`, 'le web'],
   WebFetch: ['Lit une page web', a => `Lecture ${chatPath(a.url)}`, 'le web'],
   Read: ['Lit un fichier', a => `Lecture ${chatPath(a.file_path)}`, 'des fichiers'],
@@ -3676,8 +3705,11 @@ async function loadCx(force) {
   renderCxTool();
   if (!cxRoute()) return;
   const sel = cxSel();
-  cxAct = sel ? await api(`/api/connexions/${encodeURIComponent(sel.id)}/activite`).catch(() => null) : null;
-  const sig = JSON.stringify([cx, cxAct, location.hash]);
+  const r = cxRoute(), url = sel && `/api/connexions/${encodeURIComponent(sel.id)}`;
+  cxAct = sel ? await api(`${url}/activite`).catch(() => null) : null;
+  cxSv = sel && r.vue === 'suivi' && !r.cle ? await api(`${url}/suivi`).catch(() => null) : null;
+  cxAff = sel && r.vue === 'suivi' && r.cle ? await api(`${url}/suivi/affaires/${encodeURIComponent(r.cle)}`).then(x => (x.error ? undefined : x)).catch(() => undefined) : null;
+  const sig = JSON.stringify([cx, cxAct, cxSv, cxAff, location.hash]);
   if (force || sig !== cxSig) { cxSig = sig; renderCx(); }
 }
 function renderCxTool() {
@@ -3760,17 +3792,107 @@ function cxFiche(c, act, r) {
     </div>`}
   </section>`;
 }
-const cxSuivi = () => '<p class="cx-empty">Rien de reçu pour l\'instant.</p>';
+// the suivi commercial tab: deals by stage, or one deal with its contacts, meetings, tasks and activities
+let cxSv = null, cxAff = null;
+const cxEur = n => (n == null ? '' : `${Number(n).toLocaleString('fr-FR')} €`);
+const cxJour = iso => (iso ? new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '');
+const cxHeure = iso => { const d = new Date(iso); return `${d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}, ${d.getHours()} h ${String(d.getMinutes()).padStart(2, '0')}`; };
+const CX_ACT = { note: 'Note', appel: 'Appel', email: 'E-mail', reunion: 'Réunion' };
+const CX_TACHE = { appel: 'Appel', email: 'E-mail', tache: 'Tâche', reunion: 'Réunion', echeance: 'Échéance', dejeuner: 'Déjeuner' };
+function cxSuiviAlertes(c) {
+  const p = c.court;
+  return [
+    ...(cxSv?.suppressions ?? []).map(s => `<div class="cx-alert"><span>${esc(s.titre ?? 'Fiche')} supprimée chez ${esc(p)} : la supprimer ici aussi ?</span>
+      <button type="button" class="btn ghost" data-garder="${esc(s.id)}">Garder</button><button type="button" class="btn acc" data-supprimer="${esc(s.id)}">Supprimer</button></div>`),
+    ...(cxSv?.notes ?? []).map(n => `<div class="cx-alert"><span>${esc(n.texte)}</span><button type="button" class="btn ghost" data-vu="${esc(n.id)}">Vu</button></div>`),
+  ].join('');
+}
+function cxCarte(c, a) {
+  return `<a class="cx-card" href="#connexions/${esc(c.id)}/suivi/${encodeURIComponent(a.ref)}"><b>${esc(a.titre)}</b>
+    ${a.entreprise ? `<small>${esc(a.entreprise)}</small>` : ''}
+    ${a.montant != null || a.echeance ? `<small>${a.montant != null ? `<span class="cx-num">${esc(cxEur(a.montant))}</span>` : ''}${a.montant != null && a.echeance ? ' · ' : ''}${a.echeance ? `pour le ${esc(cxJour(a.echeance))}` : ''}</small>` : ''}
+    ${a.detachee ? '<span class="cx-flag">Plus partagée</span>' : ''}</a>`;
+}
+function cxTableau(c) {
+  const sv = cxSv;
+  if (!sv) return '<p class="cx-empty">Chargement…</p>';
+  if (!sv.affaires.length) return `${cxSuiviAlertes(c)}<p class="cx-empty">${esc(c.court)} n'a encore rien partagé de son suivi commercial.</p>`;
+  const ouvertes = sv.etapes.filter(e => !e.clos), connues = new Set(sv.etapes.map(e => e.id));
+  const encours = sv.affaires.filter(a => !a.issue);
+  const cols = [...ouvertes.map(e => ({ libelle: e.libelle, affaires: encours.filter(a => a.etape === e.id) })),
+    { libelle: 'Autres', affaires: encours.filter(a => !connues.has(a.etape)) }].filter((x, i, all) => x.affaires.length || i < all.length - 1);
+  const closes = sv.affaires.filter(a => a.issue), gagnees = closes.filter(a => a.issue === 'gagne');
+  const somme = l => l.reduce((t, a) => t + (a.montant ?? 0), 0);
+  return `${cxSuiviAlertes(c)}
+    <div class="cx-board">${cols.map(k => `<section class="cx-col" aria-label="${esc(k.libelle)}"><h4>${esc(k.libelle)}<span>${k.affaires.length}${somme(k.affaires) ? ` · ${esc(cxEur(somme(k.affaires)))}` : ''}</span></h4>
+      ${k.affaires.map(a => cxCarte(c, a)).join('')}</section>`).join('')}</div>
+    ${closes.length ? `<details class="cx-row" data-k="d-closes"><summary>Affaires closes : ${gagnees.length} gagnée${gagnees.length > 1 ? 's' : ''}, ${closes.length - gagnees.length} perdue${closes.length - gagnees.length > 1 ? 's' : ''}</summary>
+      <div class="cx-list">${closes.map(a => `<a class="cx-row" href="#connexions/${esc(c.id)}/suivi/${encodeURIComponent(a.ref)}" style="text-decoration:none;color:inherit"><span class="cx-main"><b>${esc(a.titre)}</b><small class="cx-sub">${esc([a.entreprise, cxEur(a.montant)].filter(Boolean).join(' · '))}</small></span><span class="cx-badge">${a.issue === 'gagne' ? 'Gagnée' : 'Perdue'}</span></a>`).join('')}</div></details>` : ''}`;
+}
+function cxAffaire(c) {
+  const a = cxAff, base = `#connexions/${esc(c.id)}/suivi`;
+  if (!a) return `<a class="cx-back" href="${base}">← Suivi commercial</a><p class="cx-empty">${cxAff === null ? 'Chargement…' : 'Affaire introuvable.'}</p>`;
+  const ch = a.champs, p = c.court, f = cxForm;
+  const facts = [['Propriétaire', ch.proprietaire], ['Origine', ch.origine], ['Facturation', ch.mode_facturation === 'recurrent' ? `récurrente${ch.duree_engagement_mois ? `, ${ch.duree_engagement_mois} mois` : ''}` : ch.mode_facturation === 'spot' ? 'ponctuelle' : null],
+    ['Probabilité', ch.probabilite_manuelle != null ? `${ch.probabilite_manuelle} %` : null], ['Motif', ch.motif]].filter(([, v]) => v != null && v !== '');
+  const head = (titre, form, bouton) => `<div class="cx-h3row"><h3 class="cx-h3">${titre}</h3><span class="sp"></span>${bouton && f !== form ? `<button type="button" class="btn" data-form="${form}">${bouton}</button>` : ''}</div>`;
+  const actes = (form, ok) => `<div class="cx-act"><span class="sp"></span><button type="button" class="btn ghost" data-form="">Annuler</button><button type="submit" class="btn acc">${ok}</button></div>`;
+  const rdv = r => `<div class="cx-row top"><span class="cx-main"><b>${esc(r.titre)}</b><small class="cx-sub">${esc([r.debut && cxHeure(r.debut), r.lieu].filter(Boolean).join(' · '))}</small>
+      ${r.compte_rendu ? `<div class="cx-md">${md(cxLiens(r.compte_rendu))}</div>` : ''}</span>
+      ${!r.compte_rendu && f !== `cr:${r.ref}` ? `<button type="button" class="btn" data-form="cr:${esc(r.ref)}">Compte rendu</button>` : ''}</div>
+    ${f === `cr:${r.ref}` ? `<form class="cx-form" data-cr="${esc(r.ref)}"><textarea data-k="cr-${esc(r.ref)}" name="texte" required placeholder="Compte rendu, en Markdown" aria-label="Compte rendu de ${esc(r.titre)}"></textarea>${actes('', 'Enregistrer')}</form>` : ''}`;
+  const tache = t => `<div class="cx-row${t.fait_at ? ' cx-done' : ''}"><span class="cx-main"><b>${esc(t.titre)}</b><small class="cx-sub">${esc([CX_TACHE[t.type], t.echeance && (t.avec_heure ? cxHeure(t.echeance) : `pour le ${cxJour(t.echeance)}`), t.fait_at && 'faite'].filter(Boolean).join(' · '))}</small></span></div>`;
+  const act = x => `<div class="cx-row top"><span class="cx-main"><b>${esc(x.titre || CX_ACT[x.type] || 'Activité')}</b><small class="cx-sub">${esc([x.titre && CX_ACT[x.type], cxWhen(x.at), x.local ? 'par toi' : ''].filter(Boolean).join(' · '))}</small>
+      ${x.resume ? `<div class="cx-md">${md(cxLiens(x.resume))}</div>` : ''}</span></div>`;
+  const contact = k => `<div class="cx-row"><span class="cx-main"><b>${esc(k.nom)}</b><small class="cx-sub">${esc([k.fonction, k.email, k.telephone].filter(Boolean).join(' · '))}</small></span></div>`;
+  return `<a class="cx-back" href="${base}">← Suivi commercial</a>
+    <div class="cx-head"><div><h3 class="cx-h2 sm">${esc(a.titre)}</h3><span class="cx-sub">${esc([a.entreprises.map(e => e.nom).join(', '), a.issue === 'gagne' ? 'gagnée' : a.issue === 'perdue' ? 'perdue' : '', a.modifie_le && `modifiée ${cxWhen(a.modifie_le).toLowerCase()}`].filter(Boolean).join(' · '))}</span></div></div>
+    ${a.detachee ? `<div class="cx-alert"><span>Supprimée chez ${esc(p)} : gardée ici, elle n'est plus partagée.</span></div>` : ''}
+    <form class="cx-form cx-aff" id="cx-aff">
+      <label>Étape<select name="etape" data-k="a-etape">${a.etapes.map(e => `<option value="${esc(e.id)}"${e.id === a.etape ? ' selected' : ''}>${esc(e.libelle)}</option>`).join('')}${a.etapes.some(e => e.id === a.etape) ? '' : `<option value="" selected disabled>${esc(a.etape ?? '—')}</option>`}</select></label>
+      <label>Montant (€)<input name="montant" data-k="a-montant" inputmode="numeric" value="${esc(a.montant ?? '')}"></label>
+      <label>Échéance<input type="date" name="echeance" data-k="a-echeance" value="${esc(a.echeance ?? '')}"></label>
+      <label class="cx-wide">Prochaine étape<input name="prochaine_etape" data-k="a-prochaine" maxlength="200" value="${esc(a.prochaine_etape ?? '')}"></label>
+      <div class="cx-act"><span class="sp"></span><button type="submit" class="btn acc" id="cx-aff-ok" disabled>Enregistrer</button></div>
+    </form>
+    ${facts.length ? `<p class="cx-facts">${facts.map(([k, v]) => `<span>${esc(k)} <b>${esc(v)}</b></span>`).join('')}</p>` : ''}
+    <div class="cx-cols">
+      <div>${head('Activités', 'note', 'Ajouter une note')}
+        ${f === 'note' ? `<form class="cx-form" id="cx-note"><textarea data-k="note" name="texte" required placeholder="Note, en Markdown" aria-label="Note"></textarea>${actes('', 'Ajouter')}</form>` : ''}
+        <div class="cx-list">${a.activites.map(act).join('') || (f === 'note' ? '' : '<p class="cx-empty">Aucune activité.</p>')}</div>
+        ${a.rendez_vous.length ? `${head('Rendez-vous')}<div class="cx-list">${a.rendez_vous.map(rdv).join('')}</div>` : ''}
+      </div>
+      <div>${head('Contacts', 'contact', 'Ajouter un contact')}
+        ${f === 'contact' ? `<form class="cx-form" id="cx-contact"><input data-k="k-nom" name="nom" required placeholder="Nom" aria-label="Nom"><input data-k="k-fonction" name="fonction" placeholder="Fonction" aria-label="Fonction">
+          <input data-k="k-email" name="email" type="email" placeholder="E-mail" aria-label="E-mail"><input data-k="k-tel" name="telephone" type="tel" placeholder="Téléphone" aria-label="Téléphone">${actes('', 'Ajouter')}</form>` : ''}
+        <div class="cx-list">${a.contacts.map(contact).join('') || (f === 'contact' ? '' : '<p class="cx-empty">Aucun contact.</p>')}</div>
+        ${head('Tâches', 'tache', 'Ajouter une tâche')}
+        ${f === 'tache' ? `<form class="cx-form" id="cx-tache"><input data-k="t-titre" name="titre" required placeholder="Tâche" aria-label="Tâche">
+          <div class="cx-act"><select name="type" data-k="t-type" aria-label="Type">${Object.entries(CX_TACHE).map(([k, v]) => `<option value="${k}"${k === 'tache' ? ' selected' : ''}>${v}</option>`).join('')}</select>
+            <label class="lbl" for="cx-t-e">Pour le</label><input type="date" id="cx-t-e" data-k="t-echeance" name="echeance"></div>${actes('', 'Ajouter')}</form>` : ''}
+        <div class="cx-list">${a.taches.map(tache).join('') || (f === 'tache' ? '' : '<p class="cx-empty">Aucune tâche.</p>')}</div>
+      </div>
+    </div>`;
+}
+const cxSuivi = (c, r) => (r.cle ? cxAffaire(c) : cxTableau(c));
 // typed text, open <details> and focus survive a redraw by the polling
 function cxKeep(el, draw) {
   const vals = {}, open = {};
-  el.querySelectorAll('[data-k]').forEach(x => { if (x.tagName === 'DETAILS') open[x.dataset.k] = x.open; else vals[x.dataset.k] = x.value; });
+  const tape = x => (x.tagName === 'SELECT' ? !x.selectedOptions[0]?.defaultSelected : x.value !== x.defaultValue);
+  el.querySelectorAll('[data-k]').forEach(x => { if (x.tagName === 'DETAILS') open[x.dataset.k] = x.open; else if (tape(x)) vals[x.dataset.k] = x.value; });
   const f = document.activeElement?.dataset?.k, sel = f && [document.activeElement.selectionStart, document.activeElement.selectionEnd];
   draw();
   el.querySelectorAll('[data-k]').forEach(x => { if (x.tagName === 'DETAILS') { if (x.dataset.k in open) x.open = open[x.dataset.k]; } else if (x.dataset.k in vals) x.value = vals[x.dataset.k]; });
+  cxAffSale();
   const back = f && el.querySelector(`[data-k="${CSS.escape(f)}"]`);
   if (back) { back.focus(); try { back.setSelectionRange(...sel); } catch (e) { /* date inputs */ } }
 }
+// Enregistrer wakes up once a field of the deal differs from what the partner shared
+function cxAffSale() {
+  const f = $('#cx-aff');
+  if (f) $('#cx-aff-ok').disabled = ![...f.elements].some(x => (x.tagName === 'SELECT' ? !x.selectedOptions[0]?.defaultSelected : x.name && x.value !== x.defaultValue));
+}
+$('#cx-body').addEventListener('input', e => { if (e.target.closest('#cx-aff')) cxAffSale(); });
 function renderCx() {
   const r = cxRoute(), el = $('#cx-body');
   if (!r || !cx) return;
@@ -3798,7 +3920,7 @@ function cxOpen(form) {
   // leaving a reply opened from Aujourd'hui: back to the plain page
   if (r?.vue === 'repondre' && cxForm !== `rep:${r.cle}`) { history.replaceState(null, '', `#connexions/${r.id}`); }
   renderCx();
-  const first = $('#cx-body').querySelector('.cx-form input:not([type="date"]), .cx-form textarea');
+  const first = $('#cx-body').querySelector('.cx-form:not(#cx-aff) :is(input:not([type="date"]), textarea)');
   if (cxForm) first?.focus();
 }
 $('#cx-body').addEventListener('submit', async e => {
@@ -3827,6 +3949,15 @@ $('#cx-body').addEventListener('submit', async e => {
       f.reset();
       toast(`Mission confiée à ${sel.court}`);
       cxForm = null;
+    } else if (f.id === 'cx-aff' || f.id === 'cx-note' || f.id === 'cx-contact' || f.id === 'cx-tache' || f.dataset.cr) {
+      const aff = `${url}/suivi/affaires/${encodeURIComponent(cxRoute().cle)}`;
+      const r = f.id === 'cx-aff' ? await cxSend(aff, Object.fromEntries([...f.elements].filter(x => x.name && (x.tagName === 'SELECT' ? !x.selectedOptions[0]?.defaultSelected : x.value !== x.defaultValue)).map(x => [x.name, x.value])), 'PATCH')
+        : f.dataset.cr ? await cxSend(`${aff}/rendez-vous/${encodeURIComponent(f.dataset.cr)}`, v)
+          : await cxSend(`${aff}/${{ 'cx-note': 'notes', 'cx-contact': 'contacts', 'cx-tache': 'taches' }[f.id]}`, v);
+      if (r.error) throw new Error(r.error);
+      f.reset();
+      cxForm = null;
+      toast(`Enregistré : part chez ${sel.court} au prochain échange`);
     } else if (f.id === 'cx-message' || f.dataset.rep) {
       const type = f.querySelector('[data-type].on')?.dataset.type;
       const r = await cxSend(`${url}/messages`, { ...v, type, enReponseA: f.dataset.rep });
@@ -3853,7 +3984,12 @@ $('#cx-body').addEventListener('click', async e => {
   }
   if ('form' in b.dataset) return cxOpen(b.dataset.form);
   if (b.dataset.type) { b.parentElement.querySelectorAll('button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); return; }
-  if (b.dataset.niveau && sel) r = await cxSend(url, { niveau: b.dataset.niveau }, 'PATCH');
+  if (b.dataset.vu && sel) r = await cxSend(`${url}/suivi/notes/${encodeURIComponent(b.dataset.vu)}/vu`);
+  else if ((b.dataset.garder || b.dataset.supprimer) && sel) {
+    const supprimer = !!b.dataset.supprimer;
+    if (supprimer && !confirm('Supprimer cette fiche de ta copie du suivi commercial ?')) return;
+    r = await cxSend(`${url}/suivi/suppressions/${encodeURIComponent(b.dataset.garder || b.dataset.supprimer)}`, { supprimer });
+  } else if (b.dataset.niveau && sel) r = await cxSend(url, { niveau: b.dataset.niveau }, 'PATCH');
   else if (b.dataset.partage && sel) {
     const set = new Set(sel.partage);
     if (!set.delete(b.dataset.partage)) set.add(b.dataset.partage);

@@ -31,7 +31,7 @@ import { loadLinkedin, updatePost, visualFor, localToday, dueForPreparation, toP
 import { makePropositions, moneyKey } from './lib/propositions.js';
 import { makeReview, SYSTEM as REVIEW_SYSTEM } from './lib/review.js';
 import { makeReglages, pick, MODELS, EFFORTS } from './lib/reglages.js';
-import { makePartenaires, trouverFiche, blocDonnee, evenementDonnee, deposerEvenement, libelleDonnee } from './lib/partenaires.js';
+import { makePartenaires, trouverFiche, blocDonnee, evenementDonnee, evenementFait, deposerEvenement, libelleDonnee } from './lib/partenaires.js';
 import { claudeActivity } from './lib/activity.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -896,6 +896,8 @@ function rangerDonnee(d, { partenaire, quand }) {
 const partenaires = makePartenaires({
   dir: path.join(ROOT, 'output'), credentials: path.join(ROOT, 'credentials', 'relais.json'),
   propositions, delegations, ranger: rangerDonnee,
+  // only the notable facts of the shared sales follow-up reach the curator; the rest lives in output/crm/
+  marquant: fait => deposerEvenement(sbQueue, evenementFait(fait)),
 });
 partenaires.demarrer();
 const relaisErr = (res, e) => res.status(e.status >= 400 && e.status < 600 ? e.status : 502).json({ error: e.message });
@@ -921,6 +923,17 @@ app.post('/api/connexions/:id/missions', async (req, res) => {
 app.post('/api/connexions/:id/messages', async (req, res) => {
   try { res.json(await partenaires.envoyerMessage(req.params.id, req.body ?? {})); } catch (e) { relaisErr(res, e); }
 });
+// Suivi commercial: the copy of what the partner shares, and the few changes Christophe may make
+const suiviOk = (res, f) => { try { res.json(f()); } catch (e) { res.status(e.status ?? 400).json({ error: e.message }); } };
+app.get('/api/connexions/:id/suivi', (req, res) => suiviOk(res, () => partenaires.suivi.vue(req.params.id)));
+app.get('/api/connexions/:id/suivi/affaires/:ref', (req, res) => suiviOk(res, () => partenaires.suivi.affaire(req.params.id, req.params.ref)));
+app.patch('/api/connexions/:id/suivi/affaires/:ref', (req, res) => suiviOk(res, () => partenaires.suivi.modifierAffaire(req.params.id, req.params.ref, req.body ?? {})));
+app.post('/api/connexions/:id/suivi/affaires/:ref/notes', (req, res) => suiviOk(res, () => partenaires.suivi.ajouterNote(req.params.id, req.params.ref, req.body?.texte)));
+app.post('/api/connexions/:id/suivi/affaires/:ref/taches', (req, res) => suiviOk(res, () => partenaires.suivi.ajouterTache(req.params.id, req.params.ref, req.body ?? {})));
+app.post('/api/connexions/:id/suivi/affaires/:ref/contacts', (req, res) => suiviOk(res, () => partenaires.suivi.ajouterContact(req.params.id, req.params.ref, req.body ?? {})));
+app.post('/api/connexions/:id/suivi/affaires/:ref/rendez-vous/:rdv', (req, res) => suiviOk(res, () => partenaires.suivi.compteRendu(req.params.id, req.params.ref, req.params.rdv, req.body?.texte)));
+app.post('/api/connexions/:id/suivi/notes/:note/vu', (req, res) => suiviOk(res, () => partenaires.suivi.vu(req.params.id, req.params.note)));
+app.post('/api/connexions/:id/suivi/suppressions/:sid', (req, res) => suiviOk(res, () => partenaires.suivi.repondreSuppression(req.params.id, req.params.sid, !!req.body?.supprimer)));
 app.post('/api/connexions/missions/:id/terminer', async (req, res) => {
   try { res.json(await partenaires.terminer(req.params.id, req.body?.message)); } catch (e) { res.status(e.status ?? 400).json({ error: e.message }); }
 });
