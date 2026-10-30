@@ -1048,7 +1048,7 @@ async function dossierFor({ tache, slug = '', objectif = '', etapes = [], why = 
   const note = (titre, id) => { if (!sections.some(s => s.chemin === abs(id))) sections.push({ titre, texte: bundle.read(abs(id)), chemin: abs(id) }); };
   if (project) note(`Projet : ${project.title}`, project.id);
   for (const c of clients) note(`Client : ${c.title}`, c.id);
-  for (const n of notes.filter(n => (project && (n.projet === slug || (!n.projet && n.projects.includes(slug)))) || clientSlugs.includes(clientOf(n)))) note(`Finance : ${n.title}`, n.id);
+  for (const n of notes.filter(n => (project && n.projet === slug) || clientSlugs.includes(n.client))) note(`Finance : ${n.title}`, n.id);
   for (const r of refs) {
     if (r.type === 'note' && /^brain\/[\w./-]+\.md$/.test(r.id) && !r.id.includes('..') && bundle.exists(abs(r.id))) note(r.label, r.id);
     if (r.type === 'projet') { const p = listProjects(sb, { all: true }).find(p => p.slug === r.id); if (p) note(`Projet : ${p.title}`, p.id); }
