@@ -3742,7 +3742,7 @@ const cxRoute = () => {
   return m && { invitation: m[1] ?? null, id: m[2] ?? null, vue: m[3] ?? null, cle: m[4] ? decodeURIComponent(m[4]) : null };
 };
 const CX_ETAT = { submitted: 'reçue', working: 'en cours', 'input-required': 'en attente', completed: 'faite', failed: 'échouée', canceled: 'annulée', rejected: 'refusée' };
-const CX_TYPE = { question: 'Question', info: 'Info', reponse: 'Réponse' };
+const CX_TYPE = { question: 'Question', info: 'Info', reponse: 'Réponse', donnee: 'Suivi commercial' };
 const CX_NOTE = {
   montrer: () => 'Ses missions arrivent dans Aujourd\'hui, rien ne démarre sans toi.',
   demander_avant: p => `Ton agent te demande avant de commencer, puis répond seul à ${p}.`,
@@ -3825,7 +3825,7 @@ function cxMessages(c, act, repondre) {
   const row = x => `<div class="cx-row top">${who(x)}<span class="cx-main"><b>${esc(x.sujet)}</b>
       <small class="cx-sub">${esc([x.type === 'reponse' && x.enReponseA?.sujet ? '' : CX_TYPE[x.type], cxWhen(x.quand)].filter(Boolean).join(' · '))}</small>
       <div class="cx-md">${md(cxLiens(x.texte))}</div></span>
-      ${x.sens === 'recu' && !x.repondu && !open(x.id) ? `<button type="button" class="btn${x.type === 'question' ? ' acc' : ''}" data-form="rep:${esc(x.id)}">Répondre</button>` : ''}
+      ${x.sens === 'recu' && x.type !== 'donnee' && !x.repondu && !open(x.id) ? `<button type="button" class="btn${x.type === 'question' ? ' acc' : ''}" data-form="rep:${esc(x.id)}">Répondre</button>` : ''}
     </div>${x.sens === 'recu' && open(x.id) ? rep(x) : ''}`;
   return `<div><div class="cx-h3row"><h3 class="cx-h3">Messages</h3><span class="sp"></span>${cxForm === 'message' ? '' : `<button type="button" class="btn" data-form="message">Écrire</button>`}</div>
     ${cxForm === 'message' ? `<form class="cx-form" id="cx-message">
