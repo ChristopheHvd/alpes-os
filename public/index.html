@@ -181,7 +181,7 @@ button.cx-chip:hover { border-color: var(--ink-3); }
 .cx-md code { font: 400 12.5px var(--mono); background: var(--sunken); padding: 1px 4px; border-radius: 4px; }
 .cx-md a { color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .cx-res { font-size: 12.5px; color: var(--ink-2); }
-/* suivi commercial: the partner's deals by stage, then one deal */
+/* crm: the deals by stage, what comes next, and a card per deal, company or contact */
 .cx-board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(210px, 1fr); gap: 12px; overflow-x: auto; padding-bottom: 6px; }
 .cx-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 10px; border-radius: 10px; background: var(--sunken); }
 .cx-col h4 { margin: 0; padding: 2px 4px 4px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font: 600 13px/1.3 var(--font); color: var(--ink); }
@@ -206,6 +206,39 @@ button.cx-chip:hover { border-color: var(--ink-3); }
 .cx-facts b { font-weight: 500; color: var(--ink); }
 .cx-done b { text-decoration: line-through; color: var(--ink-3); }
 .cx-list + .cx-h3row { margin-top: 20px; }
+.cx-col.over { outline: 2px solid var(--accent); outline-offset: -2px; }
+.crm-late { color: #9a3c15; font-weight: 500; }
+.crm-next-step { color: var(--ink-3) !important; }
+.crm-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin: 4px 0 18px; }
+.crm-bar input { flex: 0 1 340px; min-width: 0; min-height: 36px; margin-left: auto; padding: 0 12px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); font: 400 13.5px/1.4 var(--font); }
+.crm-bar input:focus { outline: none; border-color: var(--accent); }
+#crm-body > .cx-alert + .cx-alert { margin-top: 8px; }
+#crm-body > .cx-alert + .crm-aff, #crm-body > .cx-alert + .crm-page { margin-top: 18px; }
+.crm-aff { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 20px 28px; align-items: start; }
+.crm-boards { grid-column: 1; grid-row: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+.crm-next { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; min-width: 0; }
+.crm-next h2 { padding-bottom: 8px; }
+.crm-next-it { display: flex; flex-direction: column; gap: 1px; padding: 9px 0; border-top: 1px solid var(--line-soft); color: var(--ink); text-decoration: none; }
+.crm-next-it:hover b { color: var(--accent); }
+.crm-next-it b { font: 500 13.5px/1.35 var(--font); }
+.crm-next-it small { font-size: 12.5px; color: var(--ink-2); }
+.crm-next-it small.crm-late { color: #9a3c15; }
+.crm-next details summary { padding: 8px 0; cursor: pointer; }
+.crm-page { padding: 8px 22px 14px; }
+.crm-res + .crm-res { margin-top: 18px; }
+.crm-res h2 { padding-top: 12px; }
+.crm-link { color: inherit; text-decoration: none; }
+.crm-link:hover b { color: var(--accent); }
+.crm-num { text-align: right; font-variant-numeric: tabular-nums; }
+.crm-steps { display: flex; flex-wrap: wrap; gap: 4px; }
+.crm-steps button { min-height: 34px; padding: 0 13px; border: 1px solid var(--line); border-radius: 7px; background: transparent; color: var(--ink-2); font: 500 13px/1 var(--font); cursor: pointer; }
+.crm-steps button:hover { border-color: var(--ink-3); color: var(--ink); }
+.crm-steps button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.crm-steps button.on { border-color: transparent; background: var(--ink); color: var(--bg); font-weight: 600; cursor: default; }
+.crm-moyens a, .cx-sub a { color: var(--accent); }
+.cx-detail h1.cx-h2 { font-size: 24px; }
+@media (max-width: 1100px) { .crm-aff { grid-template-columns: minmax(0, 1fr); } .crm-next { grid-column: 1; grid-row: 1; } .crm-boards { grid-row: 2; } }
+@media (max-width: 640px) { .crm-bar input { flex: 1 1 100%; margin-left: 0; } .crm-page { padding: 4px 16px 12px; } .crm-num { text-align: left; } }
 @media (max-width: 640px) { .cx-board { grid-auto-flow: row; grid-auto-columns: auto; overflow-x: visible; } .cx-col:not(:has(.cx-card)) { display: none; } .cx-detail { padding: 18px 16px 20px; } }
 
 /* ---------- today: money band, the day's tasks, a glance column ---------- */
@@ -1117,6 +1150,7 @@ a.pf-card.res-cours p { color: var(--accent); }
       <a href="#" data-tab="today">Aujourd'hui</a>
       <a href="#projets" data-tab="projets">Projets</a>
       <a href="#finances" data-tab="finances">Finances</a>
+      <a href="#crm" data-tab="crm">CRM</a>
       <a href="#linkedin" data-tab="linkedin">LinkedIn</a>
       <a href="#second-brain" data-tab="brain">Second brain</a>
       <a href="#outils" data-tab="outils">Outils</a>
@@ -1126,7 +1160,7 @@ a.pf-card.res-cours p { color: var(--accent); }
     <button class="btn" id="demo-toggle" aria-pressed="false" title="Remplace les finances par des données fictives, sur tous les écrans"><svg><use href="#i-screen"/></svg>Démo</button>
     <a class="gear" id="gear" href="#reglages" aria-label="Réglages" title="Réglages"><svg><use href="#i-gear"/></svg></a>
   </header>
-  <div class="demobar" id="demobar" hidden><span>Mode démo : les finances affichent des données fictives.</span><button class="btn sm" id="demo-quit">Quitter la démo</button></div>
+  <div class="demobar" id="demobar" hidden><span>Mode démo : les finances et le CRM affichent des données fictives.</span><button class="btn sm" id="demo-quit">Quitter la démo</button></div>
 </div>
 
 <main class="view page" data-view="today">
@@ -1175,6 +1209,9 @@ a.pf-card.res-cours p { color: var(--accent); }
   <div id="fin-detail"></div>
 </main>
 
+<main class="view page" data-view="crm" id="crmview" hidden>
+  <div id="crm-body"><span class="lbl">Chargement…</span></div>
+</main>
 <main class="view brain" data-view="brain" hidden>
   <canvas id="g" aria-label="Graphe du second brain"></canvas>
   <div class="sb-tools">
@@ -3735,10 +3772,10 @@ addEventListener('keydown', e => {
 }, true);
 
 /* ---------- connexions: partner OSes through the agents relay ---------- */
-// #connexions, #connexions/<connection id>[/suivi[/<deal ref>] | /repondre/<message id>], #connexions/invitation/<code>
+// #connexions, #connexions/<connection id>[/repondre/<message id>], #connexions/invitation/<code>
 let cx = null, cxAct = null, cxSig = '', cxForm = null;
 const cxRoute = () => {
-  const m = location.hash.match(/^#connexions(?:\/invitation\/([A-Z2-7]+)|\/([\w-]+)(?:\/(suivi|repondre)(?:\/([^/]+))?)?)?$/);
+  const m = location.hash.match(/^#connexions(?:\/invitation\/([A-Z2-7]+)|\/([\w-]+)(?:\/(repondre)(?:\/([^/]+))?)?)?$/);
   return m && { invitation: m[1] ?? null, id: m[2] ?? null, vue: m[3] ?? null, cle: m[4] ? decodeURIComponent(m[4]) : null };
 };
 const CX_ETAT = { submitted: 'reçue', working: 'en cours', 'input-required': 'en attente', completed: 'faite', failed: 'échouée', canceled: 'annulée', rejected: 'refusée' };
@@ -3771,11 +3808,9 @@ async function loadCx(force) {
   renderCxTool();
   if (!cxRoute()) return;
   const sel = cxSel();
-  const r = cxRoute(), url = sel && `/api/connexions/${encodeURIComponent(sel.id)}`;
+  const url = sel && `/api/connexions/${encodeURIComponent(sel.id)}`;
   cxAct = sel ? await api(`${url}/activite`).catch(() => null) : null;
-  cxSv = sel && r.vue === 'suivi' && !r.cle ? await api(`${url}/suivi`).catch(() => null) : null;
-  cxAff = sel && r.vue === 'suivi' && r.cle ? await api(`${url}/suivi/affaires/${encodeURIComponent(r.cle)}`).then(x => (x.error ? undefined : x)).catch(() => undefined) : null;
-  const sig = JSON.stringify([cx, cxAct, cxSv, cxAff, location.hash]);
+  const sig = JSON.stringify([cx, cxAct, location.hash]);
   if (force || sig !== cxSig) { cxSig = sig; renderCx(); }
 }
 function renderCxTool() {
@@ -3839,12 +3874,12 @@ function cxMessages(c, act, repondre) {
     </div></div>`;
 }
 function cxFiche(c, act, r) {
-  const p = c.court, base = `#connexions/${esc(c.id)}`, suivi = r.vue === 'suivi';
+  const p = c.court;
   return `<section class="pane cx-detail" aria-labelledby="cx-t">
     <div class="cx-head"><div><h2 class="cx-h2" id="cx-t">${esc(p)}</h2><span class="cx-sub">${esc(c.partenaire.nom)}${c.dernierEchange ? ` · dernier échange il y a ${esc(rel(c.dernierEchange))}` : ''}</span></div>
-      <nav class="cx-tabs" aria-label="${esc(p)}"><a href="${base}"${suivi ? '' : ' aria-current="page"'}>Échanges</a><a href="${base}/suivi"${suivi ? ' aria-current="page"' : ''}>Suivi commercial</a></nav>
+      <a class="cx-badge" href="#crm">Voir le CRM</a>
       <button type="button" class="cx-cut" id="cx-cut">Couper la connexion</button></div>
-    ${suivi ? cxSuivi(c, r) : `<div class="cx-cols">${cxMissions(c, act)}${cxMessages(c, act, r.vue === 'repondre' ? r.cle : null)}</div>
+    <div class="cx-cols">${cxMissions(c, act)}${cxMessages(c, act, r.vue === 'repondre' ? r.cle : null)}</div>
     <div class="cx-params"><h3 class="cx-h2 sm">Paramètres</h3>
       <div><h4 id="cx-auto" class="cx-h3">Quand ${esc(p)} confie une mission à ton agent</h4>
         <div class="cx-seg" role="group" aria-labelledby="cx-auto">${cx.niveaux.map(n => `<button type="button" data-niveau="${n.id}"${n.id === c.niveau ? ' class="on"' : ''} aria-pressed="${n.id === c.niveau}">${esc(n.libelle)}</button>`).join('')}</div>
@@ -3854,92 +3889,15 @@ function cxFiche(c, act, r) {
       <div><h4 class="cx-h3">${esc(p)} voit</h4>
         <p class="cx-note">Tes missions, tes messages et ce que tu changes dans son suivi commercial. Rien d'autre ne quitte AlpesOS.</p>
       </div>
-    </div>`}
+    </div>
   </section>`;
 }
-// the suivi commercial tab: deals by stage, or one deal with its contacts, meetings, tasks and activities
-let cxSv = null, cxAff = null;
+// dates and labels shared with the CRM
 const cxEur = n => (n == null ? '' : `${Number(n).toLocaleString('fr-FR')} €`);
 const cxJour = iso => (iso ? new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '');
 const cxHeure = iso => { const d = new Date(iso); return `${d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}, ${d.getHours()} h ${String(d.getMinutes()).padStart(2, '0')}`; };
 const CX_ACT = { note: 'Note', appel: 'Appel', email: 'E-mail', reunion: 'Réunion' };
 const CX_TACHE = { appel: 'Appel', email: 'E-mail', tache: 'Tâche', reunion: 'Réunion', echeance: 'Échéance', dejeuner: 'Déjeuner' };
-function cxSuiviAlertes(c) {
-  const p = c.court;
-  return [
-    ...(cxSv?.suppressions ?? []).map(s => `<div class="cx-alert"><span>${esc(p)} a supprimé « ${esc(s.titre ?? 'une fiche')} » de son suivi : supprimer aussi ici ?</span>
-      <button type="button" class="btn ghost" data-garder="${esc(s.id)}">Garder</button><button type="button" class="btn acc" data-supprimer="${esc(s.id)}">Supprimer</button></div>`),
-    ...(cxSv?.notes ?? []).map(n => `<div class="cx-alert"><span>${esc(n.texte)}</span><button type="button" class="btn ghost" data-vu="${esc(n.id)}">Vu</button></div>`),
-  ].join('');
-}
-function cxCarte(c, a) {
-  return `<a class="cx-card" href="#connexions/${esc(c.id)}/suivi/${encodeURIComponent(a.ref)}"><b>${esc(a.titre)}</b>
-    ${a.entreprise ? `<small>${esc(a.entreprise)}</small>` : ''}
-    ${a.montant != null || a.echeance ? `<small>${a.montant != null ? `<span class="cx-num">${esc(cxEur(a.montant))}</span>` : ''}${a.montant != null && a.echeance ? ' · ' : ''}${a.echeance ? `pour le ${esc(cxJour(a.echeance))}` : ''}</small>` : ''}
-    ${a.detachee ? '<span class="cx-flag">Plus partagée</span>' : ''}</a>`;
-}
-function cxTableau(c) {
-  const sv = cxSv;
-  if (!sv) return '<p class="cx-empty">Chargement…</p>';
-  if (!sv.affaires.length) return `${cxSuiviAlertes(c)}<p class="cx-empty">${esc(c.court)} n'a encore rien partagé de son suivi commercial.</p>`;
-  const ouvertes = sv.etapes.filter(e => !e.clos), connues = new Set(sv.etapes.map(e => e.id));
-  const encours = sv.affaires.filter(a => !a.issue);
-  const cols = [...ouvertes.map(e => ({ libelle: e.libelle, affaires: encours.filter(a => a.etape === e.id) })),
-    { libelle: 'Autres', affaires: encours.filter(a => !connues.has(a.etape)) }].filter((x, i, all) => x.affaires.length || i < all.length - 1);
-  const closes = sv.affaires.filter(a => a.issue), gagnees = closes.filter(a => a.issue === 'gagne');
-  const somme = l => l.reduce((t, a) => t + (a.montant ?? 0), 0);
-  return `${cxSuiviAlertes(c)}
-    <div class="cx-board">${cols.map(k => `<section class="cx-col" aria-label="${esc(k.libelle)}"><h4>${esc(k.libelle)}<span>${k.affaires.length}${somme(k.affaires) ? ` · ${esc(cxEur(somme(k.affaires)))}` : ''}</span></h4>
-      ${k.affaires.map(a => cxCarte(c, a)).join('')}</section>`).join('')}</div>
-    ${closes.length ? `<details class="cx-row" data-k="d-closes"><summary>Affaires closes : ${gagnees.length} gagnée${gagnees.length > 1 ? 's' : ''}, ${closes.length - gagnees.length} perdue${closes.length - gagnees.length > 1 ? 's' : ''}</summary>
-      <div class="cx-list">${closes.map(a => `<a class="cx-row" href="#connexions/${esc(c.id)}/suivi/${encodeURIComponent(a.ref)}" style="text-decoration:none;color:inherit"><span class="cx-main"><b>${esc(a.titre)}</b><small class="cx-sub">${esc([a.entreprise, cxEur(a.montant)].filter(Boolean).join(' · '))}</small></span><span class="cx-badge">${a.issue === 'gagne' ? 'Gagnée' : 'Perdue'}</span></a>`).join('')}</div></details>` : ''}`;
-}
-function cxAffaire(c) {
-  const a = cxAff, base = `#connexions/${esc(c.id)}/suivi`;
-  if (!a) return `<a class="cx-back" href="${base}">← Suivi commercial</a><p class="cx-empty">${cxAff === null ? 'Chargement…' : 'Affaire introuvable.'}</p>`;
-  const ch = a.champs, p = c.court, f = cxForm;
-  const facts = [['Propriétaire', ch.proprietaire], ['Origine', ch.origine], ['Facturation', ch.mode_facturation === 'recurrent' ? `récurrente${ch.duree_engagement_mois ? `, ${ch.duree_engagement_mois} mois` : ''}` : ch.mode_facturation === 'spot' ? 'ponctuelle' : null],
-    ['Probabilité', ch.probabilite_manuelle != null ? `${ch.probabilite_manuelle} %` : null], ['Motif', ch.motif]].filter(([, v]) => v != null && v !== '');
-  const head = (titre, form, bouton) => `<div class="cx-h3row"><h3 class="cx-h3">${titre}</h3><span class="sp"></span>${bouton && f !== form ? `<button type="button" class="btn" data-form="${form}">${bouton}</button>` : ''}</div>`;
-  const actes = (form, ok) => `<div class="cx-act"><span class="sp"></span><button type="button" class="btn ghost" data-form="">Annuler</button><button type="submit" class="btn acc">${ok}</button></div>`;
-  const rdv = r => `<div class="cx-row top"><span class="cx-main"><b>${esc(r.titre)}</b><small class="cx-sub">${esc([r.debut && cxHeure(r.debut), r.lieu].filter(Boolean).join(' · '))}</small>
-      ${r.compte_rendu ? `<div class="cx-md">${md(cxLiens(r.compte_rendu))}</div>` : ''}</span>
-      ${!r.compte_rendu && f !== `cr:${r.ref}` ? `<button type="button" class="btn" data-form="cr:${esc(r.ref)}">Compte rendu</button>` : ''}</div>
-    ${f === `cr:${r.ref}` ? `<form class="cx-form" data-cr="${esc(r.ref)}"><textarea data-k="cr-${esc(r.ref)}" name="texte" required placeholder="Compte rendu, en Markdown" aria-label="Compte rendu de ${esc(r.titre)}"></textarea>${actes('', 'Enregistrer')}</form>` : ''}`;
-  const tache = t => `<div class="cx-row${t.fait_at ? ' cx-done' : ''}"><span class="cx-main"><b>${esc(t.titre)}</b><small class="cx-sub">${esc([CX_TACHE[t.type], t.echeance && (t.avec_heure ? cxHeure(t.echeance) : `pour le ${cxJour(t.echeance)}`), t.fait_at && 'faite'].filter(Boolean).join(' · '))}</small></span></div>`;
-  const act = x => `<div class="cx-row top"><span class="cx-main"><b>${esc(x.titre || CX_ACT[x.type] || 'Activité')}</b><small class="cx-sub">${esc([x.titre && CX_ACT[x.type], cxWhen(x.at), x.local ? 'par toi' : ''].filter(Boolean).join(' · '))}</small>
-      ${x.resume ? `<div class="cx-md">${md(cxLiens(x.resume))}</div>` : ''}</span></div>`;
-  const contact = k => `<div class="cx-row"><span class="cx-main"><b>${esc(k.nom)}</b><small class="cx-sub">${esc([k.fonction, k.email, k.telephone].filter(Boolean).join(' · '))}</small></span></div>`;
-  return `<a class="cx-back" href="${base}">← Suivi commercial</a>
-    <div class="cx-head"><div><h3 class="cx-h2 sm">${esc(a.titre)}</h3><span class="cx-sub">${esc([a.entreprises.map(e => e.nom).join(', '), a.issue === 'gagne' ? 'gagnée' : a.issue === 'perdue' ? 'perdue' : '', a.modifie_le && `modifiée ${cxWhen(a.modifie_le).toLowerCase()}`].filter(Boolean).join(' · '))}</span></div></div>
-    ${a.detachee ? `<div class="cx-alert"><span>Supprimée chez ${esc(p)} : gardée ici, elle n'est plus partagée.</span></div>` : ''}
-    <form class="cx-form cx-aff" id="cx-aff">
-      <label>Étape<select name="etape" data-k="a-etape">${a.etapes.map(e => `<option value="${esc(e.id)}"${e.id === a.etape ? ' selected' : ''}>${esc(e.libelle)}</option>`).join('')}${a.etapes.some(e => e.id === a.etape) ? '' : `<option value="" selected disabled>${esc(a.etape ?? '—')}</option>`}</select></label>
-      <label>Montant (€)<input name="montant" data-k="a-montant" inputmode="numeric" value="${esc(a.montant ?? '')}"></label>
-      <label>Échéance<input type="date" name="echeance" data-k="a-echeance" value="${esc(a.echeance ?? '')}"></label>
-      <label class="cx-wide">Prochaine étape<input name="prochaine_etape" data-k="a-prochaine" maxlength="200" value="${esc(a.prochaine_etape ?? '')}"></label>
-      <div class="cx-act"><span class="sp"></span><button type="submit" class="btn acc" id="cx-aff-ok" disabled>Enregistrer</button></div>
-    </form>
-    ${facts.length ? `<p class="cx-facts">${facts.map(([k, v]) => `<span>${esc(k)} <b>${esc(v)}</b></span>`).join('')}</p>` : ''}
-    <div class="cx-cols">
-      <div>${head('Activités', 'note', 'Ajouter une note')}
-        ${f === 'note' ? `<form class="cx-form" id="cx-note"><textarea data-k="note" name="texte" required placeholder="Note, en Markdown" aria-label="Note"></textarea>${actes('', 'Ajouter')}</form>` : ''}
-        <div class="cx-list">${a.activites.map(act).join('') || (f === 'note' ? '' : '<p class="cx-empty">Aucune activité.</p>')}</div>
-        ${a.rendez_vous.length ? `${head('Rendez-vous')}<div class="cx-list">${a.rendez_vous.map(rdv).join('')}</div>` : ''}
-      </div>
-      <div>${head('Contacts', 'contact', 'Ajouter un contact')}
-        ${f === 'contact' ? `<form class="cx-form" id="cx-contact"><input data-k="k-nom" name="nom" required placeholder="Nom" aria-label="Nom"><input data-k="k-fonction" name="fonction" placeholder="Fonction" aria-label="Fonction">
-          <input data-k="k-email" name="email" type="email" placeholder="E-mail" aria-label="E-mail"><input data-k="k-tel" name="telephone" type="tel" placeholder="Téléphone" aria-label="Téléphone">${actes('', 'Ajouter')}</form>` : ''}
-        <div class="cx-list">${a.contacts.map(contact).join('') || (f === 'contact' ? '' : '<p class="cx-empty">Aucun contact.</p>')}</div>
-        ${head('Tâches', 'tache', 'Ajouter une tâche')}
-        ${f === 'tache' ? `<form class="cx-form" id="cx-tache"><input data-k="t-titre" name="titre" required placeholder="Tâche" aria-label="Tâche">
-          <div class="cx-act"><select name="type" data-k="t-type" aria-label="Type">${Object.entries(CX_TACHE).map(([k, v]) => `<option value="${k}"${k === 'tache' ? ' selected' : ''}>${v}</option>`).join('')}</select>
-            <label class="lbl" for="cx-t-e">Pour le</label><input type="date" id="cx-t-e" data-k="t-echeance" name="echeance"></div>${actes('', 'Ajouter')}</form>` : ''}
-        <div class="cx-list">${a.taches.map(tache).join('') || (f === 'tache' ? '' : '<p class="cx-empty">Aucune tâche.</p>')}</div>
-      </div>
-    </div>`;
-}
-const cxSuivi = (c, r) => (r.cle ? cxAffaire(c) : cxTableau(c));
 // typed text, open <details> and focus survive a redraw by the polling
 function cxKeep(el, draw) {
   const vals = {}, open = {};
@@ -3948,16 +3906,10 @@ function cxKeep(el, draw) {
   const f = document.activeElement?.dataset?.k, sel = f && [document.activeElement.selectionStart, document.activeElement.selectionEnd];
   draw();
   el.querySelectorAll('[data-k]').forEach(x => { if (x.tagName === 'DETAILS') { if (x.dataset.k in open) x.open = open[x.dataset.k]; } else if (x.dataset.k in vals) x.value = vals[x.dataset.k]; });
-  cxAffSale();
+  crmSale();
   const back = f && el.querySelector(`[data-k="${CSS.escape(f)}"]`);
   if (back) { back.focus(); try { back.setSelectionRange(...sel); } catch (e) { /* date inputs */ } }
 }
-// Enregistrer wakes up once a field of the deal differs from what the partner shared
-function cxAffSale() {
-  const f = $('#cx-aff');
-  if (f) $('#cx-aff-ok').disabled = ![...f.elements].some(x => (x.tagName === 'SELECT' ? !x.selectedOptions[0]?.defaultSelected : x.name && x.value !== x.defaultValue));
-}
-$('#cx-body').addEventListener('input', e => { if (e.target.closest('#cx-aff')) cxAffSale(); });
 function renderCx() {
   const r = cxRoute(), el = $('#cx-body');
   if (!r || !cx) return;
@@ -4014,15 +3966,6 @@ $('#cx-body').addEventListener('submit', async e => {
       f.reset();
       toast(`Mission confiée à ${sel.court}`);
       cxForm = null;
-    } else if (f.id === 'cx-aff' || f.id === 'cx-note' || f.id === 'cx-contact' || f.id === 'cx-tache' || f.dataset.cr) {
-      const aff = `${url}/suivi/affaires/${encodeURIComponent(cxRoute().cle)}`;
-      const r = f.id === 'cx-aff' ? await cxSend(aff, Object.fromEntries([...f.elements].filter(x => x.name && (x.tagName === 'SELECT' ? !x.selectedOptions[0]?.defaultSelected : x.value !== x.defaultValue)).map(x => [x.name, x.value])), 'PATCH')
-        : f.dataset.cr ? await cxSend(`${aff}/rendez-vous/${encodeURIComponent(f.dataset.cr)}`, v)
-          : await cxSend(`${aff}/${{ 'cx-note': 'notes', 'cx-contact': 'contacts', 'cx-tache': 'taches' }[f.id]}`, v);
-      if (r.error) throw new Error(r.error);
-      f.reset();
-      cxForm = null;
-      toast(`Enregistré, envoyé à ${sel.court}`);
     } else if (f.id === 'cx-message' || f.dataset.rep) {
       const type = f.querySelector('[data-type].on')?.dataset.type;
       const r = await cxSend(`${url}/messages`, { ...v, type, enReponseA: f.dataset.rep });
@@ -4049,12 +3992,7 @@ $('#cx-body').addEventListener('click', async e => {
   }
   if ('form' in b.dataset) return cxOpen(b.dataset.form);
   if (b.dataset.type) { b.parentElement.querySelectorAll('button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); return; }
-  if (b.dataset.vu && sel) r = await cxSend(`${url}/suivi/notes/${encodeURIComponent(b.dataset.vu)}/vu`);
-  else if ((b.dataset.garder || b.dataset.supprimer) && sel) {
-    const supprimer = !!b.dataset.supprimer;
-    if (supprimer && !confirm('Supprimer cette fiche de ta copie du suivi commercial ?')) return;
-    r = await cxSend(`${url}/suivi/suppressions/${encodeURIComponent(b.dataset.garder || b.dataset.supprimer)}`, { supprimer });
-  } else if (b.dataset.niveau && sel) r = await cxSend(url, { niveau: b.dataset.niveau }, 'PATCH');
+  if (b.dataset.niveau && sel) r = await cxSend(url, { niveau: b.dataset.niveau }, 'PATCH');
   else if (b.id === 'cx-cut' && sel) {
     if (!confirm(`Couper la connexion avec ${sel.court} ? Plus rien ne passera entre vos deux OS ; l'historique reste ici.`)) return;
     r = await api(url, { method: 'DELETE' });
@@ -4069,6 +4007,327 @@ $('#cx-body').addEventListener('click', async e => {
   loadCx(true);
 });
 addEventListener('hashchange', () => { if (cxRoute()) { if (cxRoute().vue !== 'repondre') cxForm = null; loadCx(true); } });
+
+/* ---------- crm: the sales follow-up the partners share ---------- */
+// #crm, #crm/entreprises, #crm/contacts, #crm/<connection id>/(affaire|entreprise|contact)/<ref>
+// Every change goes through /api/connexions/<id>/suivi (lib/suivi.js), which sends it to the partner.
+let crmData = null, crmFiche = null, crmSig = '', crmForm = null, crmQ = '', crmDrag = null;
+const crmRoute = () => {
+  const m = location.hash.match(/^#crm(?:\/(entreprises|contacts)|\/([\w-]+)\/(affaire|entreprise|contact)\/([^/]+))?$/);
+  return m && { onglet: m[1] ?? 'affaires', cx: m[2] ?? null, type: m[3] ?? null, ref: m[4] ? decodeURIComponent(m[4]) : null };
+};
+const crmHref = (cx, type, ref) => `#crm/${esc(cx)}/${type}/${encodeURIComponent(ref)}`;
+const crmCx = id => crmData?.connexions.find(c => c.id === id);
+const crmNorm = s => String(s ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+const crmPl = (n, mot) => `${n} ${mot}${n > 1 ? 's' : ''}`;
+const crmSomme = l => l.reduce((t, a) => t + (a.montant ?? 0), 0);
+const crmPlusieurs = () => (crmData?.connexions.length ?? 0) > 1;
+
+// demo mode: a fictitious follow-up, nothing real on screen and nothing sent
+function demoCrm() {
+  const jour = n => new Date(Date.now() + n * 864e5).toISOString();
+  const date = n => jour(n).slice(0, 10);
+  const E = (ref, nom, secteur, ville) => ({ ref, nom, secteur, ville });
+  const K = (ref, nom, fonction, ent) => ({ ref, nom, fonction, email: `${ref}@exemple.fr`, entreprise_ref: ent });
+  const A = (ref, titre, etape, montant, ech, ent, kontacts, prochaine) => ({ ref, titre, etape, montant, echeance: ech == null ? null : date(ech), prochaine_etape: prochaine, entreprise_ref: ent, contacts: kontacts, modifie_le: jour(-1), issue: etape === 'gagne' ? 'gagne' : etape === 'perdu' ? 'perdu' : null });
+  const entreprises = [E('atelier', 'Atelier Exemple', 'Artisanat', 'Annecy'), E('cabinet', 'Cabinet Modèle', 'Conseil', 'Chambéry'), E('studio', 'Studio Démo', 'Communication', 'Lyon'), E('maison', 'Maison Fictive', 'Hôtellerie', 'Megève')];
+  const contacts = [K('jeanne', 'Jeanne Exemple', 'Gérante', 'atelier'), K('alix', 'Alix Modèle', 'Associé', 'cabinet'), K('lea', 'Léa Démo', 'Directrice', 'studio'), K('sacha', 'Sacha Fictif', 'Directeur', 'maison')];
+  const affaires = [
+    A('a1', 'Atelier IA, 2 jours', 'decouverte', 2400, 20, 'atelier', ['jeanne'], 'Rappeler après les vacances'),
+    A('a2', 'Automatisation des devis', 'proposition', 6500, -2, 'cabinet', ['alix'], 'Relancer sur la proposition'),
+    A('a3', 'Accompagnement 6 mois', 'negociation', 9000, 12, 'studio', ['lea'], 'Valider le périmètre'),
+    A('a4', 'Audit des process', 'qualification', 1800, 30, 'maison', ['sacha'], null),
+    A('a5', 'Formation équipe', 'gagne', 3200, -20, 'atelier', ['jeanne'], null),
+    A('a6', 'Site vitrine', 'perdu', 2000, -40, 'maison', ['sacha'], null),
+  ];
+  const rendez_vous = [{ ref: 'r1', titre: 'Présentation de la proposition', debut: jour(2), lieu: 'Visio', affaire: 'a2' }, { ref: 'r2', titre: 'Découverte', debut: jour(-9), lieu: 'Annecy', compte_rendu: 'Besoin confirmé, décision en fin de mois.', affaire: 'a1' }];
+  const taches = [{ ref: 't1', titre: 'Envoyer la proposition révisée', type: 'email', echeance: jour(-1), avec_heure: false, affaire: 'a2' }, { ref: 't2', titre: 'Appeler pour le périmètre', type: 'appel', echeance: jour(4), avec_heure: false, affaire: 'a3' }];
+  const activites = [{ ref: 'n1', type: 'note', at: jour(-3), resume: 'Intéressé, attend le retour de son associé.', affaire: 'a2' }, { ref: 'n2', type: 'appel', at: jour(-9), titre: 'Premier appel', resume: 'Prise de contact.', affaire: 'a1' }];
+  const nomE = r => entreprises.find(e => e.ref === r)?.nom ?? null, titre = r => affaires.find(a => a.ref === r)?.titre ?? null;
+  const vueA = a => ({ ...a, entreprise: nomE(a.entreprise_ref) });
+  return {
+    demo: true,
+    connexions: [{
+      id: 'demo', court: 'Partenaire fictif', notes: [], suppressions: [], fiches: 1,
+      etapes: [['decouverte', 'Découverte'], ['qualification', 'Qualification'], ['proposition', 'Proposition'], ['negociation', 'Négociation'], ['gagne', 'Gagnée', 1, 1], ['perdu', 'Perdue', 1, 0]].map(([id, libelle, clos, gagne]) => ({ id, libelle, clos: !!clos, gagne: !!gagne })),
+      affaires: affaires.map(vueA),
+      entreprises: entreprises.map(e => { const s = affaires.filter(a => a.entreprise_ref === e.ref), o = s.filter(a => !a.issue); return { ...e, affaires: s.length, ouvertes: o.length, en_jeu: crmSomme(o) }; }),
+      contacts: contacts.map(k => ({ ...k, entreprise: nomE(k.entreprise_ref) })),
+      aFaire: [...taches.map(t => ({ quoi: 'tache', ...t, date: t.echeance, affaire: { ref: t.affaire, titre: titre(t.affaire) } })), ...rendez_vous.filter(r => r.debut > jour(0)).map(r => ({ quoi: 'rendez_vous', ...r, date: r.debut, affaire: { ref: r.affaire, titre: titre(r.affaire) } }))].sort((x, y) => x.date.localeCompare(y.date)),
+      _: { entreprises, contacts, affaires, rendez_vous, taches, activites },
+    }],
+  };
+}
+function demoCrmFiche(type, ref) {
+  const c = crmData.connexions[0], { entreprises, contacts, affaires, rendez_vous, taches, activites } = c._;
+  const de = refs => ({ rendez_vous: rendez_vous.filter(x => refs.includes(x.affaire)), taches: taches.filter(x => refs.includes(x.affaire)), activites: activites.filter(x => refs.includes(x.affaire)) });
+  const vues = l => l.map(a => c.affaires.find(x => x.ref === a.ref));
+  if (type === 'affaire') {
+    const a = c.affaires.find(x => x.ref === ref);
+    return a && { ...a, champs: {}, etapes: c.etapes, entreprises: entreprises.filter(e => e.ref === a.entreprise_ref), contacts: c.contacts.filter(k => a.contacts.includes(k.ref)), ...de([ref]) };
+  }
+  if (type === 'entreprise') {
+    const e = entreprises.find(x => x.ref === ref), l = affaires.filter(a => a.entreprise_ref === ref);
+    return e && { ...e, affaires: vues(l), contacts: contacts.filter(k => k.entreprise_ref === ref), ...de(l.map(a => a.ref)) };
+  }
+  const k = c.contacts.find(x => x.ref === ref), l = affaires.filter(a => a.contacts.includes(ref));
+  return k && { ...k, affaires: vues(l), ...de(l.map(a => a.ref)) };
+}
+
+async function loadCrm(force) {
+  const r = crmRoute();
+  if (!r) return;
+  const hash = location.hash, demo = demoOn;
+  const data = demo ? (crmData?.demo ? crmData : demoCrm()) : await api('/api/crm').catch(() => null);
+  if (location.hash !== hash || demo !== demoOn) return;
+  crmData = data;
+  let f = null;
+  if (r.ref) {
+    const plur = { affaire: 'affaires', entreprise: 'entreprises', contact: 'contacts' }[r.type];
+    f = demo ? demoCrmFiche(r.type, r.ref) : await api(`/api/connexions/${encodeURIComponent(r.cx)}/suivi/${plur}/${encodeURIComponent(r.ref)}`).then(x => (x.error ? null : x)).catch(() => null);
+    if (location.hash !== hash) return;
+  }
+  crmFiche = f;
+  const sig = JSON.stringify([demo, data?.connexions.map(({ _, ...c }) => c), f, hash]);
+  if (force || sig !== crmSig) { crmSig = sig; renderCrm(); }
+}
+function renderCrm() {
+  const el = $('#crm-body'), r = crmRoute();
+  if (!r) return;
+  cxKeep(el, () => { el.innerHTML = r.ref ? crmFichePage(r) : crmListe(r); });
+}
+
+// on a card, only what concerns that card
+function crmAlertes(ref) {
+  const lui = x => !ref || x.ref === ref;
+  return (crmData?.connexions ?? []).flatMap(c => [
+    ...c.suppressions.filter(lui).map(s => `<div class="cx-alert"><span>${esc(c.court)} a supprimé « ${esc(s.titre ?? 'une fiche')} » : la supprimer aussi ici ?</span>
+      <button type="button" class="btn ghost" data-cx="${esc(c.id)}" data-garder="${esc(s.id)}">Garder</button><button type="button" class="btn acc" data-cx="${esc(c.id)}" data-supprimer="${esc(s.id)}">Supprimer</button></div>`),
+    ...c.notes.filter(lui).map(n => `<div class="cx-alert"><span>${esc(n.texte)}</span><button type="button" class="btn ghost" data-cx="${esc(c.id)}" data-vu="${esc(n.id)}">Vu</button></div>`),
+  ]).join('');
+}
+const crmEcheance = a => (a.echeance ? `${a.echeance < isoToday() && !a.issue ? 'dépassée le' : 'pour le'} ${cxJour(a.echeance)}` : '');
+function crmCarte(c, a) {
+  return `<a class="cx-card" draggable="true" data-cx="${esc(c.id)}" data-ref="${esc(a.ref)}" href="${crmHref(c.id, 'affaire', a.ref)}"><b>${esc(a.titre)}</b>
+    ${a.entreprise ? `<small>${esc(a.entreprise)}</small>` : ''}
+    ${a.montant != null || a.echeance ? `<small>${a.montant != null ? `<span class="cx-num">${esc(cxEur(a.montant))}</span>` : ''}${a.montant != null && a.echeance ? ' · ' : ''}${a.echeance ? `<span${a.echeance < isoToday() ? ' class="crm-late"' : ''}>${esc(crmEcheance(a))}</span>` : ''}</small>` : ''}
+    ${a.prochaine_etape ? `<small class="crm-next-step">${esc(a.prochaine_etape)}</small>` : ''}
+    ${a.detachee ? '<span class="cx-flag">Plus partagée</span>' : ''}</a>`;
+}
+function crmTableau(c) {
+  const ouvertes = c.etapes.filter(e => !e.clos), connues = new Set(c.etapes.map(e => e.id)), encours = c.affaires.filter(a => !a.issue);
+  const cols = [...ouvertes.map(e => ({ id: e.id, libelle: e.libelle, affaires: encours.filter(a => a.etape === e.id) })),
+    { libelle: 'Autres', affaires: encours.filter(a => !connues.has(a.etape)) }].filter(k => k.id || k.affaires.length);
+  const closes = c.affaires.filter(a => a.issue), gagnees = closes.filter(a => a.issue === 'gagne');
+  if (!c.affaires.length) return `<p class="cx-empty">${esc(c.court)} n'a encore partagé aucune affaire.</p>`;
+  return `<div class="cx-board">${cols.map(k => `<section class="cx-col" aria-label="${esc(k.libelle)}"${k.id ? ` data-cx="${esc(c.id)}" data-etape="${esc(k.id)}"` : ''}><h4>${esc(k.libelle)}<span>${k.affaires.length}${crmSomme(k.affaires) ? ` · ${esc(cxEur(crmSomme(k.affaires)))}` : ''}</span></h4>
+      ${k.affaires.map(a => crmCarte(c, a)).join('')}</section>`).join('')}</div>
+    ${closes.length ? `<details class="cx-row" data-k="crm-closes-${esc(c.id)}"><summary>Affaires closes : ${gagnees.length} gagnée${gagnees.length > 1 ? 's' : ''}, ${closes.length - gagnees.length} perdue${closes.length - gagnees.length > 1 ? 's' : ''}</summary>
+      <div class="cx-list">${closes.map(a => crmLigneAffaire(c.id, a)).join('')}</div></details>` : ''}`;
+}
+const crmLigneAffaire = (cx, a) => `<a class="cx-row crm-link" href="${crmHref(cx, 'affaire', a.ref)}"><span class="cx-main"><b>${esc(a.titre)}</b><small class="cx-sub">${esc([a.entreprise, cxEur(a.montant), crmCx(cx)?.etapes.find(e => e.id === a.etape)?.libelle].filter(Boolean).join(' · '))}</small></span>${a.issue ? `<span class="cx-badge">${a.issue === 'gagne' ? 'Gagnée' : 'Perdue'}</span>` : ''}</a>`;
+function crmAVenir() {
+  const l = crmData.connexions.flatMap(c => c.aFaire.map(x => ({ ...x, cx: c.id }))).sort((x, y) => String(x.date ?? '9').localeCompare(String(y.date ?? '9')));
+  if (!l.length) return '';
+  const ligne = x => {
+    const retard = x.date && x.date < new Date().toISOString() && (x.quoi === 'rendez_vous' || x.avec_heure || x.date.slice(0, 10) < isoToday());
+    const quand = !x.date ? 'Sans date' : x.quoi === 'rendez_vous' || x.avec_heure ? cxHeure(x.date) : cxJour(x.date);
+    return `<a class="crm-next-it" href="${x.affaire ? crmHref(x.cx, 'affaire', x.affaire.ref) : '#crm'}"><small${retard ? ' class="crm-late"' : ''}>${esc(retard ? `En retard, ${quand}` : quand)}</small><b>${esc(x.titre)}</b>${x.affaire?.titre ? `<small>${esc(x.affaire.titre)}</small>` : ''}</a>`;
+  };
+  return `<section class="crm-next" aria-labelledby="crm-next-h"><h2 class="cx-h3" id="crm-next-h">À venir</h2>${l.slice(0, 6).map(ligne).join('')}
+    ${l.length > 6 ? `<details data-k="crm-next-plus"><summary class="lbl">${l.length - 6} de plus</summary>${l.slice(6).map(ligne).join('')}</details>` : ''}</section>`;
+}
+const crmLigneEntreprise = e => `<a class="cx-row crm-link" href="${crmHref(e.cx, 'entreprise', e.ref)}"><span class="cx-main"><b>${esc(e.nom)}</b><small class="cx-sub">${esc([e.secteur, e.ville, crmPlusieurs() && e.court].filter(Boolean).join(' · '))}</small></span>
+  <small class="cx-sub crm-num">${esc(e.ouvertes ? `${crmPl(e.ouvertes, 'affaire')} en cours${e.en_jeu ? ` · ${cxEur(e.en_jeu)}` : ''}` : e.affaires ? crmPl(e.affaires, 'affaire close').replace('affaire closes', 'affaires closes') : '')}</small></a>`;
+const crmLigneContact = k => `<a class="cx-row crm-link" href="${crmHref(k.cx, 'contact', k.ref)}"><span class="cx-main"><b>${esc(k.nom)}</b><small class="cx-sub">${esc([k.fonction, k.entreprise, crmPlusieurs() && k.court].filter(Boolean).join(' · '))}</small></span>
+  ${k.email || k.telephone ? `<small class="cx-sub crm-num">${esc(k.email || k.telephone)}</small>` : ''}</a>`;
+function crmListe(r) {
+  if (!crmData) return '<p class="lbl">Chargement…</p>';
+  const cs = crmData.connexions, tag = key => cs.flatMap(c => c[key].map(x => ({ ...x, cx: c.id, court: c.court })));
+  if (!cs.length) return `<div class="fin-h"><h1 class="ptitle">CRM</h1></div><section class="pane cx-detail cx-ask"><h2 class="cx-h2 sm">Aucun partenaire ne partage son suivi</h2><p>Il arrive ici dès qu'un partenaire est connecté dans <a href="#connexions">Connexions</a>.</p></section>`;
+  const toutes = tag('affaires'), encours = toutes.filter(a => !a.issue), gagnees = toutes.filter(a => a.issue === 'gagne');
+  const resume = [encours.length ? `${crmPl(encours.length, 'affaire')} en cours${crmSomme(encours) ? ` · ${cxEur(crmSomme(encours))}` : ''}` : '', gagnees.length ? `${gagnees.length} gagnée${gagnees.length > 1 ? 's' : ''}${crmSomme(gagnees) ? ` · ${cxEur(crmSomme(gagnees))}` : ''}` : ''].filter(Boolean).join('  ·  ');
+  const tabs = [['affaires', 'Affaires', '#crm'], ['entreprises', 'Entreprises', '#crm/entreprises'], ['contacts', 'Contacts', '#crm/contacts']];
+  const q = crmNorm(crmQ.trim()), hit = (...v) => v.some(x => crmNorm(x).includes(q));
+  let corps;
+  if (q) {
+    const a = toutes.filter(x => hit(x.titre, x.entreprise)), e = tag('entreprises').filter(x => hit(x.nom, x.ville, x.secteur, x.domaine)), k = tag('contacts').filter(x => hit(x.nom, x.fonction, x.email, x.telephone, x.entreprise));
+    const bloc = (titre, html) => (html ? `<section class="crm-res"><h2 class="cx-h3">${titre}</h2><div class="cx-list">${html}</div></section>` : '');
+    corps = bloc('Affaires', a.map(x => crmLigneAffaire(x.cx, x)).join('')) + bloc('Entreprises', e.map(crmLigneEntreprise).join('')) + bloc('Contacts', k.map(crmLigneContact).join(''))
+      || `<p class="cx-empty">Rien ne correspond à « ${esc(crmQ.trim())} ».</p>`;
+    corps = `<div class="pane crm-page">${corps}</div>`;
+  } else if (r.onglet === 'entreprises') {
+    corps = `<div class="pane crm-page"><div class="cx-list">${tag('entreprises').map(crmLigneEntreprise).join('') || '<p class="cx-empty">Aucune entreprise partagée.</p>'}</div></div>`;
+  } else if (r.onglet === 'contacts') {
+    corps = `<div class="pane crm-page"><div class="cx-list">${tag('contacts').map(crmLigneContact).join('') || '<p class="cx-empty">Aucun contact partagé.</p>'}</div></div>`;
+  } else {
+    corps = `<div class="crm-aff">${crmAVenir()}<div class="crm-boards">${cs.map(c => `${crmPlusieurs() ? `<h2 class="cx-h3">${esc(c.court)}</h2>` : ''}${crmTableau(c)}`).join('')}</div></div>`;
+  }
+  return `<div class="fin-h"><h1 class="ptitle">CRM</h1><span class="sp"></span><span class="lbl">${esc(resume)}</span></div>
+    <div class="crm-bar"><nav class="cx-tabs" aria-label="CRM">${tabs.map(([id, lib, href]) => `<a href="${href}"${!q && r.onglet === id ? ' aria-current="page"' : ''}>${lib}</a>`).join('')}</nav>
+      <input type="search" id="crm-q" data-k="crm-q" value="${esc(crmQ)}" placeholder="Chercher une affaire, une entreprise, un contact" aria-label="Chercher dans le CRM" autocomplete="off"></div>
+    ${crmAlertes()}${corps}`;
+}
+
+// what hangs on a deal, a company or a contact
+const crmRdv = (r, form) => `<div class="cx-row top"><span class="cx-main"><b>${esc(r.titre)}</b><small class="cx-sub">${esc([r.debut && cxHeure(r.debut), r.lieu].filter(Boolean).join(' · '))}</small>
+    ${r.compte_rendu ? `<div class="cx-md">${md(cxLiens(r.compte_rendu))}</div>` : ''}</span>
+    ${form && !r.compte_rendu && crmForm !== `cr:${r.ref}` ? `<button type="button" class="btn" data-form="cr:${esc(r.ref)}">Compte rendu</button>` : ''}</div>
+  ${form && crmForm === `cr:${r.ref}` ? `<form class="cx-form" data-cr="${esc(r.ref)}"><textarea data-k="cr-${esc(r.ref)}" name="texte" required placeholder="Compte rendu, en Markdown" aria-label="Compte rendu de ${esc(r.titre)}"></textarea>${crmActes('Enregistrer')}</form>` : ''}`;
+const crmActes = ok => `<div class="cx-act"><span class="sp"></span><button type="button" class="btn ghost" data-form="">Annuler</button><button type="submit" class="btn acc">${ok}</button></div>`;
+const crmTache = t => `<div class="cx-row${t.fait_at ? ' cx-done' : ''}"><span class="cx-main"><b>${esc(t.titre)}</b><small class="cx-sub">${esc([CX_TACHE[t.type], t.echeance && (t.avec_heure ? cxHeure(t.echeance) : `pour le ${cxJour(t.echeance)}`), t.fait_at && 'faite'].filter(Boolean).join(' · '))}</small></span></div>`;
+const crmActivite = x => `<div class="cx-row top"><span class="cx-main"><b>${esc(x.titre || CX_ACT[x.type] || 'Activité')}</b><small class="cx-sub">${esc([x.titre && CX_ACT[x.type], cxWhen(x.at), x.local ? 'par toi' : ''].filter(Boolean).join(' · '))}</small>
+    ${x.resume ? `<div class="cx-md">${md(cxLiens(x.resume))}</div>` : ''}</span></div>`;
+const crmContactLie = (cx, k) => `<a class="cx-row crm-link" href="${crmHref(cx, 'contact', k.ref)}"><span class="cx-main"><b>${esc(k.nom)}</b><small class="cx-sub">${esc([k.fonction, k.email, k.telephone].filter(Boolean).join(' · '))}</small></span></a>`;
+const crmTete = (titre, bouton, form) => `<div class="cx-h3row"><h3 class="cx-h3">${titre}</h3><span class="sp"></span>${bouton && crmForm !== form ? `<button type="button" class="btn" data-form="${form}">${bouton}</button>` : ''}</div>`;
+const crmBloc = (titre, html, vide) => (html || vide ? `${crmTete(titre)}<div class="cx-list">${html || `<p class="cx-empty">${vide}</p>`}</div>` : '');
+
+function crmFichePage(r) {
+  const retour = { affaire: ['#crm', 'Affaires'], entreprise: ['#crm/entreprises', 'Entreprises'], contact: ['#crm/contacts', 'Contacts'] }[r.type];
+  const back = `<a class="cx-back" href="${retour[0]}">← ${retour[1]}</a>`, c = crmCx(r.cx), f = crmFiche;
+  if (!crmData) return '<p class="lbl">Chargement…</p>';
+  if (!f || !c) return `<section class="pane cx-detail">${back}<p class="cx-empty">Fiche introuvable.</p></section>`;
+  const de = f.detachee ? `<div class="cx-alert"><span>Supprimée chez ${esc(c.court)} : gardée ici, elle n'est plus partagée.</span></div>` : '';
+  const page = html => `<section class="pane cx-detail">${back}${crmAlertes(r.ref)}${de}${html}</section>`;
+  if (r.type === 'affaire') return page(crmFicheAffaire(c, f));
+  const tete = (nom, sub) => `<div class="cx-head"><div><h1 class="cx-h2">${esc(nom)}</h1><span class="cx-sub">${sub}</span></div></div>`;
+  const prov = `Suivi partagé par ${esc(c.court)}`;
+  const suite = `${crmBloc('Rendez-vous', f.rendez_vous.map(x => crmRdv(x)).join(''))}${crmBloc('Historique', f.activites.map(crmActivite).join(''), 'Aucune activité.')}`;
+  const affaires = crmBloc('Affaires', f.affaires.map(a => crmLigneAffaire(c.id, a)).join(''), 'Aucune affaire.');
+  const taches = crmBloc('Tâches', f.taches.map(crmTache).join(''));
+  if (r.type === 'entreprise') {
+    const faits = [f.secteur, f.ville, f.taille, f.domaine].filter(Boolean).map(esc).join(' · ');
+    return page(`${tete(f.nom, [faits, prov].filter(Boolean).join(' · '))}<div class="cx-cols"><div>${affaires}${suite}</div><div>${crmBloc('Contacts', f.contacts.map(k => crmContactLie(c.id, k)).join(''), 'Aucun contact.')}${taches}</div></div>`);
+  }
+  const moyens = [f.email && `<a href="mailto:${esc(f.email)}">${esc(f.email)}</a>`, f.telephone && `<a href="tel:${esc(f.telephone.replace(/\s/g, ''))}">${esc(f.telephone)}</a>`, f.role && esc(f.role)].filter(Boolean).join(' · ');
+  const ent = f.entreprise ? `<a href="${crmHref(c.id, 'entreprise', f.entreprise_ref)}">${esc(f.entreprise)}</a>` : '';
+  return page(`${tete(f.nom, [f.fonction && esc(f.fonction), ent, prov].filter(Boolean).join(' · '))}${moyens ? `<p class="cx-facts crm-moyens">${moyens}</p>` : ''}<div class="cx-cols"><div>${affaires}${suite}</div><div>${taches}</div></div>`);
+}
+function crmFicheAffaire(c, a) {
+  const ch = a.champs ?? {}, f = crmForm;
+  const faits = [['Propriétaire', ch.proprietaire], ['Origine', ch.origine], ['Facturation', ch.mode_facturation === 'recurrent' ? `récurrente${ch.duree_engagement_mois ? `, ${ch.duree_engagement_mois} mois` : ''}` : ch.mode_facturation === 'spot' ? 'ponctuelle' : null],
+    ['Probabilité', ch.probabilite_manuelle != null ? `${ch.probabilite_manuelle} %` : null], ['Motif', ch.motif]].filter(([, v]) => v != null && v !== '');
+  const ents = a.entreprises.map(e => `<a href="${crmHref(c.id, 'entreprise', e.ref)}">${esc(e.nom)}</a>`).join(', ');
+  const connue = a.etapes.some(e => e.id === a.etape);
+  return `<div class="cx-head"><div><h1 class="cx-h2">${esc(a.titre)}</h1><span class="cx-sub">${[ents, a.modifie_le && esc(`modifiée ${cxWhen(a.modifie_le).toLowerCase()}`), `suivi partagé par ${esc(c.court)}`].filter(Boolean).join(' · ')}</span></div></div>
+    <div class="crm-steps" role="group" aria-label="Étape">${a.etapes.map(e => `<button type="button" data-etape="${esc(e.id)}" data-clos="${e.clos ? 1 : ''}"${e.id === a.etape ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"'}>${esc(e.libelle)}</button>`).join('')}${connue ? '' : `<span class="cx-badge">${esc(a.etape ?? 'Sans étape')}</span>`}</div>
+    <form class="cx-form cx-aff" id="crm-aff">
+      <label>Montant (€)<input name="montant" data-k="a-montant" inputmode="numeric" value="${esc(a.montant ?? '')}"></label>
+      <label>Échéance<input type="date" name="echeance" data-k="a-echeance" value="${esc(a.echeance ?? '')}"></label>
+      <label class="cx-wide">Prochaine étape<input name="prochaine_etape" data-k="a-prochaine" maxlength="200" value="${esc(a.prochaine_etape ?? '')}"></label>
+      <div class="cx-act"><span class="sp"></span><button type="submit" class="btn acc" id="crm-aff-ok" disabled>Enregistrer</button></div>
+    </form>
+    ${faits.length ? `<p class="cx-facts">${faits.map(([k, v]) => `<span>${esc(k)} <b>${esc(v)}</b></span>`).join('')}</p>` : ''}
+    <div class="cx-cols">
+      <div>${a.rendez_vous.length ? `${crmTete('Rendez-vous')}<div class="cx-list">${a.rendez_vous.map(x => crmRdv(x, true)).join('')}</div>` : ''}
+        ${crmTete('Historique', 'Ajouter une note', 'note')}
+        ${f === 'note' ? `<form class="cx-form" id="crm-note"><textarea data-k="note" name="texte" required placeholder="Note, en Markdown" aria-label="Note"></textarea>${crmActes('Ajouter')}</form>` : ''}
+        <div class="cx-list">${a.activites.map(crmActivite).join('') || (f === 'note' ? '' : '<p class="cx-empty">Aucune activité.</p>')}</div>
+      </div>
+      <div>${crmTete('Contacts', 'Ajouter un contact', 'contact')}
+        ${f === 'contact' ? `<form class="cx-form" id="crm-contact"><input data-k="k-nom" name="nom" required placeholder="Nom" aria-label="Nom"><input data-k="k-fonction" name="fonction" placeholder="Fonction" aria-label="Fonction">
+          <input data-k="k-email" name="email" type="email" placeholder="E-mail" aria-label="E-mail"><input data-k="k-tel" name="telephone" type="tel" placeholder="Téléphone" aria-label="Téléphone">${crmActes('Ajouter')}</form>` : ''}
+        <div class="cx-list">${a.contacts.map(k => crmContactLie(c.id, k)).join('') || (f === 'contact' ? '' : '<p class="cx-empty">Aucun contact.</p>')}</div>
+        ${crmTete('Tâches', 'Ajouter une tâche', 'tache')}
+        ${f === 'tache' ? `<form class="cx-form" id="crm-tache"><input data-k="t-titre" name="titre" required placeholder="Tâche" aria-label="Tâche">
+          <div class="cx-act"><select name="type" data-k="t-type" aria-label="Type">${Object.entries(CX_TACHE).map(([k, v]) => `<option value="${k}"${k === 'tache' ? ' selected' : ''}>${v}</option>`).join('')}</select>
+            <label class="lbl" for="crm-t-e">Pour le</label><input type="date" id="crm-t-e" data-k="t-echeance" name="echeance"></div>${crmActes('Ajouter')}</form>` : ''}
+        <div class="cx-list">${a.taches.map(crmTache).join('') || (f === 'tache' ? '' : '<p class="cx-empty">Aucune tâche.</p>')}</div>
+      </div>
+    </div>`;
+}
+// Enregistrer wakes up once a field of the deal differs from what is shared
+function crmSale() {
+  const f = $('#crm-aff');
+  if (f) $('#crm-aff-ok').disabled = ![...f.elements].some(x => x.name && x.value !== x.defaultValue);
+}
+const crmDemoBloque = () => { if (demoOn) toast('Mode démo : rien n\'est enregistré ni envoyé'); return demoOn; };
+async function crmEtape(cx, ref, etape) {
+  if (crmDemoBloque()) return;
+  const r = await cxSend(`/api/connexions/${encodeURIComponent(cx)}/suivi/affaires/${encodeURIComponent(ref)}`, { etape }, 'PATCH');
+  if (r.error) toast(r.error, true); else toast(`Étape changée, envoyé à ${crmCx(cx)?.court ?? 'ton partenaire'}`);
+  await loadCrm(true);
+}
+$('#crm-body').addEventListener('input', e => {
+  if (e.target.closest('#crm-aff')) crmSale();
+  if (e.target.id === 'crm-q') { crmQ = e.target.value; renderCrm(); }
+});
+$('#crm-body').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.target, r = crmRoute(), btn = f.querySelector('button[type="submit"]'), v = Object.fromEntries(new FormData(f));
+  if (!r?.ref || crmDemoBloque()) return;
+  const aff = `/api/connexions/${encodeURIComponent(r.cx)}/suivi/affaires/${encodeURIComponent(r.ref)}`;
+  btn.disabled = true;
+  try {
+    const x = f.id === 'crm-aff' ? await cxSend(aff, Object.fromEntries([...f.elements].filter(c => c.name && c.value !== c.defaultValue).map(c => [c.name, c.value])), 'PATCH')
+      : f.dataset.cr ? await cxSend(`${aff}/rendez-vous/${encodeURIComponent(f.dataset.cr)}`, v)
+        : await cxSend(`${aff}/${{ 'crm-note': 'notes', 'crm-contact': 'contacts', 'crm-tache': 'taches' }[f.id]}`, v);
+    if (x.error) throw new Error(x.error);
+    f.reset();
+    crmForm = null;
+    toast(`Enregistré, envoyé à ${crmCx(r.cx)?.court ?? 'ton partenaire'}`);
+    await loadCrm(true);
+  } catch (err) { toast(err.message, true); btn.disabled = false; }
+});
+$('#crm-body').addEventListener('click', async e => {
+  const link = e.target.closest('.cx-md a[data-link]');
+  if (link) { if (/^https?:\/\//i.test(link.dataset.link)) window.open(link.dataset.link, '_blank', 'noopener'); return; }
+  const b = e.target.closest('button');
+  if (!b) return;
+  if ('form' in b.dataset) {
+    crmForm = b.dataset.form || null;
+    renderCrm();
+    if (crmForm) $('#crm-body').querySelector('form:not(#crm-aff) textarea, form:not(#crm-aff) input')?.focus();
+    return;
+  }
+  const r = crmRoute();
+  if (b.dataset.etape && r?.ref) {
+    if (b.classList.contains('on')) return;
+    if (b.dataset.clos && !demoOn && !confirm(`Passer cette affaire en « ${b.textContent} » ? ${crmCx(r.cx)?.court ?? 'Ton partenaire'} verra le changement.`)) return;
+    return crmEtape(r.cx, r.ref, b.dataset.etape);
+  }
+  if (!b.dataset.cx || crmDemoBloque()) return;
+  const base = `/api/connexions/${encodeURIComponent(b.dataset.cx)}/suivi`;
+  let x = null;
+  if (b.dataset.vu) x = await cxSend(`${base}/notes/${encodeURIComponent(b.dataset.vu)}/vu`);
+  else if (b.dataset.garder || b.dataset.supprimer) {
+    const supprimer = !!b.dataset.supprimer;
+    if (supprimer && !confirm('Supprimer cette fiche de ta copie du suivi ?')) return;
+    x = await cxSend(`${base}/suppressions/${encodeURIComponent(b.dataset.garder || b.dataset.supprimer)}`, { supprimer });
+    loadProps().then(rvRender);
+  }
+  if (x?.error) toast(x.error, true);
+  await loadCrm(true);
+});
+// a deal dragged to another stage of the same partner
+$('#crm-body').addEventListener('dragstart', e => {
+  const k = e.target.closest?.('.cx-card[data-ref]');
+  if (k) { crmDrag = { cx: k.dataset.cx, ref: k.dataset.ref }; e.dataTransfer.effectAllowed = 'move'; }
+});
+const crmCol = e => { const c = e.target.closest?.('.cx-col[data-etape]'); return crmDrag && c?.dataset.cx === crmDrag.cx ? c : null; };
+$('#crm-body').addEventListener('dragover', e => { const c = crmCol(e); if (c) { e.preventDefault(); c.classList.add('over'); } });
+$('#crm-body').addEventListener('dragleave', e => { e.target.closest?.('.cx-col')?.classList.remove('over'); });
+$('#crm-body').addEventListener('dragend', () => { crmDrag = null; document.querySelectorAll('.cx-col.over').forEach(c => c.classList.remove('over')); });
+$('#crm-body').addEventListener('drop', e => {
+  const c = crmCol(e);
+  if (!c) return;
+  e.preventDefault();
+  const { cx, ref } = crmDrag;
+  crmDrag = null;
+  c.classList.remove('over');
+  if (crmCx(cx)?.affaires.find(a => a.ref === ref)?.etape !== c.dataset.etape) crmEtape(cx, ref, c.dataset.etape);
+});
+function onCrmHash() {
+  // the follow-up used to be a tab of the partner's page
+  const old = location.hash.match(/^#connexions\/([\w-]+)\/suivi(?:\/([^/]+))?$/);
+  if (old) { location.replace(old[2] ? `#crm/${old[1]}/affaire/${old[2]}` : '#crm'); return; }
+  if (!crmRoute()) return;
+  crmForm = null;
+  crmFiche = null;
+  window.scrollTo(0, 0);
+  loadCrm(true);
+}
+addEventListener('hashchange', onCrmHash);
 
 /* ---------- réglages: model, effort and prompt of each function, the skills (#reglages) ---------- */
 let rg = null, rgTab = 'prompts', rgFn = 'assistant', rgSk = null, rgRl = null, rgCut = null;
@@ -4249,7 +4508,7 @@ function onRgHash() { if (shellTab() === 'reglages') loadReglages(); }
 addEventListener('hashchange', onRgHash);
 
 /* ---------- shell: tabs routed by the hash, the assistant one keystroke away ---------- */
-const TAB_OF = { projets: 'projets', portefeuille: 'projets', finances: 'finances', linkedin: 'linkedin', 'second-brain': 'brain', outils: 'outils', reglages: 'reglages', connexions: 'outils' };
+const TAB_OF = { projets: 'projets', portefeuille: 'projets', finances: 'finances', crm: 'crm', linkedin: 'linkedin', 'second-brain': 'brain', outils: 'outils', reglages: 'reglages', connexions: 'outils' };
 // a page of its own that still lights up its parent tab
 const VIEW_OF = { connexions: 'connexions' };
 const shellTab = () => TAB_OF[location.hash.slice(1).split('/')[0]] ?? 'today';
@@ -4268,7 +4527,7 @@ onShellHash();
 new ResizeObserver(() => document.documentElement.style.setProperty('--bar-h', $('#top').offsetHeight + 'px')).observe($('#top'));
 $('#ask-open').onclick = () => chatShow(true);
 
-// Demo: every money figure on screen comes from demoFinance(), nothing else changes.
+// Demo: every money figure comes from demoFinance(), the CRM from demoCrm().
 // Remembered across reloads, announced by a band under the top bar.
 let demoOn = (() => { try { return localStorage.getItem('demo') === '1'; } catch (e) { return false; } })();
 function renderDemo() {
@@ -4286,6 +4545,8 @@ function setDemo(on) {
   renderFinWidget();
   if (!$('#finview').hidden) renderFinview();
   loadFinance();
+  crmData = null;
+  loadCrm(true);
 }
 $('#demo-toggle').onclick = () => setDemo(!demoOn);
 $('#demo-quit').onclick = () => setDemo(false);
@@ -4295,8 +4556,9 @@ renderDemo();
   cfg = await api('/api/config');
   chatBoot();
   draw();
-  await Promise.all([loadGraph(), loadTodo(), loadRuns(), loadProjects(), loadDecks(), loadDelegations(), loadReview(), loadCx()]);
+  await Promise.all([loadGraph(), loadTodo(), loadRuns(), loadProjects(), loadDecks(), loadDelegations(), loadReview(), loadCx(), loadCrm()]);
   setInterval(loadCx, 30e3);
+  setInterval(loadCrm, 30e3);
   setInterval(loadGraph, 30e3);      // second brain edits show up within 30 s
   setInterval(loadProjects, 60e3);
   loadSb();

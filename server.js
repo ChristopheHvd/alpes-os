@@ -928,6 +928,10 @@ app.post('/api/connexions/:id/messages', async (req, res) => {
 // Suivi commercial: the copy of what the partner shares, and the few changes Christophe may make
 const suiviOk = (res, f) => { try { res.json(f()); } catch (e) { res.status(e.status ?? 400).json({ error: e.message }); } };
 app.get('/api/connexions/:id/suivi', (req, res) => suiviOk(res, () => partenaires.suivi.vue(req.params.id)));
+// the CRM tab: every live connection's follow-up, each one saying which partner it comes from
+app.get('/api/crm', (req, res) => suiviOk(res, () => ({ connexions: partenaires.etat().connexions.map(c => ({ id: c.id, court: c.court, ...partenaires.suivi.crm(c.id) })) })));
+app.get('/api/connexions/:id/suivi/entreprises/:ref', (req, res) => suiviOk(res, () => partenaires.suivi.entreprise(req.params.id, req.params.ref)));
+app.get('/api/connexions/:id/suivi/contacts/:ref', (req, res) => suiviOk(res, () => partenaires.suivi.contact(req.params.id, req.params.ref)));
 app.get('/api/connexions/:id/suivi/affaires/:ref', (req, res) => suiviOk(res, () => partenaires.suivi.affaire(req.params.id, req.params.ref)));
 app.patch('/api/connexions/:id/suivi/affaires/:ref', (req, res) => suiviOk(res, () => partenaires.suivi.modifierAffaire(req.params.id, req.params.ref, req.body ?? {})));
 app.post('/api/connexions/:id/suivi/affaires/:ref/notes', (req, res) => suiviOk(res, () => partenaires.suivi.ajouterNote(req.params.id, req.params.ref, req.body?.texte)));
