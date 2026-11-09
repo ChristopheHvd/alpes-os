@@ -182,8 +182,8 @@ button.cx-chip:hover { border-color: var(--ink-3); }
 .cx-md a { color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .cx-res { font-size: 12.5px; color: var(--ink-2); }
 /* crm: the deals by stage, what comes next, and a card per deal, company or contact */
-.cx-board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(210px, 1fr); gap: 12px; overflow-x: auto; padding-bottom: 6px; }
-.cx-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 10px; border-radius: 10px; background: var(--sunken); }
+.cx-board { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 6px; }
+.cx-col { flex: 1 1 210px; display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 10px; border-radius: 10px; background: var(--sunken); }
 .cx-col h4 { margin: 0; padding: 2px 4px 4px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font: 600 13px/1.3 var(--font); color: var(--ink); }
 .cx-col h4 span { font-weight: 500; font-size: 12px; color: var(--ink-2); }
 .cx-card { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line-soft); background: var(--surface); color: var(--ink); text-decoration: none; }
@@ -206,6 +206,8 @@ button.cx-chip:hover { border-color: var(--ink-3); }
 .cx-facts b { font-weight: 500; color: var(--ink); }
 .cx-done b { text-decoration: line-through; color: var(--ink-3); }
 .cx-list + .cx-h3row { margin-top: 20px; }
+.cx-col.vide { flex: 0 0 auto; min-width: 120px; background: transparent; border: 1px dashed var(--line); }
+.cx-col.vide h4 { color: var(--ink-3); }
 .cx-col.over { outline: 2px solid var(--accent); outline-offset: -2px; }
 .crm-late { color: #9a3c15; font-weight: 500; }
 .crm-next-step { color: var(--ink-3) !important; }
@@ -215,6 +217,28 @@ button.cx-chip:hover { border-color: var(--ink-3); }
 #crm-body > .cx-alert + .cx-alert { margin-top: 8px; }
 #crm-body > .cx-alert + .crm-aff, #crm-body > .cx-alert + .crm-page { margin-top: 18px; }
 .crm-aff { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 20px 28px; align-items: start; }
+.crm-aff.seul { grid-template-columns: minmax(0, 1fr); }
+.crm-row { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.5fr) 170px 120px 140px; gap: 8px 22px; align-items: center; padding: 13px 0; border-top: 1px solid var(--line-soft); }
+.crm-row.crm-head { padding: 6px 0 8px; border-top: 0; font: 500 12px/1.3 var(--font); color: var(--ink-3); }
+.crm-row.crm-head + .crm-row { border-top-color: var(--line); }
+.crm-r-main, .crm-r-next, .crm-r-mt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.crm-r-main b { font: 600 14px/1.35 var(--font); }
+.crm-r-next span { font: 500 13.5px/1.35 var(--font); color: var(--ink); }
+.crm-r-next small, .crm-r-mt small { font-size: 12.5px; color: var(--ink-2); }
+.crm-r-mt { text-align: right; font-variant-numeric: tabular-nums; }
+.crm-row.crm-head span:nth-child(4) { text-align: right; }
+.crm-r-next small.crm-late, .crm-r-mt small.crm-late { color: #9a3c15; font-weight: 500; }
+.crm-r-etape { max-width: 240px; }
+.crm-r-mt b { font: 600 14px/1.35 var(--font); }
+.crm-r-etape { width: 100%; min-height: 34px; padding: 0 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); font: 500 13px/1 var(--font); cursor: pointer; }
+.crm-r-etape:hover { border-color: var(--ink-3); }
+.crm-r-etape:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.crm-r-act { display: flex; gap: 6px; justify-content: flex-end; }
+.crm-r-act .btn { min-height: 32px; padding: 0 10px; border-radius: 7px; background: transparent; color: var(--ink-2); white-space: nowrap; }
+.crm-r-act .btn:hover, .crm-r-act .btn[aria-pressed="true"] { color: var(--ink); border-color: var(--ink-3); }
+.crm-row .cx-flag { grid-column: 1 / -1; margin-top: 0; }
+.crm-quick { margin: 0 0 4px; padding: 4px 0 14px; border-top: 0; max-width: 640px; }
+.crm-more { margin-top: 6px; }
 .crm-boards { grid-column: 1; grid-row: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
 .crm-next { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; min-width: 0; }
 .crm-next h2 { padding-bottom: 8px; }
@@ -238,6 +262,13 @@ button.cx-chip:hover { border-color: var(--ink-3); }
 .crm-moyens a, .cx-sub a { color: var(--accent); }
 .cx-detail h1.cx-h2 { font-size: 24px; }
 @media (max-width: 1100px) { .crm-aff { grid-template-columns: minmax(0, 1fr); } .crm-next { grid-column: 1; grid-row: 1; } .crm-boards { grid-row: 2; } }
+@media (max-width: 900px) {
+  .crm-row { grid-template-columns: minmax(0, 1fr) auto; gap: 8px 14px; }
+  .crm-row.crm-head { display: none; }
+  .crm-row.crm-head + .crm-row { border-top: 0; }
+  .crm-r-main, .crm-r-next { grid-column: 1 / -1; }
+  .crm-r-act { grid-column: 1 / -1; justify-content: flex-start; }
+}
 @media (max-width: 640px) { .crm-bar input { flex: 1 1 100%; margin-left: 0; } .crm-page { padding: 4px 16px 12px; } .crm-num { text-align: left; } }
 @media (max-width: 640px) { .cx-board { grid-auto-flow: row; grid-auto-columns: auto; overflow-x: visible; } .cx-col:not(:has(.cx-card)) { display: none; } .cx-detail { padding: 18px 16px 20px; } }
 
@@ -4011,7 +4042,8 @@ addEventListener('hashchange', () => { if (cxRoute()) { if (cxRoute().vue !== 'r
 /* ---------- crm: the sales follow-up the partners share ---------- */
 // #crm, #crm/entreprises, #crm/contacts, #crm/<connection id>/(affaire|entreprise|contact)/<ref>
 // Every change goes through /api/connexions/<id>/suivi (lib/suivi.js), which sends it to the partner.
-let crmData = null, crmFiche = null, crmSig = '', crmForm = null, crmQ = '', crmDrag = null;
+let crmData = null, crmFiche = null, crmSig = '', crmForm = null, crmQ = '', crmDrag = null, crmQuick = null;
+let crmVue = (() => { try { return localStorage.getItem('crm-vue') === 'etapes' ? 'etapes' : 'liste'; } catch { return 'liste'; } })();
 const crmRoute = () => {
   const m = location.hash.match(/^#crm(?:\/(entreprises|contacts)|\/([\w-]+)\/(affaire|entreprise|contact)\/([^/]+))?$/);
   return m && { onglet: m[1] ?? 'affaires', cx: m[2] ?? null, type: m[3] ?? null, ref: m[4] ? decodeURIComponent(m[4]) : null };
@@ -4120,22 +4152,64 @@ function crmTableau(c) {
     { libelle: 'Autres', affaires: encours.filter(a => !connues.has(a.etape)) }].filter(k => k.id || k.affaires.length);
   const closes = c.affaires.filter(a => a.issue), gagnees = closes.filter(a => a.issue === 'gagne');
   if (!c.affaires.length) return `<p class="cx-empty">${esc(c.court)} n'a encore partagé aucune affaire.</p>`;
-  return `<div class="cx-board">${cols.map(k => `<section class="cx-col" aria-label="${esc(k.libelle)}"${k.id ? ` data-cx="${esc(c.id)}" data-etape="${esc(k.id)}"` : ''}><h4>${esc(k.libelle)}<span>${k.affaires.length}${crmSomme(k.affaires) ? ` · ${esc(cxEur(crmSomme(k.affaires)))}` : ''}</span></h4>
+  return `<div class="cx-board">${cols.map(k => `<section class="cx-col${k.affaires.length ? '' : ' vide'}" aria-label="${esc(k.libelle)}"${k.id ? ` data-cx="${esc(c.id)}" data-etape="${esc(k.id)}"` : ''}><h4>${esc(k.libelle)}<span>${k.affaires.length}${crmSomme(k.affaires) ? ` · ${esc(cxEur(crmSomme(k.affaires)))}` : ''}</span></h4>
       ${k.affaires.map(a => crmCarte(c, a)).join('')}</section>`).join('')}</div>
     ${closes.length ? `<details class="cx-row" data-k="crm-closes-${esc(c.id)}"><summary>Affaires closes : ${gagnees.length} gagnée${gagnees.length > 1 ? 's' : ''}, ${closes.length - gagnees.length} perdue${closes.length - gagnees.length > 1 ? 's' : ''}</summary>
       <div class="cx-list">${closes.map(a => crmLigneAffaire(c.id, a)).join('')}</div></details>` : ''}`;
 }
 const crmLigneAffaire = (cx, a) => `<a class="cx-row crm-link" href="${crmHref(cx, 'affaire', a.ref)}"><span class="cx-main"><b>${esc(a.titre)}</b><small class="cx-sub">${esc([a.entreprise, cxEur(a.montant), crmCx(cx)?.etapes.find(e => e.id === a.etape)?.libelle].filter(Boolean).join(' · '))}</small></span>${a.issue ? `<span class="cx-badge">${a.issue === 'gagne' ? 'Gagnée' : 'Perdue'}</span>` : ''}</a>`;
+// when a task or a meeting falls, and whether it is already late
+function crmQuand(x) {
+  const heure = x.quoi === 'rendez_vous' || x.avec_heure, jour = x.date?.length > 10 ? new Date(x.date).toLocaleDateString('sv-SE') : x.date;
+  const retard = !!x.date && x.date < new Date().toISOString() && (heure || jour < isoToday());
+  const proche = { [isoToday()]: 'Aujourd\'hui', [new Date(Date.now() + 864e5).toLocaleDateString('sv-SE')]: 'Demain' }[jour];
+  const quand = !x.date ? 'Sans date' : proche ? `${proche}${heure ? `, ${new Date(x.date).getHours()} h ${String(new Date(x.date).getMinutes()).padStart(2, '0')}` : ''}` : heure ? cxHeure(x.date) : cxJour(x.date);
+  return { retard, quand: retard ? `En retard, ${quand}` : quand };
+}
 function crmAVenir() {
   const l = crmData.connexions.flatMap(c => c.aFaire.map(x => ({ ...x, cx: c.id }))).sort((x, y) => String(x.date ?? '9').localeCompare(String(y.date ?? '9')));
   if (!l.length) return '';
   const ligne = x => {
-    const retard = x.date && x.date < new Date().toISOString() && (x.quoi === 'rendez_vous' || x.avec_heure || x.date.slice(0, 10) < isoToday());
-    const quand = !x.date ? 'Sans date' : x.quoi === 'rendez_vous' || x.avec_heure ? cxHeure(x.date) : cxJour(x.date);
-    return `<a class="crm-next-it" href="${x.affaire ? crmHref(x.cx, 'affaire', x.affaire.ref) : '#crm'}"><small${retard ? ' class="crm-late"' : ''}>${esc(retard ? `En retard, ${quand}` : quand)}</small><b>${esc(x.titre)}</b>${x.affaire?.titre ? `<small>${esc(x.affaire.titre)}</small>` : ''}</a>`;
+    const { retard, quand } = crmQuand(x);
+    return `<a class="crm-next-it" href="${x.affaire ? crmHref(x.cx, 'affaire', x.affaire.ref) : '#crm'}"><small${retard ? ' class="crm-late"' : ''}>${esc(quand)}</small><b>${esc(x.titre)}</b>${x.affaire?.titre ? `<small>${esc(x.affaire.titre)}</small>` : ''}</a>`;
   };
   return `<section class="crm-next" aria-labelledby="crm-next-h"><h2 class="cx-h3" id="crm-next-h">À venir</h2>${l.slice(0, 6).map(ligne).join('')}
     ${l.length > 6 ? `<details data-k="crm-next-plus"><summary class="lbl">${l.length - 6} de plus</summary>${l.slice(6).map(ligne).join('')}</details>` : ''}</section>`;
+}
+// the default view: one line per open deal, what needs doing first on top
+function crmLignes() {
+  const today = isoToday(), cs = crmData.connexions;
+  const rows = cs.flatMap(c => c.affaires.filter(a => !a.issue).map(a => {
+    const suite = c.aFaire.filter(x => x.affaire?.ref === a.ref);
+    let cle = suite[0]?.date ? new Date(suite[0].date.length > 10 ? suite[0].date : `${suite[0].date}T12:00:00`).toLocaleDateString('sv-SE') : today;
+    if (a.echeance && a.echeance < cle) cle = a.echeance;
+    return { c, a, suite, cle };
+  })).sort((x, y) => x.cle.localeCompare(y.cle) || (!!x.suite.length - !!y.suite.length) || String(y.a.modifie_le).localeCompare(String(x.a.modifie_le)));
+  const closes = cs.flatMap(c => c.affaires.filter(a => a.issue).map(a => ({ c, a }))), gagnees = closes.filter(x => x.a.issue === 'gagne').length;
+  const libres = cs.flatMap(c => c.aFaire.filter(x => !x.affaire).map(x => ({ ...x, cx: c.id })));
+  const ligne = ({ c, a, suite }) => {
+    const n = suite[0], q = n && crmQuand(n), cle = `${c.id}|${a.ref}`, ouvert = crmQuick?.startsWith(`${cle}|`) && crmQuick.slice(cle.length + 1);
+    const connue = c.etapes.some(e => e.id === a.etape);
+    const prochain = n ? `<small${q.retard ? ' class="crm-late"' : ''}>${esc(q.quand)}${suite.length > 1 ? ` · ${suite.length - 1} autre${suite.length > 2 ? 's' : ''}` : ''}</small><span>${esc(n.titre)}</span>`
+      : a.prochaine_etape ? `<small class="crm-late">Pas de date</small><span>${esc(a.prochaine_etape)}</span>` : '<small class="crm-late">Rien de prévu</small>';
+    const forme = ouvert === 'tache' ? `<form class="cx-form crm-quick" data-cx="${esc(c.id)}" data-ref="${esc(a.ref)}" data-quick="taches"><input data-k="q-titre" name="titre" required placeholder="Tâche" aria-label="Tâche pour ${esc(a.titre)}">
+        <div class="cx-act"><select name="type" data-k="q-type" aria-label="Type">${Object.entries(CX_TACHE).map(([k, v]) => `<option value="${k}"${k === 'tache' ? ' selected' : ''}>${v}</option>`).join('')}</select>
+          <label class="lbl" for="crm-q-e">Pour le</label><input type="date" id="crm-q-e" data-k="q-echeance" name="echeance"><span class="sp"></span><button type="button" class="btn ghost" data-form="">Annuler</button><button type="submit" class="btn acc">Ajouter</button></div></form>`
+      : ouvert === 'note' ? `<form class="cx-form crm-quick" data-cx="${esc(c.id)}" data-ref="${esc(a.ref)}" data-quick="notes"><textarea data-k="q-note" name="texte" required placeholder="Note, en Markdown" aria-label="Note sur ${esc(a.titre)}"></textarea>${crmActes('Ajouter')}</form>` : '';
+    return `<div class="crm-row${ouvert ? ' open' : ''}">
+      <a class="crm-r-main crm-link" href="${crmHref(c.id, 'affaire', a.ref)}"><b>${esc(a.titre)}</b><small class="cx-sub">${esc([a.entreprise, crmPlusieurs() && c.court].filter(Boolean).join(' · ') || 'Sans entreprise')}</small></a>
+      <div class="crm-r-next">${prochain}</div>
+      <select class="crm-r-etape" data-cx="${esc(c.id)}" data-ref="${esc(a.ref)}" aria-label="Étape de ${esc(a.titre)}">${connue ? '' : `<option selected>${esc(a.etape ?? 'Sans étape')}</option>`}${c.etapes.map(e => `<option value="${esc(e.id)}"${e.id === a.etape ? ' selected' : ''}${e.clos ? ' data-clos="1"' : ''}>${esc(e.libelle)}</option>`).join('')}</select>
+      <span class="crm-r-mt">${a.montant != null ? `<b>${esc(cxEur(a.montant))}</b>` : ''}${a.echeance ? `<small${a.echeance < today ? ' class="crm-late"' : ''}>${esc(crmEcheance(a))}</small>` : ''}</span>
+      <span class="crm-r-act"><button type="button" class="btn ghost" data-quick="${esc(cle)}|tache"${ouvert === 'tache' ? ' aria-pressed="true"' : ''}>+ Tâche</button><button type="button" class="btn ghost" data-quick="${esc(cle)}|note"${ouvert === 'note' ? ' aria-pressed="true"' : ''}>+ Note</button></span>
+      ${a.detachee ? '<span class="cx-flag">Plus partagée</span>' : ''}</div>${forme}`;
+  };
+  if (!cs.some(c => c.affaires.length)) return `<div class="pane crm-page"><p class="cx-empty">${esc(cs.map(c => c.court).join(', '))} n'a encore partagé aucune affaire.</p></div>`;
+  return `<div class="pane crm-page crm-table">
+    ${rows.length ? `<div class="crm-row crm-head" aria-hidden="true"><span>Affaire</span><span>À faire</span><span>Étape</span><span>Montant</span><span></span></div>${rows.map(ligne).join('')}` : '<p class="cx-empty">Aucune affaire en cours.</p>'}
+    ${libres.length ? `<details class="cx-row crm-more" data-k="crm-libres"><summary>${crmPl(libres.length, 'tâche')} sans affaire</summary><div class="cx-list">${libres.map(x => { const q = crmQuand(x); return `<div class="cx-row"><span class="cx-main"><b>${esc(x.titre)}</b><small class="cx-sub${q.retard ? ' crm-late' : ''}">${esc(q.quand)}</small></span></div>`; }).join('')}</div></details>` : ''}
+    ${closes.length ? `<details class="cx-row crm-more" data-k="crm-closes"><summary>Affaires closes : ${gagnees} gagnée${gagnees > 1 ? 's' : ''}, ${closes.length - gagnees} perdue${closes.length - gagnees > 1 ? 's' : ''}</summary>
+      <div class="cx-list">${closes.map(x => crmLigneAffaire(x.c.id, x.a)).join('')}</div></details>` : ''}</div>`;
 }
 const crmLigneEntreprise = e => `<a class="cx-row crm-link" href="${crmHref(e.cx, 'entreprise', e.ref)}"><span class="cx-main"><b>${esc(e.nom)}</b><small class="cx-sub">${esc([e.secteur, e.ville, crmPlusieurs() && e.court].filter(Boolean).join(' · '))}</small></span>
   <small class="cx-sub crm-num">${esc(e.ouvertes ? `${crmPl(e.ouvertes, 'affaire')} en cours${e.en_jeu ? ` · ${cxEur(e.en_jeu)}` : ''}` : e.affaires ? crmPl(e.affaires, 'affaire close').replace('affaire closes', 'affaires closes') : '')}</small></a>`;
@@ -4161,10 +4235,11 @@ function crmListe(r) {
   } else if (r.onglet === 'contacts') {
     corps = `<div class="pane crm-page"><div class="cx-list">${tag('contacts').map(crmLigneContact).join('') || '<p class="cx-empty">Aucun contact partagé.</p>'}</div></div>`;
   } else {
-    corps = `<div class="crm-aff">${crmAVenir()}<div class="crm-boards">${cs.map(c => `${crmPlusieurs() ? `<h2 class="cx-h3">${esc(c.court)}</h2>` : ''}${crmTableau(c)}`).join('')}</div></div>`;
+    corps = crmVue === 'liste' ? crmLignes() : `<div class="crm-aff${crmData.connexions.some(c => c.aFaire.length) ? '' : ' seul'}">${crmAVenir()}<div class="crm-boards">${cs.map(c => `${crmPlusieurs() ? `<h2 class="cx-h3">${esc(c.court)}</h2>` : ''}${crmTableau(c)}`).join('')}</div></div>`;
   }
   return `<div class="fin-h"><h1 class="ptitle">CRM</h1><span class="sp"></span><span class="lbl">${esc(resume)}</span></div>
     <div class="crm-bar"><nav class="cx-tabs" aria-label="CRM">${tabs.map(([id, lib, href]) => `<a href="${href}"${!q && r.onglet === id ? ' aria-current="page"' : ''}>${lib}</a>`).join('')}</nav>
+      ${!q && r.onglet === 'affaires' ? `<div class="cx-seg" role="group" aria-label="Affichage">${[['liste', 'Liste'], ['etapes', 'Par étape']].map(([v, l]) => `<button type="button" data-vue="${v}"${crmVue === v ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"'}>${l}</button>`).join('')}</div>` : ''}
       <input type="search" id="crm-q" data-k="crm-q" value="${esc(crmQ)}" placeholder="Chercher une affaire, une entreprise, un contact" aria-label="Chercher dans le CRM" autocomplete="off"></div>
     ${crmAlertes()}${corps}`;
 }
@@ -4252,20 +4327,30 @@ $('#crm-body').addEventListener('input', e => {
   if (e.target.closest('#crm-aff')) crmSale();
   if (e.target.id === 'crm-q') { crmQ = e.target.value; renderCrm(); }
 });
+$('#crm-body').addEventListener('change', e => {
+  const s = e.target.closest('select.crm-r-etape');
+  if (!s) return;
+  const o = s.selectedOptions[0];
+  if (demoOn || (o.dataset.clos && !confirm(`Passer cette affaire en « ${o.textContent} » ? ${crmCx(s.dataset.cx)?.court ?? 'Ton partenaire'} verra le changement.`))) { crmDemoBloque(); return renderCrm(); }
+  crmEtape(s.dataset.cx, s.dataset.ref, o.value);
+});
 $('#crm-body').addEventListener('submit', async e => {
   e.preventDefault();
   const f = e.target, r = crmRoute(), btn = f.querySelector('button[type="submit"]'), v = Object.fromEntries(new FormData(f));
-  if (!r?.ref || crmDemoBloque()) return;
-  const aff = `/api/connexions/${encodeURIComponent(r.cx)}/suivi/affaires/${encodeURIComponent(r.ref)}`;
+  const cx = f.dataset.cx ?? r?.cx, ref = f.dataset.ref ?? r?.ref;
+  if (!ref || crmDemoBloque()) return;
+  const aff = `/api/connexions/${encodeURIComponent(cx)}/suivi/affaires/${encodeURIComponent(ref)}`;
   btn.disabled = true;
   try {
     const x = f.id === 'crm-aff' ? await cxSend(aff, Object.fromEntries([...f.elements].filter(c => c.name && c.value !== c.defaultValue).map(c => [c.name, c.value])), 'PATCH')
+      : f.dataset.quick ? await cxSend(`${aff}/${f.dataset.quick}`, v)
       : f.dataset.cr ? await cxSend(`${aff}/rendez-vous/${encodeURIComponent(f.dataset.cr)}`, v)
         : await cxSend(`${aff}/${{ 'crm-note': 'notes', 'crm-contact': 'contacts', 'crm-tache': 'taches' }[f.id]}`, v);
     if (x.error) throw new Error(x.error);
     f.reset();
     crmForm = null;
-    toast(`Enregistré, envoyé à ${crmCx(r.cx)?.court ?? 'ton partenaire'}`);
+    crmQuick = null;
+    toast(`Enregistré, envoyé à ${crmCx(cx)?.court ?? 'ton partenaire'}`);
     await loadCrm(true);
   } catch (err) { toast(err.message, true); btn.disabled = false; }
 });
@@ -4274,8 +4359,20 @@ $('#crm-body').addEventListener('click', async e => {
   if (link) { if (/^https?:\/\//i.test(link.dataset.link)) window.open(link.dataset.link, '_blank', 'noopener'); return; }
   const b = e.target.closest('button');
   if (!b) return;
+  if (b.dataset.vue) {
+    crmVue = b.dataset.vue;
+    try { localStorage.setItem('crm-vue', crmVue); } catch { /* private window */ }
+    return renderCrm();
+  }
+  if (b.dataset.quick) {
+    crmQuick = crmQuick === b.dataset.quick ? null : b.dataset.quick;
+    renderCrm();
+    if (crmQuick) $('#crm-body').querySelector('.crm-quick input, .crm-quick textarea')?.focus();
+    return;
+  }
   if ('form' in b.dataset) {
     crmForm = b.dataset.form || null;
+    crmQuick = null;
     renderCrm();
     if (crmForm) $('#crm-body').querySelector('form:not(#crm-aff) textarea, form:not(#crm-aff) input')?.focus();
     return;
@@ -4323,6 +4420,7 @@ function onCrmHash() {
   if (old) { location.replace(old[2] ? `#crm/${old[1]}/affaire/${old[2]}` : '#crm'); return; }
   if (!crmRoute()) return;
   crmForm = null;
+  crmQuick = null;
   crmFiche = null;
   window.scrollTo(0, 0);
   loadCrm(true);
