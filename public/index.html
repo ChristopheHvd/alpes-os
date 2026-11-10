@@ -3936,6 +3936,8 @@ function cxMessages(c, act, repondre) {
       ${x.sens === 'recu' && x.type !== 'donnee' && !x.repondu && !open(x.id) ? `<button type="button" class="btn${x.type === 'question' ? ' acc' : ''}" data-form="rep:${esc(x.id)}">Répondre</button>` : ''}
     </div>${x.sens === 'recu' && open(x.id) ? rep(x) : ''}`;
   const lu = cx.partage;
+  // a question still waiting never hides among the older ones
+  const haut = fil.filter((x, i) => i < 5 || attente(x)), bas = fil.filter(x => !haut.includes(x));
   return `<div><div class="cx-h3row"><h3 class="cx-h3">Messages</h3><span class="sp"></span>${cxForm === 'message' ? '' : `<button type="button" class="btn" data-form="message">Écrire</button>`}</div>
     ${c.partage && lu?.erreur ? `<p class="cx-note">Espace partagé illisible pour l'instant : ${esc(lu.erreur)}</p>` : ''}
     ${cxForm === 'message' ? `<form class="cx-form" id="cx-message">
@@ -3944,8 +3946,8 @@ function cxMessages(c, act, repondre) {
       <textarea data-k="msg-texte" name="texte" required placeholder="Message en Markdown, liens compris" aria-label="Message"></textarea>
       <div class="cx-act">${chk('msg-chk')}<span class="sp"></span><button type="button" class="btn ghost" data-form="">Annuler</button><button type="submit" class="btn acc">Envoyer à ${esc(p)}</button></div></form>` : ''}
     <div class="cx-list">
-      ${fil.slice(0, 5).map(row).join('') || (cxForm === 'message' ? '' : '<p class="cx-empty">Aucun message.</p>')}
-      ${fil.length > 5 ? `<details class="cx-row" data-k="d-messages"><summary>Plus anciens</summary><div class="cx-list">${fil.slice(5).map(row).join('')}</div></details>` : ''}
+      ${haut.map(row).join('') || (cxForm === 'message' ? '' : '<p class="cx-empty">Aucun message.</p>')}
+      ${bas.length ? `<details class="cx-row" data-k="d-messages"><summary>Plus anciens</summary><div class="cx-list">${bas.map(row).join('')}</div></details>` : ''}
     </div></div>`;
 }
 function cxFiche(c, act, r) {
