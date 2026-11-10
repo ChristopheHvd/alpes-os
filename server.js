@@ -34,6 +34,7 @@ import { makeReview, SYSTEM as REVIEW_SYSTEM } from './lib/review.js';
 import { makeReglages, pick, MODELS, EFFORTS } from './lib/reglages.js';
 import { makePartenaires, evenementFait, deposerEvenement } from './lib/partenaires.js';
 import { makeEchanges } from './lib/partage.js';
+import { askClaude, makeMemoire, makeSujets, reponseAgent, REPONSE_SCHEMA, REPONSE_SYSTEM, SUJETS_SCHEMA, SUJETS_SYSTEM } from './lib/echange.js';
 import { claudeActivity } from './lib/activity.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -99,6 +100,8 @@ const FUNCTIONS = [
   { id: 'linkedin', name: 'Post LinkedIn', model: [cfg.linkedin?.model, 'claude-opus-5'], skill: 'linkedin-post' },
   ...cfg.apps.map(a => ({ id: a.id, name: a.name, model: [a.model, cfg.claude.defaultModel], skill: a.skill?.replace(/^\//, ''), uses: a.skillsUsed ?? [] })),
   { id: 'curateur', name: 'Second cerveau', model: [cfg.claude.defaultModel], skill: 'second-brain-curator' },
+  { id: 'sujets', name: 'Échanges : rangement par sujet', model: ['claude-haiku-5-5'], prompt: SUJETS_SYSTEM },
+  { id: 'reponse-partenaire', name: 'Échanges : réponse par l\'agent', model: [cfg.claude.defaultModel], prompt: REPONSE_SYSTEM },
 ];
 function setting(id) {
   const f = FUNCTIONS.find(x => x.id === id) ?? {};
@@ -944,6 +947,92 @@ app.post('/api/connexions/:id/suivi/affaires/:ref/contacts', (req, res) => suivi
 app.post('/api/connexions/:id/suivi/affaires/:ref/rendez-vous/:rdv', (req, res) => suiviOk(res, () => partenaires.suivi.compteRendu(req.params.id, req.params.ref, req.params.rdv, req.body?.texte)));
 app.post('/api/connexions/:id/suivi/notes/:note/vu', (req, res) => suiviOk(res, () => partenaires.suivi.vu(req.params.id, req.params.note)));
 app.post('/api/connexions/:id/suivi/suppressions/:sid', (req, res) => suiviOk(res, () => partenaires.suivi.repondreSuppression(req.params.id, req.params.sid, !!req.body?.supprimer)));
+// Échanges: the messages with the partner gathered by subject, its missions, and the second brain kept in step
+const sujets = makeSujets({
+  file: path.join(ROOT, 'output', 'sujets.json'),
+  ranger: input => askClaude(cfg.claude.bin, { ...setting('sujets'), system: reglages.prompt('sujets', SUJETS_SYSTEM), schema: SUJETS_SCHEMA }, input),
+});
+const memoire = makeMemoire({ root: cfg.secondBrain, queue: sbQueue, file: path.join(ROOT, 'output', 'echanges-memoire.json') });
+function echange() {
+  const c = partenaires.connexionEchange();
+  if (!c) return null;
+  const act = partenaires.activite(c.id);
+  const messages = act.messages.filter(m => m.type !== 'donnee').map(m => ({ ...m, enReponseA: m.enReponseA?.id ?? null }));
+  return { c, court: partenaires.etat().connexions.find(x => x.id === c.id)?.court ?? 'Partenaire', act, messages };
+}
+// a test instance only files and hands over when asked (ALPES_OS_ECHANGES_AUTO=1): each filing is a real run
+const ECHANGES_AUTO = sbQueue === CURATOR_QUEUE || process.env.ALPES_OS_ECHANGES_AUTO === '1';
+async function echangesPasse() {
+  const e = echange();
+  if (!e) return;
+  await sujets.passe(e.messages);
+  try { memoire.confier(e.messages.map(m => ({ ...m, sujetTitre: sujets.titre(sujets.de(m.id)) })), { partenaire: e.court }); } catch (err) { console.error('echanges', err.message); }
+}
+if (ECHANGES_AUTO) {
+  setTimeout(echangesPasse, 30e3).unref();
+  setInterval(echangesPasse, 2 * 60e3).unref();
+}
+const JOURS = 30;
+app.get('/api/echanges', (req, res) => {
+  const e = echange();
+  if (!e) return res.json({ partenaire: null });
+  const depuis = new Date(Date.now() - JOURS * 864e5).toISOString();
+  const groupes = sujets.grouper(e.messages);
+  const visibles = req.query.tout ? groupes : groupes.filter(g => g.messages.at(-1).quand >= depuis);
+  res.json({
+    partenaire: e.court, connexion: e.c.id, partage: !!partenaires.etat().connexions.find(x => x.id === e.c.id)?.partage,
+    missions: { enCours: e.act.enCours, terminees: e.act.terminees },
+    sujets: visibles.map(g => ({
+      id: g.id, titre: g.titre, messages: g.messages,
+      sansReponse: g.messages.some(m => m.type === 'question' && !m.repondu),
+      note: g.messages.every(m => memoire.note(m.id)),
+    })),
+    caches: groupes.length - visibles.length,
+    rangement: sujets.etat(),
+  });
+});
+// an answer joins its subject: it replies to the partner's last message there, or opens with the subject's title
+async function envoyerDansSujet(sid, texte, partage) {
+  const e = echange();
+  if (!e) throw Object.assign(new Error('aucun partenaire connecté'), { status: 409 });
+  const g = sujets.grouper(e.messages).find(x => x.id === sid);
+  if (!g) throw Object.assign(new Error('sujet inconnu'), { status: 404 });
+  const dernier = g.messages.filter(m => m.sens === 'recu').at(-1);
+  const lu = await partenaires.envoyerMessage(e.c.id, dernier ? { texte, enReponseA: dernier.id, partage } : { type: 'info', sujet: g.titre, texte, partage });
+  const cible = sid.startsWith('brut:') ? sujets.creer(g.titre) : sid;
+  if (sid.startsWith('brut:')) for (const m of g.messages) sujets.affecter(m.id, cible);
+  sujets.affecter(lu.id, cible);
+  return lu;
+}
+const echangeErr = (res, e) => res.status(e.status >= 400 && e.status < 600 ? e.status : 502).json({ error: e.message });
+app.post('/api/echanges/sujets/:sid/messages', async (req, res) => {
+  try { res.json(await envoyerDansSujet(req.params.sid, req.body?.texte, !!req.body?.partage)); } catch (e) { echangeErr(res, e); }
+});
+// Christophe chose that the agent's answer leaves at once, copied to the shared space when there is one
+const agentEnCours = new Set();
+app.post('/api/echanges/sujets/:sid/agent', async (req, res) => {
+  const sid = req.params.sid;
+  if (agentEnCours.has(sid)) return res.status(409).json({ error: 'l\'agent répond déjà' });
+  agentEnCours.add(sid);
+  try {
+    const e = echange();
+    const g = e && sujets.grouper(e.messages).find(x => x.id === sid);
+    if (!g) throw Object.assign(new Error('sujet inconnu'), { status: 404 });
+    const texte = await reponseAgent(input => askClaude(cfg.claude.bin, { ...setting('reponse-partenaire'), system: reglages.prompt('reponse-partenaire', REPONSE_SYSTEM), schema: REPONSE_SCHEMA }, input), g);
+    const partage = !!partenaires.etat().connexions.find(x => x.id === e.c.id)?.partage;
+    res.json(await envoyerDansSujet(sid, texte, partage));
+  } catch (e) { echangeErr(res, e); } finally { agentEnCours.delete(sid); }
+});
+app.post('/api/echanges/messages', async (req, res) => {
+  try {
+    const e = echange();
+    if (!e) throw Object.assign(new Error('aucun partenaire connecté'), { status: 409 });
+    const { type, sujet, texte, partage } = req.body ?? {};
+    const lu = await partenaires.envoyerMessage(e.c.id, { type, sujet, texte, partage: !!partage });
+    sujets.affecter(lu.id, sujets.creer(lu.sujet));
+    res.json(lu);
+  } catch (e) { echangeErr(res, e); }
+});
 app.post('/api/connexions/missions/:id/terminer', async (req, res) => {
   try { res.json(await partenaires.terminer(req.params.id, req.body?.message)); } catch (e) { res.status(e.status ?? 400).json({ error: e.message }); }
 });
