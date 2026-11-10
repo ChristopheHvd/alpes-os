@@ -33,6 +33,7 @@ import { assemble, namesOf, mentions, journalEntries } from './lib/dossier.js';
 import { makeReview, SYSTEM as REVIEW_SYSTEM } from './lib/review.js';
 import { makeReglages, pick, MODELS, EFFORTS } from './lib/reglages.js';
 import { makePartenaires, evenementFait, deposerEvenement } from './lib/partenaires.js';
+import { makeEchanges } from './lib/partage.js';
 import { claudeActivity } from './lib/activity.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -895,13 +896,16 @@ const propositions = makePropositions(path.join(ROOT, 'output', 'propositions.js
 // missions become propositions or delegations depending on the level set per connection;
 // the sales follow-up they share is kept as a copy in output/crm/ (lib/suivi.js).
 // Off until credentials/relais.json exists (scripts/relais-inscription.js).
+// the shared space's echanges/ folder, read through the user's `partage` MCP server
+const echanges = makeEchanges({ dir: path.join(ROOT, 'output'), nouveaux: m => partenaires.surPartage(m) });
 const partenaires = makePartenaires({
   dir: path.join(ROOT, 'output'), credentials: path.join(ROOT, 'credentials', 'relais.json'),
-  propositions, delegations,
+  propositions, delegations, echanges,
   // only the notable facts of the shared sales follow-up reach the curator; the rest lives in output/crm/
   marquant: fait => deposerEvenement(sbQueue, evenementFait(fait)),
 });
 partenaires.demarrer();
+echanges.demarrer();
 const relaisErr = (res, e) => res.status(e.status >= 400 && e.status < 600 ? e.status : 502).json({ error: e.message });
 app.get('/api/connexions', (req, res) => res.json(partenaires.etat()));
 app.post('/api/connexions/invitations', async (req, res) => {
