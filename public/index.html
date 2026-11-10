@@ -3837,6 +3837,7 @@ function cxSel() {
 async function loadCx(force) {
   try { cx = await api('/api/connexions'); } catch (e) { return; }
   renderCxTool();
+  cxNotifier();
   if (!cxRoute()) return;
   const sel = cxSel();
   const url = sel && `/api/connexions/${encodeURIComponent(sel.id)}`;
@@ -3844,6 +3845,40 @@ async function loadCx(force) {
   const sig = JSON.stringify([cx, cxAct, location.hash]);
   if (force || sig !== cxSig) { cxSig = sig; renderCx(); }
 }
+/* A message from a partner: a chime and a toast, plus a dot in the tab title and a
+   system notification when AlpesOS is in the background. The last one told about is
+   remembered, so what arrived while AlpesOS was closed is told at the next opening. */
+function cxNotifier() {
+  let vu = null;
+  try { vu = localStorage.getItem('cx-recu-vu'); } catch (e) { /* private mode */ }
+  const recus = cx.recus ?? [], last = recus.at(-1)?.quand;
+  if (!last) return;
+  const neufs = vu ? recus.filter(m => m.quand > vu) : [];
+  try { localStorage.setItem('cx-recu-vu', last); } catch (e) { /* private mode */ }
+  if (!neufs.length) return;
+  const m = neufs.at(-1), r = cxRoute();
+  if (!document.hidden && r?.id === m.connexion && neufs.length === 1) return;
+  // in a demo, no subject nor name on screen
+  const text = demoOn ? 'Nouveau message reçu'
+    : neufs.length > 1 ? `${neufs.length} messages reçus` : `${m.de} : ${m.sujet}`;
+  const go = () => { location.hash = `#connexions/${m.connexion}`; };
+  chatChime();
+  toast(text, false, go);
+  if (!document.hidden) return;
+  document.title = '● ' + CHAT_TITLE;
+  try {
+    if (Notification.permission === 'granted') {
+      const n = new Notification('AlpesOS', { body: text, tag: 'alpes-os-message' });
+      n.onclick = () => { window.focus(); go(); n.close(); };
+    }
+  } catch (e) { /* notifications unavailable */ }
+}
+// asking needs a gesture: the first click, once a partner can write
+addEventListener('pointerdown', function ask() {
+  if (!cx?.actif) return;
+  removeEventListener('pointerdown', ask);
+  try { if (Notification.permission === 'default') Notification.requestPermission(); } catch (e) { /* unsupported */ }
+});
 function renderCxTool() {
   const el = $('#cx-tool');
   if (!cx.actif) { el.innerHTML = '<span class="lbl">Relais non configuré.</span>'; return; }
