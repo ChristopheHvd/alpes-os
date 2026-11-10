@@ -329,6 +329,16 @@ app.get('/api/finance', (req, res) => {
   try { res.json({ notes: listFinance(cfg.secondBrain), clients: listClients(cfg.secondBrain).map(c => ({ slug: c.slug, title: c.title })), projects: listProjects(cfg.secondBrain, { all: true }).map(p => ({ slug: p.slug, client: p.client })) }); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
+// A line for a client that may have no finance note yet: one is created for it.
+app.post('/api/finance/echeances', (req, res) => {
+  try {
+    const { client, libelle } = req.body ?? {};
+    const c = listClients(cfg.secondBrain).find(x => x.slug === client);
+    if (!c) throw new Error(`client inconnu : ${client}`);
+    const slug = createFinanceNote(cfg.secondBrain, { client: c.slug, clientTitle: c.title, libelle });
+    res.json(addEcheance(cfg.secondBrain, slug, req.body));
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
 app.post('/api/finance/:slug/echeances', (req, res) => {
   try { res.json(addEcheance(cfg.secondBrain, req.params.slug, req.body ?? {})); }
   catch (e) { res.status(400).json({ error: e.message }); }

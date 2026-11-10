@@ -3161,6 +3161,7 @@ const CHAT_TOOLS = {
   creer_evenement: ['Prépare un événement', a => `Proposition : événement « ${esc(a.titre)} »`],
   lancer_micro_app: ['Prépare un lancement', a => `Proposition : micro-app ${esc(a.app)}`],
   maj_echeance: ['Prépare la mise à jour des finances', a => `Proposition : échéances ${esc(a.ref || a.note)}`],
+  ajouter_echeance: ['Prépare un ajout aux finances', a => `Proposition : ${esc(a.libelle)}`],
   lister_partenaires: ['Regarde les partenaires', () => 'Missions et messages des partenaires', 'les partenaires'],
   confier_mission: ['Prépare une mission', a => `Proposition : mission « ${esc(a.titre)} »`],
   envoyer_message: ['Prépare un message', a => `Proposition : message « ${esc(a.sujet || 'réponse')} »`],
