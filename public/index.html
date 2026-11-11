@@ -1257,6 +1257,33 @@ a.pf-card.res-cours p { color: var(--accent); }
 .pr .seg button { border: 0; background: none; min-height: 28px; padding: 0 12px; border-radius: 16px; color: var(--ink-3); font: 500 12.5px/1 var(--font); cursor: pointer; }
 .pr .seg button.on { background: var(--sunken); color: var(--ink); font-weight: 600; }
 .pr .small { font-size: 12.5px; }
+.pr-h3 { margin: 0 0 8px; font: 600 15px/1.3 var(--font); }
+.pr-calls { display: flex; flex-direction: column; margin-bottom: 18px; }
+.pr-call { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--line-soft); font-size: 13.5px; }
+.pr-call:last-child { border-bottom: 0; }
+.pr-call > div { flex: 1 1 320px; min-width: 0; }
+.pr-call small { display: block; color: var(--ink-3); font-size: 12.5px; }
+.pr-call .pr-say { color: var(--ink-2); font-style: italic; margin-top: 3px; }
+.pr-tel { font: 500 13px var(--mono); white-space: nowrap; }
+.pr-sel, .pr-in { min-height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); color: var(--ink); font: 400 13px var(--font); }
+.pr-in { flex: 1; min-width: 0; }
+.pr-inline { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-3); }
+.pr-inline input { min-height: 28px; padding: 0 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
+.pr-camp { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 900px) { .pr-camp { grid-template-columns: 1fr; } }
+.pr-steps { padding: 6px; display: flex; flex-direction: column; }
+.pr-step { display: grid; grid-template-columns: 26px 1fr; gap: 10px; padding: 9px 10px; border: 0; border-radius: 7px; background: none; text-align: left; cursor: pointer; color: var(--ink); font: inherit; }
+.pr-step:hover { background: var(--bg); }
+.pr-step[aria-current="true"] { background: var(--sunken); }
+.pr-step b { display: block; font-size: 13.5px; }
+.pr-step small { color: var(--ink-3); font-size: 12px; }
+.pr-dot { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; font-size: 12px; font-weight: 600; color: var(--ink-2); background: var(--surface); }
+.pr-step[aria-current="true"] .pr-dot { border-color: var(--accent); color: var(--accent); }
+.pr-editor { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.pr-edit select { min-height: 36px; }
+.pr-pv { border: 1px solid var(--line-soft); border-radius: 8px; background: var(--bg); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; }
+.pr-pv-obj { font-size: 13px; }
+.pr-bubble { white-space: pre-wrap; background: var(--surface); border: 1px solid var(--line-soft); border-radius: 8px; padding: 10px 12px; font-size: 13.5px; line-height: 1.55; max-width: 70ch; }
 .pr-clip { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 46ch; }
 
 </style>
@@ -3279,6 +3306,9 @@ const CHAT_TOOLS = {
   lire_prospection: ['Regarde la prospection', a => a.cible ? `Cible ${esc(a.cible)}` : 'Cibles de prospection', 'la prospection'],
   creer_cible: ['Prépare une cible', a => `Proposition : cible « ${esc(a.phrase)} »`],
   chercher_coordonnees: ['Prépare une recherche de coordonnées', a => `Proposition : coordonnées ${esc(a.cible)}`],
+  preparer_campagne: ['Prépare une campagne', a => `Proposition : campagne ${esc(a.cible)}`],
+  reecrire_message: ['Prépare une réécriture', a => `Proposition : message ${esc(a.etape)}`],
+  lancer_campagne: ['Prépare un lancement', a => `Proposition : lancer ${esc(a.cible)}`],
   modifier_cible: ['Prépare un changement de cible', a => `Proposition : cible ${esc(a.cible)}`],
   lister_clients: ['Regarde les clients', () => 'Liste des clients', 'les clients'],
   lire_finances: ['Regarde les finances', () => 'Lecture du suivi financier', 'les finances'],
@@ -4882,8 +4912,8 @@ addEventListener('hashchange', onRgHash);
 // #prospection, #prospection/cible/<slug>. Data lives in output/prospection (lib/prospection.js).
 let prData = null, prCible = null, prSig = '', prNew = null, prEdit = false, prFiltre = 'retenue', prOpen = null, prPoll = null;
 const prRoute = () => {
-  const m = location.hash.match(/^#prospection(?:\/(cible)\/([\w-]+)|\/(campagnes|reponses))?$/);
-  return m && { vue: m[1] ? 'cible' : m[3] ?? 'cibles', slug: m[2] ?? null };
+  const m = location.hash.match(/^#prospection(?:\/(cible|campagne)\/([\w-]+)|\/(campagnes|reponses))?$/);
+  return m && { vue: m[1] ?? m[3] ?? 'cibles', slug: m[2] ?? null };
 };
 const prSend = (method, url, body) => fetch(url, { method, headers: { 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })
   .then(r => r.json()).catch(e => ({ error: e.message }));
@@ -4918,6 +4948,8 @@ async function loadPr(force) {
   else {
     liste = await api('/api/prospection').catch(() => null);
     if (r.slug) cible = await api(`/api/prospection/cibles/${encodeURIComponent(r.slug)}`).then(x => (x.error ? null : x)).catch(() => null);
+    if (r.vue === 'campagnes') prAppels = await api('/api/prospection/appels').then(x => (Array.isArray(x) ? x : [])).catch(() => []);
+    if (r.vue === 'campagne' && !prWx) api('/api/prospection/waalaxy').then(x => { prWx = x.error ? { actif: false } : x; renderPr(); }).catch(() => { prWx = { actif: false }; });
   }
   if (location.hash !== hash || demo !== demoOn) return;
   prData = liste; prCible = cible;
@@ -4931,11 +4963,11 @@ async function loadPr(force) {
 function renderPr() {
   const el = $('#pr-body'), r = prRoute();
   if (!r) return;
-  cxKeep(el, () => { el.innerHTML = prHead(r) + (r.vue === 'cible' ? prCiblePage() : r.vue === 'cibles' ? prCibles() : prPlus(r.vue)); });
+  cxKeep(el, () => { el.innerHTML = prHead(r) + (r.vue === 'cible' ? prCiblePage() : r.vue === 'cibles' ? prCibles() : r.vue === 'campagnes' ? prCampagnes() : r.vue === 'campagne' ? prCampagnePage() : prPlus(r.vue)); });
 }
 function prHead(r) {
   const tabs = [['cibles', 'Cibles', '#prospection'], ['campagnes', 'Campagnes', '#prospection/campagnes'], ['reponses', 'Réponses', '#prospection/reponses']];
-  const on = r.vue === 'cible' ? 'cibles' : r.vue;
+  const on = r.vue === 'cible' ? 'cibles' : r.vue === 'campagne' ? 'campagnes' : r.vue;
   return `<div class="pr-h"><h1 class="ptitle">Prospection</h1><nav class="cx-tabs" aria-label="Prospection">${tabs.map(([id, lib, href]) => `<a href="${href}"${on === id ? ' aria-current="page"' : ''}>${lib}</a>`).join('')}</nav></div>`;
 }
 const prPlus = () => '<div class="pane pr-empty">Arrive avec la suite de la prospection.</div>';
@@ -5020,6 +5052,7 @@ function prCiblePage() {
   }).join('');
   return `<a class="more" href="#prospection">← Cibles</a>
     <div class="pr-h" style="margin:8px 0 12px"><h2 style="margin:0;font:600 24px/1.2 var(--display)">${esc(c.titre)}</h2><span class="sp"></span>
+      <a class="btn" href="#prospection/campagne/${esc(c.slug)}">${c.campagne ? 'Voir la campagne' : 'Préparer la campagne'}</a>
       <button class="btn" data-pr="editer">${prEdit ? 'Fermer' : 'Modifier'}</button></div>
     ${prEdit ? prEditForm(c) : `<dl class="pane pr-brief">
       <div><dt>Pourquoi eux</dt><dd>${esc(c.pourquoi || '–')}</dd></div>
@@ -5072,6 +5105,139 @@ function prEditForm(c) {
     <div class="pr-row"><button class="btn pri">Enregistrer</button><span class="pr-note" style="margin:0">Des critères changés relancent la recherche.</span><span class="sp"></span><button type="button" class="lnk" data-pr="archiver">Archiver la cible</button></div></form>`;
 }
 
+
+/* prospection: campaigns */
+let prStep = null, prPv = 0, prWx = null, prBusy = '', prAppels = null;
+const PR_CANAL = { linkedin: 'LinkedIn', email: 'E-mail', appel: 'Appel' };
+const prOkMail = k => !!k?.email && (k.email_type !== 'deduit' || k.email_verifie === true);
+function prVars(e, c) {
+  const d = e.dirigeants?.[0], prenom = d?.prenom ?? '', nom = d?.nom ?? '';
+  const perso = ['nominatif', 'deduit'].includes(e.contact?.email_type);
+  return { 'prénom': prenom, prenom, nom, entreprise: e.enseigne || e.nom, ville: e.ville ?? '', moment: e.signaux?.[0]?.quoi?.toLowerCase() ?? '', lien: c.lien ?? '',
+    bonjour: perso && prenom ? `Bonjour ${prenom},` : prenom ? `Bonjour, pourriez-vous transmettre ce message à ${prenom} ${nom} ?` : 'Bonjour,' };
+}
+const prFill = (t, v) => String(t ?? '').replace(/\{(prénom|prenom|nom|entreprise|ville|bonjour|moment|lien)\}/g, (m, k) => v[k] ?? '');
+const prParticipants = c => { const used = new Set(c.campagne.etapes.map(s => s.canal)); return c.entreprises.filter(e => e.etat === 'retenue' && ((used.has('email') && prOkMail(e.contact)) || (used.has('linkedin') && e.contact?.linkedin) || (used.has('appel') && e.contact?.telephone))); };
+const prCampEtat = k => ({ brouillon: '<span class="pr-pill">Brouillon</span>', en_cours: '<span class="pr-pill run">En cours</span>', en_pause: '<span class="pr-pill sort">En pause</span>' }[k?.etat] ?? '');
+
+function prCampagnes() {
+  const l = (prData?.cibles ?? []).filter(c => c.statut !== 'archivee');
+  const avec = l.filter(c => c.campagne), sans = l.filter(c => !c.campagne && c.retenues);
+  const appels = prAppels ?? [];
+  const call = a => `<div class="pr-call"><div><b>${esc(a.dirigeant ? `${a.dirigeant.prenom} ${a.dirigeant.nom}` : a.nom)}</b> · ${esc(a.nom)}, ${esc(a.ville)} <span class="muted">· ${esc(a.cible_titre)}</span>
+      ${a.signaux[0] ? `<small>${esc(a.signaux[0].quoi)}</small>` : ''}<small class="pr-say">${esc(a.texte)}</small></div>
+      <span class="pr-tel">${esc(a.telephone ?? '')}</span>
+      <span class="pr-acts"><button class="btn" data-pr-appel="joint" data-c="${esc(a.cible)}" data-s="${a.siren}" data-e="${a.etape}">Joint</button><button class="lnk" data-pr-appel="pas_joint" data-c="${esc(a.cible)}" data-s="${a.siren}" data-e="${a.etape}">Pas joint</button><button class="lnk" data-pr-appel="reporter" data-c="${esc(a.cible)}" data-s="${a.siren}" data-e="${a.etape}">Dans 2 jours</button></span></div>`;
+  return `${appels.length ? `<h3 class="pr-h3">Appels du jour</h3><div class="pane pr-calls">${appels.map(call).join('')}</div>` : ''}
+    ${avec.length ? `<div class="pane pr-wrap"><table class="pr-tbl"><thead><tr><th>Campagne</th><th>État</th><th class="r">Prospects</th><th class="r">E-mails envoyés</th><th class="r">Dans Waalaxy</th><th class="r">Réponses</th><th class="r">RDV</th></tr></thead><tbody>
+      ${avec.map(c => `<tr class="go" data-href="#prospection/campagne/${esc(c.slug)}"><td><b>${esc(c.titre)}</b><small>${c.campagne.etapes} étapes</small></td><td>${prCampEtat(c.campagne)}</td>
+        <td class="r">${c.campagne.prospects}</td><td class="r">${c.campagne.emails}</td><td class="r">${c.campagne.waalaxy}</td><td class="r">${c.campagne.repondu}</td><td class="r">${c.campagne.rdv}</td></tr>`).join('')}</tbody></table></div>`
+      : '<div class="pane pr-empty">Aucune campagne.</div>'}
+    ${sans.length ? `<form class="pr-row" data-pr-form="campagne" style="margin-top:14px"><select name="cible" data-k="pr-camp-cible" class="pr-sel">${sans.map(c => `<option value="${esc(c.slug)}">${esc(c.titre)} (${c.retenues} retenues)</option>`).join('')}</select>
+      <button class="btn pri"${prBusy === 'campagne' ? ' disabled' : ''}>${prBusy === 'campagne' ? 'Écriture des messages…' : 'Préparer une campagne'}</button></form>` : ''}`;
+}
+
+function prCampagnePage() {
+  const c = prCible;
+  if (!c) return '<div class="pane pr-empty">Campagne introuvable.</div>';
+  if (!c.campagne) return `<a class="more" href="#prospection/campagnes">← Campagnes</a><div class="pane pr-empty">Cette cible n'a pas encore de campagne. <button class="btn pri" data-pr="ecrire"${prBusy ? ' disabled' : ''}>${prBusy === 'ecrire' ? 'Écriture des messages…' : 'Préparer la campagne'}</button></div>`;
+  const k = c.campagne, steps = k.etapes;
+  if (!steps.some(s => s.id === prStep)) prStep = steps.find(s => s.canal === 'email')?.id ?? steps[0].id;
+  const s = steps.find(x => x.id === prStep);
+  const parts = prParticipants(c), nouveaux = parts.filter(e => !e.prospect?.depart);
+  const nMail = parts.filter(e => prOkMail(e.contact)).length, nLi = parts.filter(e => e.contact?.linkedin).length, nTel = parts.filter(e => e.contact?.telephone).length;
+  const firstMail = steps.find(x => x.canal === 'email');
+  const moments = parts.filter(e => e.signaux?.length && prOkMail(e.contact));
+  const persoFaits = moments.filter(e => firstMail && e.prospect?.perso?.[firstMail.id]).length;
+  const pv = parts.length ? parts[prPv % parts.length] : null;
+  const perso = pv && pv.prospect?.perso?.[s.id];
+  const pvTxt = pv ? prFill(perso?.texte ?? s.texte, prVars(pv, c)) + (s.canal === 'email' && !/stop/i.test(perso?.texte ?? s.texte) ? '\n\nPour ne plus recevoir mes messages, répondez « stop ».' : '') : '';
+  const pvObj = pv && s.canal === 'email' ? prFill(perso?.objet ?? s.objet, prVars(pv, c)) : '';
+  const enSeq = c.entreprises.filter(e => e.prospect?.depart);
+  const wx = prWx, w = k.waalaxy;
+  const wxBox = !wx ? '<span class="muted">Lecture de Waalaxy…</span>' : !wx.actif ? '<span class="muted">Clé Waalaxy absente : dépose-la dans credentials/waalaxy.json.</span>'
+    : `<form class="pr-row" data-pr-form="waalaxy"><label class="pr-inline">Liste<select name="liste" data-k="pr-wx-l" class="pr-sel"><option value="">Choisir</option>${wx.listes.filter(l => !l.ne_pas_contacter).map(l => `<option value="${esc(l.id)}"${w?.liste_id === l.id ? ' selected' : ''}>${esc(l.nom)} (${l.total})</option>`).join('')}</select></label>
+      <label class="pr-inline">Campagne<select name="campagne" data-k="pr-wx-c" class="pr-sel"><option value="">Aucune (liste seule)</option>${wx.campagnes.map(x => `<option value="${esc(x.id)}"${w?.campagne_id === x.id ? ' selected' : ''}>${esc(x.nom)}</option>`).join('')}</select></label>
+      <button class="btn">Enregistrer</button></form>`;
+  return `<a class="more" href="#prospection/campagnes">← Campagnes</a>
+    <div class="pr-h" style="margin:8px 0 6px"><h2 style="margin:0;font:600 24px/1.2 var(--display)">${esc(c.titre)}</h2>${prCampEtat(k)}<span class="sp"></span>
+      <a class="btn" href="#prospection/cible/${esc(c.slug)}">Voir la cible</a>
+      ${k.etat === 'en_cours' ? '<button class="btn" data-pr="pause">Mettre en pause</button>' : k.etat === 'en_pause' ? '<button class="btn" data-pr="reprendre">Reprendre</button>' : ''}
+      ${k.etat === 'brouillon' || nouveaux.length ? `<button class="btn pri" data-pr="lancer"${prBusy ? ' disabled' : ''}>${k.etat === 'brouillon' ? `Lancer (${nouveaux.length} prospects)` : `Ajouter les ${nouveaux.length} nouveaux`}</button>` : ''}</div>
+    <p class="pr-note" style="margin:0 0 14px">${parts.length} prospects : ${nMail} par e-mail, ${nLi} par LinkedIn, ${nTel} au téléphone · <label class="pr-inline">départs par jour <input type="number" min="1" max="50" value="${k.par_jour}" data-k="pr-pj" data-pr-pj style="width:56px"></label>
+      ${k.etat === 'brouillon' ? '· les e-mails partent de ta boîte Infomaniak, au plafond du jour' : ''}</p>
+    ${prBusy === 'lancer-confirm' ? `<div class="cx-alert" style="margin-bottom:14px"><span>${nouveaux.length} prospects entrent dans la séquence, ${k.par_jour} par jour ouvré à partir d'aujourd'hui. ${nouveaux.filter(e => prOkMail(e.contact)).length} recevront des e-mails depuis ta boîte${w?.liste_id ? `, ${nouveaux.filter(e => e.contact?.linkedin).length} profils partent dans Waalaxy` : ''}. Lancer ?</span><button class="btn pri" data-pr="lancer-go">Oui</button><button class="btn ghost" data-pr="lancer-non">Annuler</button></div>` : ''}
+    <div class="pr-camp">
+      <div class="pane pr-steps">
+        ${steps.map((x, i) => `<button class="pr-step" data-pr-step="${x.id}" aria-current="${x.id === prStep}"><span class="pr-dot">${i + 1}</span><span><b>${esc(x.titre)}</b><small>${PR_CANAL[x.canal]} · jour ${x.delai}</small></span></button>`).join('')}
+        <button class="lnk" data-pr="ajouter-etape" style="margin:6px 10px">+ Ajouter une étape</button>
+        <p class="pr-note" style="margin:6px 10px 10px">Une réponse arrête la séquence. Une étape dont le prospect n'a pas le canal est sautée.</p>
+      </div>
+      <div class="pane pr-editor">
+        <form data-pr-form="etape" class="pr-edit" style="margin:0;padding:0">
+          <div class="pr-grid">
+            <label>Étape<input name="titre" data-k="pr-st-t-${s.id}" value="${esc(s.titre)}"></label>
+            <label>Canal<select name="canal" data-k="pr-st-c-${s.id}" class="pr-sel">${Object.entries(PR_CANAL).map(([v, l]) => `<option value="${v}"${s.canal === v ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+            <label>Jour (après le départ)<input name="delai" type="number" min="0" max="90" data-k="pr-st-d-${s.id}" value="${s.delai}"></label>
+          </div>
+          ${s.canal === 'email' ? `<label>Objet<input name="objet" data-k="pr-st-o-${s.id}" value="${esc(s.objet)}"></label>` : ''}
+          <label>${s.canal === 'appel' ? 'Ce que tu dis en premier' : s.canal === 'linkedin' ? 'Message (à recopier dans la séquence Waalaxy ; vide pour une invitation sans note)' : 'Message'}<textarea name="texte" data-k="pr-st-x-${s.id}" rows="9">${esc(s.texte)}</textarea></label>
+          <p class="pr-note" style="margin:0">Variables : {bonjour} {prénom} {nom} {entreprise} {ville} {moment} {lien}${s.canal === 'email' ? ' · la ligne de désinscription est ajoutée seule' : ''}</p>
+          <div class="pr-row"><button class="btn pri">Enregistrer l'étape</button>${s.canal === 'linkedin' && s.texte ? '<button type="button" class="btn" data-pr="copier">Copier</button>' : ''}<span class="sp"></span>${steps.length > 1 ? '<button type="button" class="lnk" data-pr="supprimer-etape">Retirer l\'étape</button>' : ''}</div>
+        </form>
+        ${pv ? `<div class="pr-pv"><div class="pr-row"><span class="muted">${esc(pv.enseigne || pv.nom)}${perso ? ' · message personnel' : ''}${s.canal === 'email' ? ` · ${esc(pv.contact?.email ?? 'pas d\'e-mail')}` : ''}</span><span class="sp"></span><button class="lnk" data-pr="pv-prev">Précédent</button><button class="lnk" data-pr="pv-next">Suivant</button></div>
+          ${pvObj ? `<b class="pr-pv-obj">${esc(pvObj)}</b>` : ''}<div class="pr-bubble">${esc(pvTxt || '(invitation sans note)')}</div></div>` : ''}
+        <form class="pr-row" data-pr-form="reecrire"><input name="consigne" data-k="pr-rw" class="pr-in" placeholder="Plus court, parler des relances de factures, rappeler l'e-mail…"><button class="btn"${prBusy === 'reecrire' ? ' disabled' : ''}>${prBusy === 'reecrire' ? 'Réécriture…' : 'Réécrire cette étape'}</button></form>
+        <form class="pr-row" data-pr-form="sequence"><input name="consigne" data-k="pr-seq" class="pr-in" placeholder="Consigne pour réécrire toute la séquence (facultatif)"><button class="btn"${prBusy === 'ecrire' ? ' disabled' : ''}>${prBusy === 'ecrire' ? 'Écriture…' : 'Réécrire toute la séquence'}</button></form>
+      </div>
+    </div>
+    ${firstMail && moments.length ? `<div class="cx-alert" style="margin-top:14px"><span>${moments.length} prospects ont un moment d'achat : ${persoFaits ? `${persoFaits} ont leur premier e-mail personnel` : 'leur premier e-mail peut partir de ce moment'}.</span>${persoFaits < moments.length ? `<button class="btn" data-pr="personnaliser"${prBusy ? ' disabled' : ''}>${prBusy === 'personnaliser' ? 'Écriture…' : `Écrire les ${moments.length - persoFaits} messages personnels`}</button>` : ''}</div>` : ''}
+    <div class="pane" style="margin-top:14px"><div class="pr-bar"><b style="font-size:13px">Waalaxy</b><span class="sp"></span>${wxBox}</div>
+      ${enSeq.length ? `<div class="pr-wrap"><table class="pr-tbl"><thead><tr><th>Prospect</th><th>Départ</th><th>Dernière action</th><th>Où en est-il</th></tr></thead><tbody>${enSeq.sort((a, b) => (b.prospect.faits?.at(-1)?.at ?? '').localeCompare(a.prospect.faits?.at(-1)?.at ?? '')).slice(0, 80).map(e => {
+        const f = e.prospect.faits?.at(-1);
+        return `<tr><td><b>${esc(e.enseigne || e.nom)}</b><small>${esc(e.ville)}</small></td><td>${prDate(e.prospect.depart)}</td>
+          <td>${f ? `${esc(PR_CANAL[f.canal] ?? f.canal)} : ${esc({ envoye: 'envoyé', rebond: 'adresse en erreur', joint: 'joint', pas_joint: 'pas joint' }[f.status] ?? f.status)}<small>${prDate(f.at)}</small>` : '<span class="muted">rien encore</span>'}${e.prospect.waalaxy ? `<small>Waalaxy : ${e.prospect.waalaxy.ok ? 'ajouté' : esc(e.prospect.waalaxy.code)}</small>` : ''}</td>
+          <td>${esc({ en_sequence: 'en séquence', repondu: 'a répondu', termine: 'séquence finie', exclu: 'exclu' }[e.prospect.statut] ?? e.prospect.statut ?? '')}</td></tr>`;
+      }).join('')}</tbody></table></div>` : ''}
+    </div>`;
+}
+
+
+const prCampUrl = () => `/api/prospection/cibles/${encodeURIComponent(prCible.slug)}/campagne`;
+async function prLong(tag, fn) { prBusy = tag; renderPr(); try { const r = await fn(); if (r?.error) toast(r.error, true); return r; } finally { prBusy = ''; loadPr(true); } }
+async function prSaveSteps(steps) { const r = await prSend('PATCH', prCampUrl(), { etapes: steps }); if (r.error) toast(r.error, true); return r; }
+async function prCampAction(what, b) {
+  const local = ['pv-prev', 'pv-next', 'lancer', 'lancer-non', 'copier'];
+  if (demoOn && !local.includes(what) && ['ecrire', 'lancer-go', 'pause', 'reprendre', 'ajouter-etape', 'supprimer-etape', 'personnaliser'].includes(what)) { toast('Mode démo : rien n\'est enregistré'); return true; }
+  const k = prCible?.campagne;
+  switch (what) {
+    case 'pv-prev': prPv = Math.max(0, prPv - 1); renderPr(); return true;
+    case 'pv-next': prPv++; renderPr(); return true;
+    case 'lancer': prBusy = 'lancer-confirm'; renderPr(); return true;
+    case 'lancer-non': prBusy = ''; renderPr(); return true;
+    case 'lancer-go': {
+      const r = await prLong('lancer', () => prSend('POST', `${prCampUrl()}/lancer`));
+      if (r && !r.error) toast(`${r.ajoutes} prospects dans la séquence${r.waalaxy?.envoyes ? `, ${r.waalaxy.envoyes} dans Waalaxy` : ''}${r.waalaxy?.erreur ? ` (Waalaxy : ${r.waalaxy.erreur})` : ''}`);
+      return true;
+    }
+    case 'pause': case 'reprendre': { const r = await prSend('POST', `${prCampUrl()}/pause`, { on: what === 'pause' }); if (r.error) toast(r.error, true); loadPr(true); return true; }
+    case 'ecrire': { await prLong('ecrire', () => prSend('POST', prCampUrl(), {})); return true; }
+    case 'personnaliser': { const r = await prLong('personnaliser', () => prSend('POST', `${prCampUrl()}/personnaliser`)); if (r && !r.error) toast(`${r.personnalises} messages personnels écrits`); return true; }
+    case 'ajouter-etape': {
+      const last = k.etapes.at(-1);
+      const steps = [...k.etapes, { canal: 'email', titre: 'Nouvelle étape', delai: (last?.delai ?? 0) + 5, objet: '', texte: '' }];
+      const r = await prSaveSteps(steps); if (!r.error) { prStep = r.campagne?.etapes?.at(-1)?.id ?? null; loadPr(true); }
+      return true;
+    }
+    case 'supprimer-etape': { const r = await prSaveSteps(k.etapes.filter(x => x.id !== prStep)); if (!r.error) { prStep = null; loadPr(true); } return true; }
+    case 'copier': {
+      const t = k.etapes.find(x => x.id === prStep)?.texte ?? '';
+      try { await navigator.clipboard.writeText(t); toast('Copié : colle-le dans la séquence Waalaxy'); } catch { toast('Copie impossible', true); }
+      return true;
+    }
+  }
+  return false;
+}
 const prSplit = v => String(v ?? '').split(/[\s,;]+/).map(x => x.trim()).filter(Boolean);
 $('#pr-body').addEventListener('click', async e => {
   const go = e.target.closest('tr.go[data-href]');
@@ -5086,10 +5252,22 @@ $('#pr-body').addEventListener('click', async e => {
     if (r.error) return toast(r.error, true);
     return loadPr(true);
   }
-  if (e.target.closest('a, button, input, textarea, label')) {
+  const st = e.target.closest('[data-pr-step]');
+  if (st) { prStep = st.dataset.prStep; prPv = 0; renderPr(); return; }
+  const ap = e.target.closest('[data-pr-appel]');
+  if (ap) {
+    if (demoOn) return toast('Mode démo : rien n\'est enregistré');
+    const issue = ap.dataset.prAppel;
+    const note = issue === 'joint' ? prompt('Ce qu\'il a dit (facultatif)') ?? '' : '';
+    const r = await prSend('POST', '/api/prospection/appels', { cible: ap.dataset.c, siren: ap.dataset.s, etape: ap.dataset.e, issue, note });
+    if (r.error) return toast(r.error, true);
+    toast(issue === 'reporter' ? 'Appel reporté de 2 jours' : 'Appel noté'); return loadPr(true);
+  }
+  if (e.target.closest('a, button, input, textarea, label, select')) {
     const b = e.target.closest('[data-pr]');
     if (!b) return;
     const what = b.dataset.pr;
+    if (await prCampAction(what, b)) return;
     if (what === 'nouvelle') { prNew = { etape: 'phrase' }; renderPr(); $('#pr-body textarea')?.focus(); }
     else if (what === 'annuler') { prNew = null; renderPr(); }
     else if (what === 'editer') { prEdit = !prEdit; renderPr(); }
@@ -5116,6 +5294,29 @@ $('#pr-body').addEventListener('submit', async e => {
   e.preventDefault();
   const form = e.target, kind = form.dataset.prForm, fd = Object.fromEntries(new FormData(form));
   if (demoOn) return toast('Mode démo : rien n\'est enregistré');
+  if (kind === 'campagne') {
+    const slug = fd.cible;
+    prBusy = 'campagne'; renderPr();
+    const r = await prSend('POST', `/api/prospection/cibles/${encodeURIComponent(slug)}/campagne`, {});
+    prBusy = '';
+    if (r.error) { renderPr(); return toast(r.error, true); }
+    location.hash = `#prospection/campagne/${slug}`; return;
+  }
+  if (kind === 'waalaxy') {
+    const l = prWx.listes.find(x => x.id === fd.liste), cpg = prWx.campagnes.find(x => x.id === fd.campagne);
+    const r = await prSend('PATCH', prCampUrl(), { waalaxy: l ? { liste_id: l.id, liste_nom: l.nom, campagne_id: cpg?.id ?? '', campagne_nom: cpg?.nom ?? '' } : null });
+    if (r.error) return toast(r.error, true);
+    toast('Waalaxy enregistré'); return loadPr(true);
+  }
+  if (kind === 'etape') {
+    const steps = prCible.campagne.etapes.map(x => (x.id === prStep ? { ...x, titre: fd.titre, canal: fd.canal, delai: Number(fd.delai), objet: fd.objet ?? '', texte: fd.texte } : x));
+    const r = await prSaveSteps(steps); if (!r.error) { toast('Étape enregistrée'); loadPr(true); } return;
+  }
+  if (kind === 'reecrire') {
+    await prLong('reecrire', () => prSend('POST', `${prCampUrl()}/reecrire`, { etape: prStep, consigne: fd.consigne }));
+    form.reset(); return;
+  }
+  if (kind === 'sequence') { await prLong('ecrire', () => prSend('POST', prCampUrl(), { consigne: fd.consigne })); form.reset(); return; }
   if (kind === 'interpreter') {
     prNew = { etape: 'attente', phrase: fd.phrase }; renderPr();
     const r = await prSend('POST', '/api/prospection/interpreter', { phrase: fd.phrase });
@@ -5136,6 +5337,11 @@ $('#pr-body').addEventListener('submit', async e => {
     if (changed) await prSend('POST', `/api/prospection/cibles/${encodeURIComponent(prCible.slug)}/recherche`);
     prEdit = false; toast(changed ? 'Cible modifiée, recherche relancée' : 'Cible modifiée'); loadPr(true);
   }
+});
+$('#pr-body').addEventListener('change', async e => {
+  if (!e.target.matches('[data-pr-pj]') || demoOn) return;
+  const r = await prSend('PATCH', prCampUrl(), { par_jour: Number(e.target.value) });
+  if (r.error) toast(r.error, true); else loadPr(true);
 });
 function onPrHash() { if (prRoute()) { prOpen = null; loadPr(true); } }
 addEventListener('hashchange', onPrHash);
