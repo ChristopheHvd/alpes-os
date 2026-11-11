@@ -10,9 +10,11 @@
     "AGENTS.md"
   ],
   "todoFile": "brain/journal/todo.md",
-  "gmail": {
-    "label": "ALPES-IA",
-    "query": "in:inbox",
+  "mail": {
+    "mailbox": "vous@domaine.fr",
+    "fromName": "Prénom Nom",
+    "folder": "INBOX",
+    "dailyCap": 15,
     "maxThreads": 10,
     "newerThanDays": 180,
     "filter": {
@@ -122,7 +124,7 @@
         "brain/journal/todo.md",
         "brain/projects/",
         "Google Calendar",
-        "Gmail"
+        "Boîte mail"
       ]
     }
   ],
