@@ -1196,6 +1196,69 @@ a.pf-card.res-cours p { color: var(--accent); }
 .rg-cnh { display: flex; justify-content: flex-end; font-size: 12px; margin-bottom: 2px; }
 @media (max-width: 860px) { .rg-list { max-width: none; } }
 
+/* ---------- prospection: targets, their companies, campaigns, replies ---------- */
+.pr-h { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-bottom: 18px; }
+.pr-h .ptitle { margin: 0; }
+.pr-h .sp { flex: 1; }
+.pr-h .btn, .pr .btn { min-height: 34px; font-size: 13px; padding: 0 13px; border-radius: 7px; }
+.pr .btn.pri { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.pr .btn.pri:hover { filter: brightness(.95); }
+.pr .btn[disabled] { opacity: .55; cursor: default; }
+.pr .lnk { background: none; border: 0; padding: 0; color: var(--ink-2); font: 500 12.5px/1.4 var(--font); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.pr .lnk:hover { color: var(--ink); }
+.pr .muted { color: var(--ink-3); }
+.pr-tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.pr-tbl th { text-align: left; font: 500 12px/1.3 var(--font); color: var(--ink-3); padding: 10px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.pr-tbl td { padding: 10px 14px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+.pr-tbl tr:last-child td { border-bottom: 0; }
+.pr-tbl td small { display: block; color: var(--ink-3); font-size: 12.5px; }
+.pr-tbl .r { text-align: right; font-variant-numeric: tabular-nums; }
+.pr-tbl tr.go { cursor: pointer; }
+.pr-tbl tr.go:hover td { background: color-mix(in srgb, var(--sunken) 45%, transparent); }
+.pr-tbl .ok { color: var(--good); font-weight: 600; }
+.pr-tbl .no { color: var(--ink-3); }
+.pr-wrap { overflow-x: auto; }
+.pr-pill { display: inline-flex; align-items: center; gap: 5px; font: 500 12px/1.6 var(--font); padding: 0 8px; border-radius: 20px; white-space: nowrap; background: var(--sunken); color: var(--ink-2); }
+.pr-pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pr-pill.run { background: color-mix(in srgb, var(--good) 14%, transparent); color: var(--good); }
+.pr-pill.sort { background: color-mix(in srgb, var(--warn) 16%, transparent); color: var(--warn); }
+.pr-pill.hot { background: var(--accent-soft); color: #9a3c15; }
+.pr-pill.err { background: color-mix(in srgb, var(--crit) 12%, transparent); color: var(--crit); }
+.pr-brief { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin: 0 0 14px; }
+.pr-brief > div { padding: 12px 16px; border-right: 1px solid var(--line-soft); min-width: 0; }
+.pr-brief > div:last-child { border-right: 0; }
+.pr-brief dt { font-size: 12px; color: var(--ink-3); margin-bottom: 3px; }
+.pr-brief dd { margin: 0; font-size: 13.5px; overflow-wrap: anywhere; }
+.pr-crit { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.pr-chip { border: 1px solid var(--line); background: var(--bg); border-radius: 6px; padding: 3px 9px; font-size: 12.5px; }
+.pr-chip b { font-weight: 600; }
+.pr-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.pr-bar .sp { flex: 1; }
+.pr-fiche td { background: var(--bg); }
+.pr-fiche dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; font-size: 13px; }
+.pr-fiche dt { color: var(--ink-3); }
+.pr-fiche dd { margin: 0; overflow-wrap: anywhere; }
+.pr-src { font: 400 11px var(--mono); color: var(--ink-3); margin-left: 6px; }
+.pr-acts { display: flex; gap: 10px; flex-wrap: wrap; }
+.pr-new { padding: 14px 16px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 10px; }
+.pr-new textarea, .pr-new input, .pr-edit textarea, .pr-edit input { box-sizing: border-box; width: 100%; min-height: 36px; padding: 7px 11px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); color: var(--ink); font: 400 13.5px/1.5 var(--font); }
+.pr-new textarea { min-height: 64px; resize: vertical; }
+.pr-new label, .pr-edit label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--ink-3); }
+.pr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 14px; }
+.pr-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.pr-row .sp { flex: 1; }
+.pr-edit { padding: 14px 16px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 10px; }
+.pr-edit textarea { min-height: 72px; resize: vertical; }
+.pr-note { font-size: 12.5px; color: var(--ink-3); margin: 10px 2px 0; }
+.pr-empty { padding: 28px 16px; text-align: center; color: var(--ink-3); font-size: 13.5px; }
+.pr-fold { padding: 10px 14px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-2); }
+.pr-fold summary { cursor: pointer; }
+.pr .seg { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line-soft); border-radius: 20px; background: var(--surface); }
+.pr .seg button { border: 0; background: none; min-height: 28px; padding: 0 12px; border-radius: 16px; color: var(--ink-3); font: 500 12.5px/1 var(--font); cursor: pointer; }
+.pr .seg button.on { background: var(--sunken); color: var(--ink); font-weight: 600; }
+.pr .small { font-size: 12.5px; }
+.pr-clip { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 46ch; }
+
 </style>
 </head>
 <body>
@@ -1238,6 +1301,7 @@ a.pf-card.res-cours p { color: var(--accent); }
       <a href="#projets" data-tab="projets">Projets</a>
       <a href="#finances" data-tab="finances">Finances</a>
       <a href="#crm" data-tab="crm">CRM</a>
+      <a href="#prospection" data-tab="prospection">Prospection</a>
       <a href="#echanges" data-tab="echanges">Échanges</a>
       <a href="#linkedin" data-tab="linkedin">LinkedIn</a>
       <a href="#second-brain" data-tab="brain">Second brain</a>
@@ -1299,6 +1363,9 @@ a.pf-card.res-cours p { color: var(--accent); }
 
 <main class="view page" data-view="crm" id="crmview" hidden>
   <div id="crm-body"><span class="lbl">Chargement…</span></div>
+</main>
+<main class="view page pr" data-view="prospection" id="prview" hidden>
+  <div id="pr-body"><span class="lbl">Chargement…</span></div>
 </main>
 <main class="view brain" data-view="brain" hidden>
   <canvas id="g" aria-label="Graphe du second brain"></canvas>
@@ -3209,6 +3276,9 @@ const CHAT_TOOLS = {
   chercher_second_brain: ['Consulte le second brain', a => `Recherche « ${esc(a.requete)} »`, 'le second brain'],
   lire_note: ['Lit une note', a => `Lecture ${chatPath(a.chemin)}`, a => /(^|\/)finance\//.test(a.chemin) ? 'les finances' : /(^|\/)projects\//.test(a.chemin) ? 'les projets' : /(^|\/)clients\//.test(a.chemin) ? 'les clients' : 'le second brain'],
   lister_projets: ['Regarde les projets', () => 'Liste des projets', 'les projets'],
+  lire_prospection: ['Regarde la prospection', a => a.cible ? `Cible ${esc(a.cible)}` : 'Cibles de prospection', 'la prospection'],
+  creer_cible: ['Prépare une cible', a => `Proposition : cible « ${esc(a.phrase)} »`],
+  modifier_cible: ['Prépare un changement de cible', a => `Proposition : cible ${esc(a.cible)}`],
   lister_clients: ['Regarde les clients', () => 'Liste des clients', 'les clients'],
   lire_finances: ['Regarde les finances', () => 'Lecture du suivi financier', 'les finances'],
   lire_todo: ['Regarde la todo', () => 'Lecture de la todo', 'la todo'],
@@ -4807,8 +4877,256 @@ $('#rg-detail').onclick = async e => {
 function onRgHash() { if (shellTab() === 'reglages') loadReglages(); }
 addEventListener('hashchange', onRgHash);
 
+/* ---------- prospection: targets, the companies found, campaigns, replies ---------- */
+// #prospection, #prospection/cible/<slug>. Data lives in output/prospection (lib/prospection.js).
+let prData = null, prCible = null, prSig = '', prNew = null, prEdit = false, prFiltre = 'retenue', prOpen = null, prPoll = null;
+const prRoute = () => {
+  const m = location.hash.match(/^#prospection(?:\/(cible)\/([\w-]+)|\/(campagnes|reponses))?$/);
+  return m && { vue: m[1] ? 'cible' : m[3] ?? 'cibles', slug: m[2] ?? null };
+};
+const prSend = (method, url, body) => fetch(url, { method, headers: { 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })
+  .then(r => r.json()).catch(e => ({ error: e.message }));
+const PR_TR = { '00': '0', '01': '1 à 2', '02': '3 à 5', '03': '6 à 9', '11': '10 à 19', '12': '20 à 49', '21': '50 à 99', '22': '100 à 199', NN: 'inconnu' };
+const prTr = t => PR_TR[t] ?? 'inconnu';
+const prEur = n => (n == null ? '' : n >= 1e6 ? `${(n / 1e6).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} M€` : `${Math.round(n / 1e3).toLocaleString('fr-FR')} k€`);
+const prDate = iso => iso ? new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+const prMois = iso => iso ? new Date(iso).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) : '';
+const prDir = e => e.dirigeants?.[0];
+
+// demo mode: fictitious targets, nothing real on screen, nothing saved
+function demoProspection() {
+  const E = (siren, nom, ville, tranche, dir, contact, signaux = [], etat = 'retenue', raison = '') => ({ siren, nom, ville, tranche, naf: '43.32A', dirigeants: dir ? [{ prenom: dir[0], nom: dir[1], qualite: dir[2] }] : [], contact, signaux, etat, raison, ca: 2.1e6, annee: '2025', sources: {} });
+  const ents = [
+    E('100000001', 'Menuiserie Exemple', 'Thônes', '12', ['Jeanne', 'Exemple', 'Gérante'], { email: 'contact@exemple.fr', email_type: 'generique', telephone: '04 50 00 00 00', linkedin: 'https://www.linkedin.com/in/exemple' }, [{ quoi: 'Changement de dirigeant', date: '2026-04-15', source: 'BODACC' }]),
+    E('100000002', 'Plomberie Modèle', 'Cluses', '11', ['Alix', 'Modèle', 'Président'], { telephone: '04 50 00 00 01' }),
+    E('100000003', 'Peinture Démo', 'Annecy', '12', ['Léa', 'Démo', 'Gérante'], { email: 'lea@demo.fr', email_type: 'nominatif', linkedin: 'https://www.linkedin.com/in/demo' }, [{ quoi: 'Nouveau siège', date: '2026-03-01', source: 'BODACC' }]),
+    E('100000004', 'Charpentes Fictives', 'Seynod', '11', null, {}, [], 'a_trier', 'aucun dirigeant nommé'),
+    E('100000005', 'Électricité Exemple', 'Rumilly', '12', ['Sacha', 'Exemple', 'Gérant'], {}, [], 'ecartee', 'procédure collective (BODACC, 2026-05-02)'),
+  ];
+  const c = { slug: 'demo-batiment', titre: 'Bâtiment 74', statut: 'active', pourquoi: 'Les dirigeants font leurs devis le soir, après le chantier.', moments: ['Recrutement administratif', 'Nouveau dirigeant', 'Agrandissement'], offre: 'Devis et relances automatisés', lien: '', criteres: { naf: ['43.32A', '43.21A'], departements: ['74'], codes_postaux: [], tranches: ['11', '12'] }, recherche: { etat: 'fini', fin: new Date().toISOString(), total: 141 }, entreprises: ents, demo: true };
+  const resume = { slug: c.slug, titre: c.titre, statut: 'active', criteres: c.criteres, offre: c.offre, pourquoi: c.pourquoi, recherche: c.recherche, retenues: 3, a_trier: 1, ecartees: 1, total: 5, avec_email: 2, avec_linkedin: 2, avec_tel: 2, avec_moment: 2, campagne: null };
+  return { demo: true, liste: { cibles: [resume], exclusions: 0 }, cible: c };
+}
+
+async function loadPr(force) {
+  const r = prRoute();
+  if (!r) return;
+  const hash = location.hash, demo = demoOn;
+  let liste, cible = null;
+  if (demo) { const d = demoProspection(); liste = d.liste; cible = r.slug ? d.cible : null; }
+  else {
+    liste = await api('/api/prospection').catch(() => null);
+    if (r.slug) cible = await api(`/api/prospection/cibles/${encodeURIComponent(r.slug)}`).then(x => (x.error ? null : x)).catch(() => null);
+  }
+  if (location.hash !== hash || demo !== demoOn) return;
+  prData = liste; prCible = cible;
+  const sig = JSON.stringify([demo, liste, cible, hash]);
+  if (force || sig !== prSig) { prSig = sig; renderPr(); }
+  // a search in progress: read it again until it ends
+  const busy = (cible?.recherche?.etat === 'en_cours') || liste?.cibles?.some(c => c.recherche?.etat === 'en_cours');
+  clearTimeout(prPoll);
+  if (busy && !demo) prPoll = setTimeout(() => loadPr(), 3000);
+}
+function renderPr() {
+  const el = $('#pr-body'), r = prRoute();
+  if (!r) return;
+  cxKeep(el, () => { el.innerHTML = prHead(r) + (r.vue === 'cible' ? prCiblePage() : r.vue === 'cibles' ? prCibles() : prPlus(r.vue)); });
+}
+function prHead(r) {
+  const tabs = [['cibles', 'Cibles', '#prospection'], ['campagnes', 'Campagnes', '#prospection/campagnes'], ['reponses', 'Réponses', '#prospection/reponses']];
+  const on = r.vue === 'cible' ? 'cibles' : r.vue;
+  return `<div class="pr-h"><h1 class="ptitle">Prospection</h1><nav class="cx-tabs" aria-label="Prospection">${tabs.map(([id, lib, href]) => `<a href="${href}"${on === id ? ' aria-current="page"' : ''}>${lib}</a>`).join('')}</nav></div>`;
+}
+const prPlus = () => '<div class="pane pr-empty">Arrive avec la suite de la prospection.</div>';
+
+function prEtat(c) {
+  const s = c.recherche;
+  if (s?.etat === 'en_cours') return `<span class="pr-pill sort">Recherche en cours</span>`;
+  if (s?.etat === 'erreur') return `<span class="pr-pill err">Recherche en erreur</span>`;
+  if (c.statut === 'archivee') return `<span class="pr-pill">Archivée</span>`;
+  if (c.campagne?.etat === 'en_cours') return `<span class="pr-pill run">Campagne en cours</span>`;
+  if (c.a_trier) return `<span class="pr-pill sort">${c.a_trier} à trier</span>`;
+  if (!s) return `<span class="pr-pill">Pas encore cherchée</span>`;
+  return `<span class="pr-pill">Prête</span>`;
+}
+function prCibles() {
+  const l = (prData?.cibles ?? []).filter(c => c.statut !== 'archivee');
+  const rows = l.map(c => `<tr class="go" data-href="#prospection/cible/${esc(c.slug)}">
+      <td><b>${esc(c.titre)}</b><small>${esc(prCritTxt(c.criteres))}</small></td>
+      <td><span class="pr-clip">${esc(c.offre || '')}</span></td>
+      <td class="r">${c.retenues}<small>sur ${c.total} trouvées</small></td>
+      <td class="r">${c.avec_email}<small>LinkedIn ${c.avec_linkedin}</small></td>
+      <td>${prEtat(c)}</td></tr>`).join('');
+  return prNouvelle() + (l.length
+    ? `<div class="pane pr-wrap"><table class="pr-tbl"><thead><tr><th>Cible</th><th>Offre</th><th class="r">Entreprises</th><th class="r">E-mails</th><th>Où en est-on</th></tr></thead><tbody>${rows}</tbody></table></div>`
+    : `<div class="pane pr-empty">Aucune cible. Décris la première ci-dessus, ou demande à l'assistant.</div>`);
+}
+const prCritTxt = c => [c.naf?.length ? `${c.naf.length} activité${c.naf.length > 1 ? 's' : ''}` : '', c.tranches?.length ? `${c.tranches.map(prTr).join(', ')} salariés` : '', c.codes_postaux?.length ? c.codes_postaux.join(', ') : (c.departements ?? []).join(', ')].filter(Boolean).join(' · ');
+
+function prNouvelle() {
+  if (!prNew) return `<p style="margin:0 0 14px"><button class="btn" data-pr="nouvelle">+ Nouvelle cible</button></p>`;
+  if (prNew.etape === 'phrase' || prNew.etape === 'attente') return `<form class="pane pr-new" data-pr-form="interpreter">
+      <label>Qui veux-tu viser ?<textarea data-k="pr-phrase" name="phrase" placeholder="Ex. les entreprises du second œuvre de Haute-Savoie de 10 à 49 salariés">${esc(prNew.phrase ?? '')}</textarea></label>
+      <div class="pr-row"><button class="btn pri"${prNew.etape === 'attente' ? ' disabled' : ''}>${prNew.etape === 'attente' ? 'Préparation des critères…' : 'Proposer les critères'}</button><button type="button" class="lnk" data-pr="annuler">Annuler</button></div></form>`;
+  const p = prNew.prop;
+  return `<form class="pane pr-new" data-pr-form="creer">
+    <div class="pr-grid">
+      <label>Titre<input name="titre" data-k="pr-n-titre" value="${esc(p.titre)}"></label>
+      <label>Codes d'activité<input name="naf" data-k="pr-n-naf" value="${esc(p.naf.join(', '))}"></label>
+      <label>Départements<input name="departements" data-k="pr-n-dep" value="${esc(p.departements.join(', '))}"></label>
+      <label>Codes postaux (facultatif)<input name="codes_postaux" data-k="pr-n-cp" value="${esc(p.codes_postaux.join(', '))}"></label>
+      <label>Tranches de salariés<input name="tranches" data-k="pr-n-tr" value="${esc(p.tranches.join(', '))}"></label>
+    </div>
+    <label>Pourquoi eux<input name="pourquoi" data-k="pr-n-pq" value="${esc(p.pourquoi)}"></label>
+    <label>Moments où ils achètent (un par ligne)<textarea name="moments" data-k="pr-n-mo">${esc(p.moments.join('\n'))}</textarea></label>
+    <label>Offre<input name="offre" data-k="pr-n-of" value="${esc(p.offre)}"></label>
+    <p class="pr-note" style="margin:0">Tranches : 01 (1-2), 02 (3-5), 03 (6-9), 11 (10-19), 12 (20-49), 21 (50-99).</p>
+    <div class="pr-row"><button class="btn pri">Créer et chercher les entreprises</button><button type="button" class="lnk" data-pr="annuler">Annuler</button></div></form>`;
+}
+
+function prCiblePage() {
+  const c = prCible;
+  if (!c) return '<div class="pane pr-empty">Cible introuvable.</div>';
+  const by = etat => c.entreprises.filter(e => e.etat === etat);
+  const cr = c.criteres, s = c.recherche;
+  const chips = [...cr.naf.map(n => `<span class="pr-chip"><b>Activité</b> ${esc(n)}</span>`),
+    cr.tranches.length ? `<span class="pr-chip"><b>Salariés</b> ${esc(cr.tranches.map(prTr).join(', '))}</span>` : '',
+    cr.codes_postaux.length ? `<span class="pr-chip"><b>Codes postaux</b> ${esc(cr.codes_postaux.join(', '))}</span>` : `<span class="pr-chip"><b>Départements</b> ${esc(cr.departements.join(', '))}</span>`].join('');
+  const statut = s?.etat === 'en_cours' ? `<span class="pr-pill sort">Recherche en cours : ${esc(s.progres ?? '')}</span>`
+    : s?.etat === 'erreur' ? `<span class="pr-pill err">${esc(s.erreur)}</span>`
+    : s ? `<span class="muted" style="font-size:12.5px">${s.total} trouvées le ${prDate(s.fin)}${s.tronque ? ', limitées aux 1 000 premières' : ''}</span>` : '';
+  const ret = by('retenue'), tri = by('a_trier'), ec = by('ecartee');
+  const list = { retenue: ret, a_trier: tri, ecartee: ec }[prFiltre] ?? ret;
+  const sorted = [...list].sort((a, b) => (b.signaux?.length ?? 0) - (a.signaux?.length ?? 0) || (b.ca ?? 0) - (a.ca ?? 0));
+  const seg = [['retenue', 'Retenues', ret.length], ['a_trier', 'À trier', tri.length], ['ecartee', 'Écartées', ec.length]]
+    .map(([id, lib, n]) => `<button type="button" class="${prFiltre === id ? 'on' : ''}" data-pr-f="${id}" aria-pressed="${prFiltre === id}">${lib} ${n}</button>`).join('');
+  const mail = e => e.contact?.email ? `<span class="small">${e.contact.email_type === 'nominatif' ? 'nominatif' : e.contact.email_type === 'deduit' ? 'déduit' : esc(e.contact.email.split('@')[0] + '@')}</span>` : '<span class="no">–</span>';
+  const yes = v => (v ? '<span class="ok">✓</span>' : '<span class="no">–</span>');
+  const act = e => e.etat === 'a_trier' ? `<button class="lnk" data-pr-etat="retenue" data-siren="${e.siren}">Garder</button><button class="lnk" data-pr-etat="ecartee" data-siren="${e.siren}">Écarter</button>`
+    : e.etat === 'retenue' ? `<button class="lnk" data-pr-etat="ecartee" data-siren="${e.siren}">Écarter</button>`
+    : `<button class="lnk" data-pr-etat="retenue" data-siren="${e.siren}">Remettre</button>`;
+  const rows = sorted.map(e => {
+    const d = prDir(e), open = prOpen === e.siren;
+    return `<tr class="go" data-pr-open="${e.siren}">
+      <td><b>${esc(e.enseigne || e.nom)}</b><small>${esc(e.ville)}</small></td>
+      <td style="white-space:nowrap">${esc(prTr(e.tranche))}</td>
+      <td>${d ? `${esc(d.prenom)} ${esc(d.nom)}<small>${esc(d.qualite)}${e.via_holding ? ` · via ${esc(e.via_holding)}` : ''}</small>` : '<span class="muted">aucun nommé</span>'}</td>
+      <td>${mail(e)}</td><td>${yes(e.contact?.linkedin)}</td><td>${yes(e.contact?.telephone)}</td>
+      <td>${e.signaux?.length ? esc(e.signaux[0].quoi) + `<small>${prMois(e.signaux[0].date)}</small>` : ''}</td>
+      <td>${e.raison ? `<small style="margin-bottom:3px">${esc(e.raison)}</small>` : ''}<span class="pr-acts">${act(e)}</span></td></tr>
+      ${open ? `<tr class="pr-fiche"><td colspan="8">${prFiche(e)}</td></tr>` : ''}`;
+  }).join('');
+  return `<a class="more" href="#prospection">← Cibles</a>
+    <div class="pr-h" style="margin:8px 0 12px"><h2 style="margin:0;font:600 24px/1.2 var(--display)">${esc(c.titre)}</h2><span class="sp"></span>
+      <button class="btn" data-pr="editer">${prEdit ? 'Fermer' : 'Modifier'}</button></div>
+    ${prEdit ? prEditForm(c) : `<dl class="pane pr-brief">
+      <div><dt>Pourquoi eux</dt><dd>${esc(c.pourquoi || '–')}</dd></div>
+      <div><dt>Moments où ils achètent</dt><dd>${esc(c.moments?.join(' · ') || '–')}</dd></div>
+      <div><dt>Offre</dt><dd>${esc(c.offre || '–')}${c.lien ? `<br><a class="more" href="${esc(c.lien)}" target="_blank" rel="noopener">${esc(c.lien)}</a>` : ''}</dd></div></dl>`}
+    <div class="pane">
+      <div class="pr-crit">${chips}<span class="sp" style="flex:1"></span>${statut}<button class="btn" data-pr="chercher"${s?.etat === 'en_cours' ? ' disabled' : ''}>${s ? 'Relancer la recherche' : 'Chercher les entreprises'}</button></div>
+      <div class="pr-bar"><div class="cx-seg seg">${seg}</div><span class="sp"></span>
+        <span class="muted" style="font-size:12.5px">e-mail ${ret.filter(e => e.contact?.email).length} · LinkedIn ${ret.filter(e => e.contact?.linkedin).length} · téléphone ${ret.filter(e => e.contact?.telephone).length}</span></div>
+      ${list.length ? `<div class="pr-wrap"><table class="pr-tbl"><thead><tr><th>Entreprise</th><th>Salariés</th><th>Dirigeant</th><th>E-mail</th><th>LinkedIn</th><th>Tél.</th><th>Moment</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`
+        : `<div class="pr-empty">${s?.etat === 'en_cours' ? 'Recherche en cours…' : 'Aucune entreprise ici.'}</div>`}
+    </div>`;
+}
+function prFiche(e) {
+  const src = k => e.sources?.[k] ? `<span class="pr-src">${esc(e.sources[k])}</span>` : '';
+  const k = e.contact ?? {};
+  return `<dl>
+    <dt>SIREN</dt><dd>${esc(e.siren)}${e.creation ? ` · créée en ${esc(String(e.creation).slice(0, 4))}` : ''}${e.ca ? ` · CA ${esc(e.annee)} : ${prEur(e.ca)}` : ''}${e.resultat != null ? `, résultat ${prEur(e.resultat)}` : ''}<span class="pr-src">annuaire des entreprises</span></dd>
+    <dt>Dirigeants</dt><dd>${e.dirigeants?.length ? e.dirigeants.map(d => `${esc(d.prenom)} ${esc(d.nom)} (${esc(d.qualite)})`).join(', ') : 'aucun nommé'}${e.via_holding ? ` · via ${esc(e.via_holding)}` : ''}</dd>
+    ${e.signaux?.map(s => `<dt>Moment</dt><dd>${esc(s.quoi)}, ${prDate(s.date)}<span class="pr-src">${esc(s.source)}</span>${s.url ? ` <a class="more" href="${esc(s.url)}" target="_blank" rel="noopener">voir</a>` : ''}</dd>`).join('') ?? ''}
+    ${k.site ? `<dt>Site</dt><dd><a class="more" href="${esc(k.site)}" target="_blank" rel="noopener">${esc(k.site)}</a></dd>` : ''}
+    ${k.email ? `<dt>E-mail</dt><dd>${esc(k.email)} (${k.email_type === 'nominatif' ? 'nominatif' : k.email_type === 'deduit' ? 'déduit, non vérifié' : 'générique'})${src('email')}</dd>` : ''}
+    ${k.telephone ? `<dt>Téléphone</dt><dd>${esc(k.telephone)}${src('telephone')}</dd>` : ''}
+    ${k.linkedin ? `<dt>LinkedIn</dt><dd><a class="more" href="${esc(k.linkedin)}" target="_blank" rel="noopener">${esc(k.linkedin)}</a>${k.linkedin_confiance ? ` (confiance ${esc(k.linkedin_confiance)})` : ''}${src('linkedin')}</dd>` : ''}
+    ${e.procedure ? `<dt>Santé</dt><dd>${esc(e.procedure.quoi)}, ${prDate(e.procedure.date)}<span class="pr-src">BODACC</span></dd>` : ''}
+  </dl>`;
+}
+function prEditForm(c) {
+  const cr = c.criteres;
+  return `<form class="pane pr-edit" data-pr-form="modifier">
+    <div class="pr-grid">
+      <label>Titre<input name="titre" data-k="pr-e-titre" value="${esc(c.titre)}"></label>
+      <label>Codes d'activité<input name="naf" data-k="pr-e-naf" value="${esc(cr.naf.join(', '))}"></label>
+      <label>Départements<input name="departements" data-k="pr-e-dep" value="${esc(cr.departements.join(', '))}"></label>
+      <label>Codes postaux<input name="codes_postaux" data-k="pr-e-cp" value="${esc(cr.codes_postaux.join(', '))}"></label>
+      <label>Tranches de salariés<input name="tranches" data-k="pr-e-tr" value="${esc(cr.tranches.join(', '))}"></label>
+    </div>
+    <label>Pourquoi eux<input name="pourquoi" data-k="pr-e-pq" value="${esc(c.pourquoi)}"></label>
+    <label>Moments où ils achètent (un par ligne)<textarea name="moments" data-k="pr-e-mo">${esc((c.moments ?? []).join('\n'))}</textarea></label>
+    <div class="pr-grid"><label>Offre<input name="offre" data-k="pr-e-of" value="${esc(c.offre)}"></label>
+      <label>Lien du livre blanc ou de la ressource<input name="lien" data-k="pr-e-li" value="${esc(c.lien ?? '')}"></label></div>
+    <div class="pr-row"><button class="btn pri">Enregistrer</button><span class="pr-note" style="margin:0">Des critères changés relancent la recherche.</span><span class="sp"></span><button type="button" class="lnk" data-pr="archiver">Archiver la cible</button></div></form>`;
+}
+
+const prSplit = v => String(v ?? '').split(/[\s,;]+/).map(x => x.trim()).filter(Boolean);
+$('#pr-body').addEventListener('click', async e => {
+  const go = e.target.closest('tr.go[data-href]');
+  if (go) { location.hash = go.dataset.href; return; }
+  const f = e.target.closest('[data-pr-f]');
+  if (f) { prFiltre = f.dataset.prF; prOpen = null; renderPr(); return; }
+  const et = e.target.closest('[data-pr-etat]');
+  if (et) {
+    e.stopPropagation();
+    if (demoOn) return toast('Mode démo : rien n\'est enregistré');
+    const r = await prSend('PATCH', `/api/prospection/cibles/${encodeURIComponent(prCible.slug)}/entreprises/${et.dataset.siren}`, { etat: et.dataset.prEtat });
+    if (r.error) return toast(r.error, true);
+    return loadPr(true);
+  }
+  if (e.target.closest('a, button, input, textarea, label')) {
+    const b = e.target.closest('[data-pr]');
+    if (!b) return;
+    const what = b.dataset.pr;
+    if (what === 'nouvelle') { prNew = { etape: 'phrase' }; renderPr(); $('#pr-body textarea')?.focus(); }
+    else if (what === 'annuler') { prNew = null; renderPr(); }
+    else if (what === 'editer') { prEdit = !prEdit; renderPr(); }
+    else if (demoOn) toast('Mode démo : rien n\'est enregistré');
+    else if (what === 'chercher') {
+      const r = await prSend('POST', `/api/prospection/cibles/${encodeURIComponent(prCible.slug)}/recherche`);
+      if (r.error) toast(r.error, true); else loadPr(true);
+    } else if (what === 'archiver') {
+      const r = await prSend('PATCH', `/api/prospection/cibles/${encodeURIComponent(prCible.slug)}`, { statut: 'archivee' });
+      if (r.error) toast(r.error, true); else { prEdit = false; location.hash = '#prospection'; toast('Cible archivée'); }
+    }
+    return;
+  }
+  const row = e.target.closest('[data-pr-open]');
+  if (row) { prOpen = prOpen === row.dataset.prOpen ? null : row.dataset.prOpen; renderPr(); }
+});
+$('#pr-body').addEventListener('submit', async e => {
+  e.preventDefault();
+  const form = e.target, kind = form.dataset.prForm, fd = Object.fromEntries(new FormData(form));
+  if (demoOn) return toast('Mode démo : rien n\'est enregistré');
+  if (kind === 'interpreter') {
+    prNew = { etape: 'attente', phrase: fd.phrase }; renderPr();
+    const r = await prSend('POST', '/api/prospection/interpreter', { phrase: fd.phrase });
+    if (r.error) { prNew = { etape: 'phrase', phrase: fd.phrase }; renderPr(); return toast(r.error, true); }
+    prNew = { etape: 'proposition', phrase: fd.phrase, prop: r }; renderPr();
+  } else if (kind === 'creer') {
+    const body = { titre: fd.titre, phrase: prNew?.phrase, pourquoi: fd.pourquoi, offre: fd.offre, moments: String(fd.moments).split('\n'),
+      criteres: { naf: prSplit(fd.naf), departements: prSplit(fd.departements), codes_postaux: prSplit(fd.codes_postaux), tranches: prSplit(fd.tranches) } };
+    const r = await prSend('POST', '/api/prospection/cibles', body);
+    if (r.error) return toast(r.error, true);
+    prNew = null; location.hash = `#prospection/cible/${r.slug}`;
+  } else if (kind === 'modifier') {
+    const c = prCible.criteres;
+    const crit = { naf: prSplit(fd.naf), departements: prSplit(fd.departements), codes_postaux: prSplit(fd.codes_postaux), tranches: prSplit(fd.tranches) };
+    const changed = Object.keys(crit).some(k => crit[k].join(',') !== (c[k] ?? []).join(','));
+    const r = await prSend('PATCH', `/api/prospection/cibles/${encodeURIComponent(prCible.slug)}`, { titre: fd.titre, pourquoi: fd.pourquoi, offre: fd.offre, lien: fd.lien, moments: String(fd.moments).split('\n'), ...(changed ? { criteres: crit } : {}) });
+    if (r.error) return toast(r.error, true);
+    if (changed) await prSend('POST', `/api/prospection/cibles/${encodeURIComponent(prCible.slug)}/recherche`);
+    prEdit = false; toast(changed ? 'Cible modifiée, recherche relancée' : 'Cible modifiée'); loadPr(true);
+  }
+});
+function onPrHash() { if (prRoute()) { prOpen = null; loadPr(true); } }
+addEventListener('hashchange', onPrHash);
+setTimeout(onPrHash, 0);   // demoOn is declared further down
+
 /* ---------- shell: tabs routed by the hash, the assistant one keystroke away ---------- */
-const TAB_OF = { projets: 'projets', portefeuille: 'projets', finances: 'finances', crm: 'crm', echanges: 'echanges', linkedin: 'linkedin', 'second-brain': 'brain', outils: 'outils', reglages: 'reglages', connexions: 'outils' };
+const TAB_OF = { projets: 'projets', portefeuille: 'projets', finances: 'finances', crm: 'crm', prospection: 'prospection', echanges: 'echanges', linkedin: 'linkedin', 'second-brain': 'brain', outils: 'outils', reglages: 'reglages', connexions: 'outils' };
 // a page of its own that still lights up its parent tab
 const VIEW_OF = { connexions: 'connexions' };
 const shellTab = () => TAB_OF[location.hash.slice(1).split('/')[0]] ?? 'today';
@@ -4847,6 +5165,7 @@ function setDemo(on) {
   loadFinance();
   crmData = null;
   loadCrm(true);
+  loadPr(true);
 }
 $('#demo-toggle').onclick = () => setDemo(!demoOn);
 $('#demo-quit').onclick = () => setDemo(false);
