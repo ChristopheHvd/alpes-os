@@ -34,7 +34,7 @@ import { makeReview, SYSTEM as REVIEW_SYSTEM } from './lib/review.js';
 import { makeReglages, pick, MODELS, EFFORTS } from './lib/reglages.js';
 import { makePartenaires, evenementFait, deposerEvenement } from './lib/partenaires.js';
 import { makeEchanges } from './lib/partage.js';
-import { askClaude, makeMemoire, makeSujets, reponseAgent, REPONSE_SCHEMA, REPONSE_SYSTEM, SUJETS_SCHEMA, SUJETS_SYSTEM } from './lib/echange.js';
+import { askClaude, fichesPartenaire, makeMemoire, makeSujets, reponseAgent, REPONSE_SCHEMA, REPONSE_SYSTEM, SUJETS_SCHEMA, SUJETS_SYSTEM } from './lib/echange.js';
 import { claudeActivity } from './lib/activity.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -1023,7 +1023,10 @@ app.post('/api/echanges/fils/:ancre/messages', (req, res) => unSeul(req.params.a
 // Christophe chose that the agent's answer leaves at once, copied to the shared space when there is one
 app.post('/api/echanges/fils/:ancre/agent', (req, res) => unSeul(req.params.ancre, res, async () => {
   const { e, g } = filDe(req.params.ancre);
-  const texte = await reponseAgent(input => askClaude(cfg.claude.bin, { ...setting('reponse-partenaire'), system: reglages.prompt('reponse-partenaire', REPONSE_SYSTEM), schema: REPONSE_SCHEMA }, input), g);
+  // what Christophe knows: the shared space's documents and his files on the partner, money left out
+  const espacePartage = await echanges.documents().catch(err => { console.error('echanges', err.message); return []; });
+  const texte = await reponseAgent(input => askClaude(cfg.claude.bin, { ...setting('reponse-partenaire'), system: reglages.prompt('reponse-partenaire', REPONSE_SYSTEM), schema: REPONSE_SCHEMA }, input), g,
+    { espacePartage, fiches: fichesPartenaire(cfg.secondBrain) });
   const partage = !!partenaires.etat().connexions.find(x => x.id === e.c.id)?.partage;
   // the conversation may have been filed meanwhile: its anchor still finds it
   return envoyerDansFil(req.params.ancre, texte, partage);
