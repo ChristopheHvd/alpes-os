@@ -113,6 +113,7 @@ const FUNCTIONS = [
   { id: 'curateur', name: 'Second cerveau', model: [cfg.claude.defaultModel], skill: 'second-brain-curator' },
   { id: 'sujets', name: 'Échanges : rangement par sujet', model: ['claude-haiku-5-5'], prompt: SUJETS_SYSTEM },
   { id: 'reponse-partenaire', name: 'Échanges : réponse par l\'agent', model: [cfg.claude.defaultModel], prompt: REPONSE_SYSTEM },
+  { id: 'prospection-recherche', name: 'Prospection : recherche des coordonnées', model: [cfg.prospection?.model, 'claude-sonnet-5-5'], effort: ['low'], prompt: prIa.RECHERCHE_SYSTEM },
   { id: 'prospection-cible', name: 'Prospection : cible à partir d\'une phrase', model: [cfg.prospection?.model, 'claude-sonnet-5-5'], effort: ['low'], prompt: prIa.CIBLE_SYSTEM },
 ];
 function setting(id) {
@@ -1424,6 +1425,15 @@ app.post('/api/prospection/cibles', (req, res) => prOk(res, () => {
 app.get('/api/prospection/cibles/:slug', (req, res) => prOk(res, () => prospection.get(req.params.slug)));
 app.patch('/api/prospection/cibles/:slug', (req, res) => prOk(res, () => prospection.modifier(req.params.slug, req.body ?? {})));
 app.post('/api/prospection/cibles/:slug/recherche', (req, res) => prOk(res, () => { prospection.chercher(req.params.slug); return prospection.get(req.params.slug); }));
+// web research of each kept company (site, e-mail, phone, LinkedIn, buying moments)
+const chercherEntreprise = (e, c) => prAsk('prospection-recherche', {
+  schema: prIa.RECHERCHE_SCHEMA, tools: 'WebSearch,WebFetch', timeoutMs: 6 * 60e3,
+  input: { entreprise: e.enseigne ? `${e.nom} (${e.enseigne})` : e.nom, ville: e.ville, code_postal: e.cp, siren: e.siren, activite: e.naf, dirigeants: e.dirigeants, holding: e.via_holding ?? null, moments_recherches: c.moments, aujourd_hui: new Date().toISOString().slice(0, 10) },
+});
+app.post('/api/prospection/cibles/:slug/enrichir', (req, res) => prOk(res, () => {
+  prospection.enrichir(req.params.slug, chercherEntreprise, { sirens: req.body?.sirens ?? null, limite: Math.min(Number(req.body?.limite) || 60, 200) });
+  return prospection.get(req.params.slug);
+}));
 app.patch('/api/prospection/cibles/:slug/entreprises/:siren', (req, res) => prOk(res, () => prospection.choisir(req.params.slug, req.params.siren, req.body?.etat, req.body?.raison)));
 app.get('/api/prospection/exclusions', (req, res) => prOk(res, () => prospection.exclusions()));
 app.post('/api/prospection/exclusions', (req, res) => prOk(res, () => prospection.exclure(req.body ?? {})));
