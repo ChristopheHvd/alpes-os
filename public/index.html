@@ -5244,7 +5244,7 @@ function prReponses() {
   const todo = all.filter(r => r.etat === 'a_traiter' || r.etat === 'a_classer'), seules = all.filter(r => r.auto || r.classe === 'stop'), faites = all.filter(r => r.etat !== 'a_traiter' && r.etat !== 'a_classer' && !r.auto && r.classe !== 'stop');
   const opts = (prData?.cibles ?? []).filter(c => c.campagne?.prospects).map(c => `<option value="${esc(c.slug)}">${esc(c.titre)}</option>`).join('');
   const card = r => {
-    if (r.etat === 'a_classer') return `<article class="pane pr-card"><div class="pr-meta">${esc(r.cible_titre)} · ${r.canal === 'email' ? 'e-mail' : 'LinkedIn'} · ${prHeure(r.date)}</div><h3>${esc(r.entreprise)}</h3><p class="pr-fact">Lecture de la réponse…</p></article>`;
+    if (r.etat === 'a_classer') return `<article class="pane pr-card"><div class="pr-meta">${esc(r.cible_titre)} · ${r.canal === 'email' ? 'e-mail' : 'LinkedIn'} · ${prHeure(r.date)}</div><h3>${esc(r.entreprise)}</h3><p class="pr-fact">Lecture de la réponse… (relue au prochain passage si elle échoue)</p><div class="pr-msg">${esc(r.texte)}</div></article>`;
     const k = r.contact ?? {};
     return `<article class="pane pr-card">
       <div class="pr-meta">${esc(r.cible_titre)} · ${r.canal === 'email' ? 'e-mail' : 'LinkedIn'} · ${prHeure(r.date)}</div>
