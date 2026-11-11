@@ -11,6 +11,8 @@ import { readTodo, writeTodo, completeCarried, addItem, tidyTodo } from './lib/t
 import { makeGoogle } from './lib/google.js';
 import { makeMail } from './lib/mail.js';
 import { makeSendLog } from './lib/mailsend.js';
+import { makeProspection } from './lib/prospection.js';
+import * as prIa from './lib/prospection-ia.js';
 import { makeRunner } from './lib/runs.js';
 import { listProjects, updateProject, createProject } from './lib/projects.js';
 import { listClients, createClient } from './lib/clients.js';
@@ -111,6 +113,7 @@ const FUNCTIONS = [
   { id: 'curateur', name: 'Second cerveau', model: [cfg.claude.defaultModel], skill: 'second-brain-curator' },
   { id: 'sujets', name: 'Échanges : rangement par sujet', model: ['claude-haiku-5-5'], prompt: SUJETS_SYSTEM },
   { id: 'reponse-partenaire', name: 'Échanges : réponse par l\'agent', model: [cfg.claude.defaultModel], prompt: REPONSE_SYSTEM },
+  { id: 'prospection-cible', name: 'Prospection : cible à partir d\'une phrase', model: [cfg.prospection?.model, 'claude-sonnet-5-5'], effort: ['low'], prompt: prIa.CIBLE_SYSTEM },
 ];
 function setting(id) {
   const f = FUNCTIONS.find(x => x.id === id) ?? {};
@@ -1391,6 +1394,40 @@ app.post('/api/reveal', (req, res) => {
 
 // Loopback only: the API starts Claude runs and serves local files, with no
 // authentication — nothing on the network may reach it.
+// Prospection — targets, the companies found for each, campaigns (output/prospection/).
+// Companies already known elsewhere are set aside at search time: clients of the second
+// brain, companies of the shared CRM.
+const prospection = makeProspection(path.join(ROOT, 'output', 'prospection'), {
+  exclusionsOf: () => {
+    let crm = [];
+    try { crm = partenaires.etat().connexions.flatMap(c => partenaires.suivi.crm(c.id).entreprises?.map(e => e.nom) ?? []); } catch { /* no relay */ }
+    return { clients: listClients(cfg.secondBrain).map(c => c.title), crm, partenaire: [] };
+  },
+});
+const prOk = (res, fn) => { try { res.json(fn()); } catch (e) { res.status(/introuvable/.test(e.message) ? 404 : 400).json({ error: e.message }); } };
+const prAsk = (id, opts) => prIa.ask({ bin: cfg.claude.bin, ...setting(id), system: reglages.prompt(id, FUNCTIONS.find(f => f.id === id)?.prompt), cwd: ROOT, ...opts });
+async function interpreterCible(phrase) {
+  const p = String(phrase ?? '').trim();
+  if (p.length < 8) throw new Error('décris la cible en une phrase : qui, où, quelle taille');
+  const r = await prAsk('prospection-cible', { schema: prIa.CIBLE_SCHEMA, input: p, timeoutMs: 120e3 });
+  return { ...r, phrase: p, criteres: { naf: r.naf, departements: r.departements, codes_postaux: r.codes_postaux, tranches: r.tranches } };
+}
+app.get('/api/prospection', (req, res) => prOk(res, () => ({ cibles: prospection.lister().map(prospection.resume), exclusions: prospection.exclusions().length })));
+app.post('/api/prospection/interpreter', async (req, res) => {
+  try { res.json(await interpreterCible(req.body?.phrase)); } catch (e) { res.status(400).json({ error: e.message }); }
+});
+app.post('/api/prospection/cibles', (req, res) => prOk(res, () => {
+  const c = prospection.creer(req.body ?? {});
+  if (req.body?.chercher !== false) prospection.chercher(c.slug);
+  return prospection.get(c.slug);
+}));
+app.get('/api/prospection/cibles/:slug', (req, res) => prOk(res, () => prospection.get(req.params.slug)));
+app.patch('/api/prospection/cibles/:slug', (req, res) => prOk(res, () => prospection.modifier(req.params.slug, req.body ?? {})));
+app.post('/api/prospection/cibles/:slug/recherche', (req, res) => prOk(res, () => { prospection.chercher(req.params.slug); return prospection.get(req.params.slug); }));
+app.patch('/api/prospection/cibles/:slug/entreprises/:siren', (req, res) => prOk(res, () => prospection.choisir(req.params.slug, req.params.siren, req.body?.etat, req.body?.raison)));
+app.get('/api/prospection/exclusions', (req, res) => prOk(res, () => prospection.exclusions()));
+app.post('/api/prospection/exclusions', (req, res) => prOk(res, () => prospection.exclure(req.body ?? {})));
+
 app.listen(PORT, '127.0.0.1', () => {
   const st = google.status();
   console.log(`Alpes IA OS  →  http://localhost:${PORT}`);
