@@ -3278,6 +3278,7 @@ const CHAT_TOOLS = {
   lister_projets: ['Regarde les projets', () => 'Liste des projets', 'les projets'],
   lire_prospection: ['Regarde la prospection', a => a.cible ? `Cible ${esc(a.cible)}` : 'Cibles de prospection', 'la prospection'],
   creer_cible: ['Prépare une cible', a => `Proposition : cible « ${esc(a.phrase)} »`],
+  chercher_coordonnees: ['Prépare une recherche de coordonnées', a => `Proposition : coordonnées ${esc(a.cible)}`],
   modifier_cible: ['Prépare un changement de cible', a => `Proposition : cible ${esc(a.cible)}`],
   lister_clients: ['Regarde les clients', () => 'Liste des clients', 'les clients'],
   lire_finances: ['Regarde les finances', () => 'Lecture du suivi financier', 'les finances'],
@@ -4923,7 +4924,7 @@ async function loadPr(force) {
   const sig = JSON.stringify([demo, liste, cible, hash]);
   if (force || sig !== prSig) { prSig = sig; renderPr(); }
   // a search in progress: read it again until it ends
-  const busy = (cible?.recherche?.etat === 'en_cours') || liste?.cibles?.some(c => c.recherche?.etat === 'en_cours');
+  const busy = cible?.recherche?.etat === 'en_cours' || cible?.enrichissement?.etat === 'en_cours' || liste?.cibles?.some(c => c.recherche?.etat === 'en_cours' || c.enrichissement?.etat === 'en_cours');
   clearTimeout(prPoll);
   if (busy && !demo) prPoll = setTimeout(() => loadPr(), 3000);
 }
@@ -4944,6 +4945,7 @@ function prEtat(c) {
   if (s?.etat === 'en_cours') return `<span class="pr-pill sort">Recherche en cours</span>`;
   if (s?.etat === 'erreur') return `<span class="pr-pill err">Recherche en erreur</span>`;
   if (c.statut === 'archivee') return `<span class="pr-pill">Archivée</span>`;
+  if (c.enrichissement?.etat === 'en_cours') return `<span class="pr-pill sort">Coordonnées : ${c.enrichissement.fait}/${c.enrichissement.total}</span>`;
   if (c.campagne?.etat === 'en_cours') return `<span class="pr-pill run">Campagne en cours</span>`;
   if (c.a_trier) return `<span class="pr-pill sort">${c.a_trier} à trier</span>`;
   if (!s) return `<span class="pr-pill">Pas encore cherchée</span>`;
@@ -5026,10 +5028,16 @@ function prCiblePage() {
     <div class="pane">
       <div class="pr-crit">${chips}<span class="sp" style="flex:1"></span>${statut}<button class="btn" data-pr="chercher"${s?.etat === 'en_cours' ? ' disabled' : ''}>${s ? 'Relancer la recherche' : 'Chercher les entreprises'}</button></div>
       <div class="pr-bar"><div class="cx-seg seg">${seg}</div><span class="sp"></span>
-        <span class="muted" style="font-size:12.5px">e-mail ${ret.filter(e => e.contact?.email).length} · LinkedIn ${ret.filter(e => e.contact?.linkedin).length} · téléphone ${ret.filter(e => e.contact?.telephone).length}</span></div>
+        <span class="muted" style="font-size:12.5px">e-mail ${ret.filter(e => e.contact?.email).length} · LinkedIn ${ret.filter(e => e.contact?.linkedin).length} · téléphone ${ret.filter(e => e.contact?.telephone).length}</span>
+        ${prEnrich(c, ret)}</div>
       ${list.length ? `<div class="pr-wrap"><table class="pr-tbl"><thead><tr><th>Entreprise</th><th>Salariés</th><th>Dirigeant</th><th>E-mail</th><th>LinkedIn</th><th>Tél.</th><th>Moment</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`
         : `<div class="pr-empty">${s?.etat === 'en_cours' ? 'Recherche en cours…' : 'Aucune entreprise ici.'}</div>`}
     </div>`;
+}
+function prEnrich(c, ret) {
+  const en = c.enrichissement, reste = ret.filter(e => !e.contact?.recherche_le).length;
+  if (en?.etat === 'en_cours') return `<span class="pr-pill sort">Coordonnées : ${en.fait}/${en.total}</span>`;
+  return reste ? `<button class="btn" data-pr="enrichir">Chercher les coordonnées (${reste})</button>` : '';
 }
 function prFiche(e) {
   const src = k => e.sources?.[k] ? `<span class="pr-src">${esc(e.sources[k])}</span>` : '';
@@ -5042,6 +5050,8 @@ function prFiche(e) {
     ${k.email ? `<dt>E-mail</dt><dd>${esc(k.email)} (${k.email_type === 'nominatif' ? 'nominatif' : k.email_type === 'deduit' ? 'déduit, non vérifié' : 'générique'})${src('email')}</dd>` : ''}
     ${k.telephone ? `<dt>Téléphone</dt><dd>${esc(k.telephone)}${src('telephone')}</dd>` : ''}
     ${k.linkedin ? `<dt>LinkedIn</dt><dd><a class="more" href="${esc(k.linkedin)}" target="_blank" rel="noopener">${esc(k.linkedin)}</a>${k.linkedin_confiance ? ` (confiance ${esc(k.linkedin_confiance)})` : ''}${src('linkedin')}</dd>` : ''}
+    ${k.notes ? `<dt>Notes</dt><dd>${esc(k.notes)}</dd>` : ''}
+    <dt></dt><dd><button class="lnk" data-pr="enrichir-une" data-siren="${e.siren}">${k.recherche_le ? `Chercher à nouveau (dernière recherche le ${prDate(k.recherche_le)})` : 'Chercher ses coordonnées'}</button></dd>
     ${e.procedure ? `<dt>Santé</dt><dd>${esc(e.procedure.quoi)}, ${prDate(e.procedure.date)}<span class="pr-src">BODACC</span></dd>` : ''}
   </dl>`;
 }
@@ -5087,6 +5097,12 @@ $('#pr-body').addEventListener('click', async e => {
     else if (what === 'chercher') {
       const r = await prSend('POST', `/api/prospection/cibles/${encodeURIComponent(prCible.slug)}/recherche`);
       if (r.error) toast(r.error, true); else loadPr(true);
+    } else if (what === 'enrichir') {
+      const r = await prSend('POST', `/api/prospection/cibles/${encodeURIComponent(prCible.slug)}/enrichir`, {});
+      if (r.error) toast(r.error, true); else { toast('Recherche des coordonnées lancée'); loadPr(true); }
+    } else if (what === 'enrichir-une') {
+      const r = await prSend('POST', `/api/prospection/cibles/${encodeURIComponent(prCible.slug)}/enrichir`, { sirens: [b.dataset.siren] });
+      if (r.error) toast(r.error, true); else { toast('Recherche lancée'); loadPr(true); }
     } else if (what === 'archiver') {
       const r = await prSend('PATCH', `/api/prospection/cibles/${encodeURIComponent(prCible.slug)}`, { statut: 'archivee' });
       if (r.error) toast(r.error, true); else { prEdit = false; location.hash = '#prospection'; toast('Cible archivée'); }
