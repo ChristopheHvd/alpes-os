@@ -117,6 +117,7 @@ const FUNCTIONS = [
   { id: 'sujets', name: 'Échanges : rangement par sujet', model: ['claude-haiku-5-5'], prompt: SUJETS_SYSTEM },
   { id: 'reponse-partenaire', name: 'Échanges : réponse par l\'agent', model: [cfg.claude.defaultModel], prompt: REPONSE_SYSTEM },
   { id: 'prospection-messages', name: 'Prospection : messages des campagnes', model: [cfg.prospection?.model, 'claude-opus-5-5'], effort: ['medium'], prompt: prIa.MESSAGES_SYSTEM },
+  { id: 'prospection-reponses', name: 'Prospection : lecture des réponses', model: [cfg.prospection?.model, 'claude-sonnet-5-5'], effort: ['low'], prompt: prIa.REPONSE_SYSTEM },
   { id: 'prospection-recherche', name: 'Prospection : recherche des coordonnées', model: [cfg.prospection?.model, 'claude-sonnet-5-5'], effort: ['low'], prompt: prIa.RECHERCHE_SYSTEM },
   { id: 'prospection-cible', name: 'Prospection : cible à partir d\'une phrase', model: [cfg.prospection?.model, 'claude-sonnet-5-5'], effort: ['low'], prompt: prIa.CIBLE_SYSTEM },
 ];
@@ -1502,10 +1503,131 @@ app.post('/api/prospection/appels', (req, res) => prOk(res, () => {
   if (issue === 'reporter') return prospection.reporter(cible, siren, etape, prCp.plus(prCp.jour(new Date()), Number(req.body?.jours) || 2));
   return prospection.noter(cible, siren, { etape, canal: 'appel', status: issue === 'joint' ? 'joint' : 'pas_joint', note: String(note ?? '').slice(0, 500) });
 }));
+
+// ---- replies: read in the mailbox (e-mail) or pasted (LinkedIn), read by Claude, decided by a Oui ----
+const jourFr = () => new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' });
+async function classerReponse(slug, r) {
+  const c = prospection.get(slug), e = c.entreprises.find(x => x.siren === r.siren);
+  const envoyes = (e?.prospect?.faits ?? []).filter(f => f.status === 'envoye').map(f => { const s = c.campagne?.etapes.find(x => x.id === f.etape); return { canal: f.canal, objet: f.sujet ?? s?.objet, texte: s ? prCp.remplir(e.prospect?.perso?.[s.id]?.texte ?? s.texte, prCp.variables(e, c)) : '' }; });
+  const cl = await prAsk('prospection-reponses', { schema: prIa.REPONSE_SCHEMA, timeoutMs: 120e3,
+    input: { aujourd_hui: jourFr(), cible: { titre: c.titre, offre: c.offre, lien: c.lien }, entreprise: e?.enseigne || e?.nom, ville: e?.ville, dirigeant: e?.dirigeants?.[0] ?? null, telephone: e?.contact?.telephone ?? null, canal: r.canal, messages_envoyes: envoyes, reponse: { de: r.nom || r.de, sujet: r.sujet, texte: r.texte } } });
+  prospection.classer(slug, r.id, cl);
+  if (cl.classe === 'stop') await exclureProspect(slug, r.siren, 'a demandé à ne plus être contacté', r.id);
+  return cl;
+}
+// an opt-out is applied at once: excluded here, out of the sequence, on the Waalaxy do-not-contact list
+async function exclureProspect(slug, siren, raison, reponseId = null) {
+  const c = prospection.get(slug), e = c.entreprises.find(x => x.siren === siren);
+  if (!e) throw new Error('entreprise introuvable');
+  prospection.exclure({ siren, email: e.contact?.email ?? null, linkedin: e.contact?.linkedin ?? null, nom: e.enseigne || e.nom, raison });
+  prospection.statut(slug, siren, 'exclu');
+  let wx = null;
+  if (e.contact?.linkedin && waalaxy.actif()) {
+    try { const npc = (await waalaxy.listes()).find(l => l.ne_pas_contacter); if (npc) wx = (await waalaxy.ajouter([e.contact.linkedin], { liste: npc.id }))[0]; } catch (err) { wx = { ok: false, code: err.message }; }
+  }
+  if (reponseId) prospection.traiter(slug, reponseId, { etat: 'traitee', note: `exclu${wx?.ok ? ', ajouté à « Ne pas contacter » dans Waalaxy' : ''}` });
+  return { exclu: true, waalaxy: wx };
+}
+// the replies to campaign e-mails, read in the Infomaniak mailbox
+async function lireReponses() {
+  const who = new Map();
+  let since = null;
+  for (const c of prospection.lister()) {
+    if (!c.campagne || c.campagne.etat === 'brouillon') continue;
+    for (const e of c.entreprises) {
+      const sent = (e.prospect?.faits ?? []).filter(f => f.canal === 'email' && f.status === 'envoye');
+      if (!sent.length || e.prospect.statut === 'exclu') continue;
+      who.set(e.contact.email.toLowerCase(), { slug: c.slug, siren: e.siren });
+      if (!since || sent[0].at < since) since = sent[0].at;
+    }
+  }
+  if (!who.size) return 0;
+  let n = 0;
+  for (const m of await mail.messagesDe(who.keys(), { since })) {
+    const w = who.get(m.de);
+    const r = prospection.ajouterReponse(w.slug, { siren: w.siren, canal: 'email', texte: m.texte, de: m.de, nom: m.nom, sujet: m.sujet, uid: m.uid, thread: m.thread, messageId: m.messageId, date: m.date });
+    if (!r) continue;
+    n++;
+    classerReponse(w.slug, r).catch(err => console.warn('prospection : lecture de réponse', err.message));
+  }
+  return n;
+}
+app.get('/api/prospection/reponses', (req, res) => prOk(res, () => ({
+  reponses: prospection.reponses(),
+  prospects: prospection.lister().filter(c => c.campagne).flatMap(c => c.entreprises.filter(e => e.prospect?.depart).map(e => ({ cible: c.slug, cible_titre: c.titre, siren: e.siren, nom: e.enseigne || e.nom, dirigeant: e.dirigeants?.[0] ? `${e.dirigeants[0].prenom} ${e.dirigeants[0].nom}` : '' }))),
+})));
+app.post('/api/prospection/reponses/lire', prAsync(async () => ({ nouvelles: await lireReponses() })));
+// a LinkedIn reply pasted by Christophe: to whom it belongs is given, or found by name
+app.post('/api/prospection/reponses', prAsync(async req => {
+  const texte = String(req.body?.texte ?? '').trim();
+  if (texte.length < 2) throw new Error('colle la réponse reçue');
+  let { cible, siren } = req.body ?? {};
+  if (req.body?.prospect) [cible, siren] = String(req.body.prospect).split('|');
+  if (!cible || !siren) {
+    const words = s => String(s ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+    const t = words(texte);
+    const hits = prospection.lister().filter(c => c.campagne).flatMap(c => c.entreprises.filter(e => e.prospect?.depart).map(e => ({ c, e })))
+      .filter(({ e }) => { const d = e.dirigeants?.[0]; return (d && t.includes(words(d.nom)) && words(d.nom).length > 2) || t.includes(words(e.enseigne || e.nom)); });
+    if (hits.length !== 1) throw new Error(hits.length ? 'plusieurs prospects possibles : choisis-le dans la liste' : 'prospect non reconnu : choisis-le dans la liste');
+    cible = hits[0].c.slug; siren = hits[0].e.siren;
+  }
+  const r = prospection.ajouterReponse(cible, { siren, canal: 'linkedin', texte });
+  await classerReponse(cible, r);
+  return prospection.reponses().find(x => x.id === r.id);
+}));
+app.post('/api/prospection/reponses/:cible/:id/ignorer', (req, res) => prOk(res, () => prospection.traiter(req.params.cible, req.params.id, { etat: 'ignoree' })));
+app.post('/api/prospection/reponses/:cible/:id/rdv', (req, res) => prOk(res, () => {
+  const r = prospection.reponses().find(x => x.id === req.params.id && x.cible === req.params.cible);
+  if (!r) throw new Error('réponse introuvable');
+  return prospection.statut(req.params.cible, r.siren, 'repondu', { rdv: String(req.body?.date ?? new Date().toISOString().slice(0, 10)), interesse: true });
+}));
+// "Oui": what the card proposed. Sending a reply is this click's own authorisation.
+app.post('/api/prospection/reponses/:cible/:id/oui', prAsync(async req => {
+  const slug = req.params.cible, r = prospection.reponses().find(x => x.id === req.params.id && x.cible === slug);
+  if (!r) throw new Error('réponse introuvable');
+  if (r.etat !== 'a_traiter') throw new Error('réponse déjà traitée');
+  const texte = String(req.body?.reponse ?? r.reponse ?? '').trim();
+  const qui = r.dirigeant ? `${r.dirigeant.prenom} ${r.dirigeant.nom}` : r.entreprise;
+  const out = { fait: r.action };
+  if (r.classe === 'interesse') {
+    try {
+      const cx = partenaires.etat().connexions[0];
+      if (cx) {
+        const a = partenaires.suivi.creerAffaire(cx.id, { titre: `${prospection.get(slug).offre || 'Alpes IA'} · ${r.entreprise}`.slice(0, 200), entreprise: { nom: r.entreprise, ville: r.ville, domaine: r.contact?.site ? new URL(r.contact.site).hostname.replace(/^www\./, '') : '' }, contact: { nom: qui, fonction: r.dirigeant?.qualite, email: r.contact?.email, telephone: r.contact?.telephone }, prochaine_etape: r.question });
+        out.crm = a.ref;
+      }
+    } catch (e) { out.crm_erreur = e.message; }
+  }
+  if (r.action === 'repondre' || r.action === 'renvoyer') {
+    if (!texte) throw new Error('pas de réponse à envoyer');
+    if (r.canal === 'email' && r.action === 'repondre') {
+      const sent = await mail.send({ to: r.de, subject: /^re\s*:/i.test(r.sujet) ? r.sujet : `Re: ${r.sujet || r.entreprise}`, body: texte, inReplyTo: r.messageId, references: r.messageId ?? '' }, { confirmed: true });
+      out.envoye = sent.to;
+    } else {
+      out.copier = texte;
+      out.ouvrir = r.canal === 'linkedin' ? r.contact?.linkedin ?? null : null;
+      if (r.action === 'renvoyer' && r.personne?.nom) addItem(todoFile, { t: `Écrire à ${r.personne.nom}${r.personne.fonction ? ` (${r.personne.fonction})` : ''} chez ${r.entreprise}${r.personne.contact ? ` : ${r.personne.contact}` : ''}`, s: 'Prospection' });
+    }
+  } else if (r.action === 'appeler') {
+    addItem(todoFile, { t: `Appeler ${qui} (${r.entreprise})${r.contact?.telephone ? ` au ${r.contact.telephone}` : ''}`, s: 'Prospection' });
+    out.todo = true;
+  } else if (r.action === 'relancer') {
+    const d = /^\d{4}-\d{2}-\d{2}$/.test(req.body?.date ?? '') ? req.body.date : r.relance || prCp.plus(prCp.jour(new Date()), 90);
+    prospection.reporter(slug, r.siren, 'relance', d);
+    prospection.mutate(slug, c => { const e = c.entreprises.find(x => x.siren === r.siren); if (e?.prospect) e.prospect.relance_note = r.fait; });
+    out.relance = d;
+  } else if (r.action === 'exclure') {
+    Object.assign(out, await exclureProspect(slug, r.siren, 'pas intéressé'));
+  }
+  prospection.traiter(slug, r.id, { etat: 'traitee', reponse: texte || undefined });
+  return out;
+}));
+
 // the clock: only the real instance sends, unless a test asks for it
 const prAuto = sbQueue === CURATOR_QUEUE || process.env.ALPES_OS_PROSPECTION_AUTO === '1';
 async function prPasse() {
   if (!prOuvert()) return;
+  try { await lireReponses(); } catch (e) { console.warn('prospection : réponses', e.message); }
   try { const r = await prTick({ prospection, mail, log: m => console.warn(m) }); if (r.envoyes) console.log(`prospection : ${r.envoyes} e-mail(s) envoyé(s)`); } catch (e) { console.warn('prospection :', e.message); }
 }
 if (prAuto) setInterval(prPasse, 10 * 60e3).unref();

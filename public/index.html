@@ -1284,6 +1284,23 @@ a.pf-card.res-cours p { color: var(--accent); }
 .pr-pv { border: 1px solid var(--line-soft); border-radius: 8px; background: var(--bg); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; }
 .pr-pv-obj { font-size: 13px; }
 .pr-bubble { white-space: pre-wrap; background: var(--surface); border: 1px solid var(--line-soft); border-radius: 8px; padding: 10px 12px; font-size: 13.5px; line-height: 1.55; max-width: 70ch; }
+.pr-n { display: inline-block; margin-left: 6px; min-width: 18px; padding: 0 6px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); font: 600 11px/18px var(--font); text-align: center; }
+.pr-paste { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; max-width: 760px; }
+.pr-paste textarea, .pr-lab textarea, .pr-lab input { box-sizing: border-box; width: 100%; padding: 8px 11px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); color: var(--ink); font: 400 13.5px/1.5 var(--font); resize: vertical; }
+.pr-cards { display: flex; flex-direction: column; gap: 12px; max-width: 760px; }
+.pr-card { padding: 14px 16px; }
+.pr-meta { font-size: 12px; color: var(--ink-3); }
+.pr-card h3 { margin: 3px 0 4px; font: 600 16px/1.3 var(--font); }
+.pr-fact { margin: 0 0 10px; color: var(--ink-2); font-size: 13.5px; }
+.pr-q { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 10px; border-top: 1px solid var(--line-soft); }
+.pr-q p { margin: 0; font-weight: 600; font-size: 13.5px; }
+.pr-card details { margin-top: 8px; font-size: 13px; }
+.pr-card summary { cursor: pointer; color: var(--ink-3); }
+.pr-msg { white-space: pre-wrap; background: var(--bg); border: 1px solid var(--line-soft); border-radius: 7px; padding: 9px 11px; margin: 8px 0; }
+.pr-msg small { display: block; color: var(--ink-3); margin-bottom: 3px; }
+.pr-lab { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--ink-3); margin: 8px 0; }
+.pr-fold ul { margin: 8px 0 2px; padding-left: 18px; }
+.pr-fold li { margin: 3px 0; }
 .pr-clip { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 46ch; }
 
 </style>
@@ -3309,6 +3326,8 @@ const CHAT_TOOLS = {
   preparer_campagne: ['Prépare une campagne', a => `Proposition : campagne ${esc(a.cible)}`],
   reecrire_message: ['Prépare une réécriture', a => `Proposition : message ${esc(a.etape)}`],
   lancer_campagne: ['Prépare un lancement', a => `Proposition : lancer ${esc(a.cible)}`],
+  lire_reponses_prospection: ['Regarde les réponses', () => 'Réponses des prospects', 'les réponses'],
+  noter_reponse: ['Prépare une réponse reçue', () => 'Proposition : réponse LinkedIn'],
   modifier_cible: ['Prépare un changement de cible', a => `Proposition : cible ${esc(a.cible)}`],
   lister_clients: ['Regarde les clients', () => 'Liste des clients', 'les clients'],
   lire_finances: ['Regarde les finances', () => 'Lecture du suivi financier', 'les finances'],
@@ -4948,12 +4967,13 @@ async function loadPr(force) {
   else {
     liste = await api('/api/prospection').catch(() => null);
     if (r.slug) cible = await api(`/api/prospection/cibles/${encodeURIComponent(r.slug)}`).then(x => (x.error ? null : x)).catch(() => null);
+    if (r.vue === 'reponses') { const x = await api('/api/prospection/reponses').catch(() => ({})); prReps = x.reponses ?? []; prPros = x.prospects ?? []; }
     if (r.vue === 'campagnes') prAppels = await api('/api/prospection/appels').then(x => (Array.isArray(x) ? x : [])).catch(() => []);
     if (r.vue === 'campagne' && !prWx) api('/api/prospection/waalaxy').then(x => { prWx = x.error ? { actif: false } : x; renderPr(); }).catch(() => { prWx = { actif: false }; });
   }
   if (location.hash !== hash || demo !== demoOn) return;
   prData = liste; prCible = cible;
-  const sig = JSON.stringify([demo, liste, cible, hash]);
+  const sig = JSON.stringify([demo, liste, cible, hash, prReps, prAppels]);
   if (force || sig !== prSig) { prSig = sig; renderPr(); }
   // a search in progress: read it again until it ends
   const busy = cible?.recherche?.etat === 'en_cours' || cible?.enrichissement?.etat === 'en_cours' || liste?.cibles?.some(c => c.recherche?.etat === 'en_cours' || c.enrichissement?.etat === 'en_cours');
@@ -4963,12 +4983,13 @@ async function loadPr(force) {
 function renderPr() {
   const el = $('#pr-body'), r = prRoute();
   if (!r) return;
-  cxKeep(el, () => { el.innerHTML = prHead(r) + (r.vue === 'cible' ? prCiblePage() : r.vue === 'cibles' ? prCibles() : r.vue === 'campagnes' ? prCampagnes() : r.vue === 'campagne' ? prCampagnePage() : prPlus(r.vue)); });
+  cxKeep(el, () => { el.innerHTML = prHead(r) + (r.vue === 'cible' ? prCiblePage() : r.vue === 'cibles' ? prCibles() : r.vue === 'campagnes' ? prCampagnes() : r.vue === 'campagne' ? prCampagnePage() : r.vue === 'reponses' ? prReponses() : prPlus(r.vue)); });
 }
 function prHead(r) {
   const tabs = [['cibles', 'Cibles', '#prospection'], ['campagnes', 'Campagnes', '#prospection/campagnes'], ['reponses', 'Réponses', '#prospection/reponses']];
   const on = r.vue === 'cible' ? 'cibles' : r.vue === 'campagne' ? 'campagnes' : r.vue;
-  return `<div class="pr-h"><h1 class="ptitle">Prospection</h1><nav class="cx-tabs" aria-label="Prospection">${tabs.map(([id, lib, href]) => `<a href="${href}"${on === id ? ' aria-current="page"' : ''}>${lib}</a>`).join('')}</nav></div>`;
+  const n = (prData?.cibles ?? []).reduce((t, c) => t + (c.campagne?.a_traiter ?? 0), 0);
+  return `<div class="pr-h"><h1 class="ptitle">Prospection</h1><nav class="cx-tabs" aria-label="Prospection">${tabs.map(([id, lib, href]) => `<a href="${href}"${on === id ? ' aria-current="page"' : ''}>${lib}${id === 'reponses' && n ? ` <span class="pr-n">${n}</span>` : ''}</a>`).join('')}</nav></div>`;
 }
 const prPlus = () => '<div class="pane pr-empty">Arrive avec la suite de la prospection.</div>';
 
@@ -5118,6 +5139,7 @@ function prVars(e, c) {
 }
 const prFill = (t, v) => String(t ?? '').replace(/\{(prénom|prenom|nom|entreprise|ville|bonjour|moment|lien)\}/g, (m, k) => v[k] ?? '');
 const prParticipants = c => { const used = new Set(c.campagne.etapes.map(s => s.canal)); return c.entreprises.filter(e => e.etat === 'retenue' && ((used.has('email') && prOkMail(e.contact)) || (used.has('linkedin') && e.contact?.linkedin) || (used.has('appel') && e.contact?.telephone))); };
+const prTaux = k => { const n = (k.emails ?? 0) + (k.waalaxy ?? 0); return n ? `${Math.round(k.repondu * 100 / n)}<small>${n} contacts</small>` : '<span class="muted">–</span>'; };
 const prCampEtat = k => ({ brouillon: '<span class="pr-pill">Brouillon</span>', en_cours: '<span class="pr-pill run">En cours</span>', en_pause: '<span class="pr-pill sort">En pause</span>' }[k?.etat] ?? '');
 
 function prCampagnes() {
@@ -5129,9 +5151,9 @@ function prCampagnes() {
       <span class="pr-tel">${esc(a.telephone ?? '')}</span>
       <span class="pr-acts"><button class="btn" data-pr-appel="joint" data-c="${esc(a.cible)}" data-s="${a.siren}" data-e="${a.etape}">Joint</button><button class="lnk" data-pr-appel="pas_joint" data-c="${esc(a.cible)}" data-s="${a.siren}" data-e="${a.etape}">Pas joint</button><button class="lnk" data-pr-appel="reporter" data-c="${esc(a.cible)}" data-s="${a.siren}" data-e="${a.etape}">Dans 2 jours</button></span></div>`;
   return `${appels.length ? `<h3 class="pr-h3">Appels du jour</h3><div class="pane pr-calls">${appels.map(call).join('')}</div>` : ''}
-    ${avec.length ? `<div class="pane pr-wrap"><table class="pr-tbl"><thead><tr><th>Campagne</th><th>État</th><th class="r">Prospects</th><th class="r">E-mails envoyés</th><th class="r">Dans Waalaxy</th><th class="r">Réponses</th><th class="r">RDV</th></tr></thead><tbody>
+    ${avec.length ? `<div class="pane pr-wrap"><table class="pr-tbl"><thead><tr><th>Campagne</th><th>État</th><th class="r">Prospects</th><th class="r">E-mails envoyés</th><th class="r">Dans Waalaxy</th><th class="r">Réponses</th><th class="r">Intéressés</th><th class="r">RDV</th><th class="r">Réponses pour 100 contacts</th></tr></thead><tbody>
       ${avec.map(c => `<tr class="go" data-href="#prospection/campagne/${esc(c.slug)}"><td><b>${esc(c.titre)}</b><small>${c.campagne.etapes} étapes</small></td><td>${prCampEtat(c.campagne)}</td>
-        <td class="r">${c.campagne.prospects}</td><td class="r">${c.campagne.emails}</td><td class="r">${c.campagne.waalaxy}</td><td class="r">${c.campagne.repondu}</td><td class="r">${c.campagne.rdv}</td></tr>`).join('')}</tbody></table></div>`
+        <td class="r">${c.campagne.prospects}</td><td class="r">${c.campagne.emails}</td><td class="r">${c.campagne.waalaxy}</td><td class="r">${c.campagne.repondu}</td><td class="r">${c.campagne.interesses ?? 0}</td><td class="r">${c.campagne.rdv}</td><td class="r">${prTaux(c.campagne)}</td></tr>`).join('')}</tbody></table></div>`
       : '<div class="pane pr-empty">Aucune campagne.</div>'}
     ${sans.length ? `<form class="pr-row" data-pr-form="campagne" style="margin-top:14px"><select name="cible" data-k="pr-camp-cible" class="pr-sel">${sans.map(c => `<option value="${esc(c.slug)}">${esc(c.titre)} (${c.retenues} retenues)</option>`).join('')}</select>
       <button class="btn pri"${prBusy === 'campagne' ? ' disabled' : ''}>${prBusy === 'campagne' ? 'Écriture des messages…' : 'Préparer une campagne'}</button></form>` : ''}`;
@@ -5203,6 +5225,48 @@ function prCampagnePage() {
 }
 
 
+
+/* prospection: replies */
+let prReps = null;
+const PR_CLASSE = { interesse: 'Intéressé', pas_maintenant: 'Pas maintenant', renvoi: 'Renvoie vers quelqu\'un', pas_interesse: 'Pas intéressé', stop: 'Ne veut plus être contacté', absence: 'Absent', autre: 'Autre' };
+const prHeure = iso => new Date(iso).toLocaleString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+function prReponses() {
+  const all = prReps ?? [];
+  const todo = all.filter(r => r.etat === 'a_traiter' || r.etat === 'a_classer'), seules = all.filter(r => r.auto || r.classe === 'stop'), faites = all.filter(r => r.etat !== 'a_traiter' && r.etat !== 'a_classer' && !r.auto && r.classe !== 'stop');
+  const opts = (prData?.cibles ?? []).filter(c => c.campagne?.prospects).map(c => `<option value="${esc(c.slug)}">${esc(c.titre)}</option>`).join('');
+  const card = r => {
+    if (r.etat === 'a_classer') return `<article class="pane pr-card"><div class="pr-meta">${esc(r.cible_titre)} · ${r.canal === 'email' ? 'e-mail' : 'LinkedIn'} · ${prHeure(r.date)}</div><h3>${esc(r.entreprise)}</h3><p class="pr-fact">Lecture de la réponse…</p></article>`;
+    const k = r.contact ?? {};
+    return `<article class="pane pr-card">
+      <div class="pr-meta">${esc(r.cible_titre)} · ${r.canal === 'email' ? 'e-mail' : 'LinkedIn'} · ${prHeure(r.date)}</div>
+      <h3>${esc(r.titre || PR_CLASSE[r.classe] || 'Réponse')}</h3>
+      <p class="pr-fact">${esc(r.entreprise)} : ${esc(r.fait)}${r.action === 'appeler' && k.telephone ? ` <span class="pr-tel">${esc(k.telephone)}</span>` : ''}</p>
+      <div class="pr-q"><p>${esc(r.question)}</p><button class="btn pri" data-pr-oui="${esc(r.id)}" data-c="${esc(r.cible)}">Oui</button></div>
+      <details data-k="pr-d-${esc(r.id)}"><summary>Voir le détail</summary>
+        <div class="pr-msg"><small>Reçu${r.sujet ? ` · ${esc(r.sujet)}` : ''}</small>${esc(r.texte)}</div>
+        ${r.action === 'repondre' || r.action === 'renvoyer' ? `<label class="pr-lab">${r.canal === 'email' && r.action === 'repondre' ? 'Réponse envoyée depuis ta boîte, dans la même conversation' : 'Réponse à copier'}<textarea data-k="pr-rep-${esc(r.id)}" data-pr-rep="${esc(r.id)}" rows="6">${esc(r.reponse)}</textarea></label>` : ''}
+        ${r.action === 'relancer' ? `<label class="pr-lab">Date de la relance<input type="date" data-k="pr-rel-${esc(r.id)}" data-pr-rel="${esc(r.id)}" value="${esc(r.relance)}"></label>` : ''}
+        <p class="muted small">${r.classe === 'interesse' ? 'Oui crée aussi l\'affaire dans le CRM partagé. ' : ''}${r.action === 'appeler' ? 'Oui met l\'appel dans ta todo.' : ''}</p>
+        <div class="pr-acts"><button class="lnk" data-pr-ign="${esc(r.id)}" data-c="${esc(r.cible)}">Ignorer</button></div>
+      </details></article>`;
+  };
+  const line = r => `<li><b>${esc(r.entreprise)}</b> · ${esc(r.titre || PR_CLASSE[r.classe] || '')} <span class="muted">· ${prHeure(r.date)}${r.note ? ` · ${esc(r.note)}` : ''}${r.auto ? ` · ${esc(r.auto)}` : ''}</span>
+    ${r.classe === 'interesse' && !prCibleRdv(r) ? ` <button class="lnk" data-pr-rdv="${esc(r.id)}" data-c="${esc(r.cible)}">RDV pris</button>` : ''}</li>`;
+  return `<form class="pane pr-paste" data-pr-form="coller">
+      <textarea name="texte" data-k="pr-paste" rows="3" placeholder="Coller une réponse reçue sur LinkedIn, avec le nom de la personne"></textarea>
+      <div class="pr-row"><select name="prospect" data-k="pr-paste-who" class="pr-sel"><option value="">Reconnaître la personne</option>${prProspectOpts()}</select><span class="sp"></span>
+        <button class="btn"${prBusy === 'coller' ? ' disabled' : ''}>${prBusy === 'coller' ? 'Lecture…' : 'Classer'}</button></div></form>
+    <p class="pr-note" style="margin:0 0 12px">Les réponses aux e-mails arrivent seules depuis ta boîte. <button class="lnk" data-pr="lire-boite">Relire la boîte maintenant</button></p>
+    <div class="pr-cards">${todo.length ? todo.map(card).join('') : '<div class="pane pr-empty">0 réponse à traiter</div>'}</div>
+    ${seules.length ? `<details class="pr-fold pane" style="margin-top:12px" data-k="pr-seules"><summary>Traitées seules</summary><ul>${seules.map(line).join('')}</ul></details>` : ''}
+    ${faites.length ? `<details class="pr-fold pane" style="margin-top:12px" data-k="pr-faites"><summary>Déjà traitées</summary><ul>${faites.map(line).join('')}</ul></details>` : ''}`;
+}
+const prCibleRdv = r => !!r.rdv;
+function prProspectOpts() {
+  return (prPros ?? []).map(p => `<option value="${esc(p.cible)}|${esc(p.siren)}">${esc(p.nom)}${p.dirigeant ? ` (${esc(p.dirigeant)})` : ''} · ${esc(p.cible_titre)}</option>`).join('');
+}
+let prPros = null;
+
 const prCampUrl = () => `/api/prospection/cibles/${encodeURIComponent(prCible.slug)}/campagne`;
 async function prLong(tag, fn) { prBusy = tag; renderPr(); try { const r = await fn(); if (r?.error) toast(r.error, true); return r; } finally { prBusy = ''; loadPr(true); } }
 async function prSaveSteps(steps) { const r = await prSend('PATCH', prCampUrl(), { etapes: steps }); if (r.error) toast(r.error, true); return r; }
@@ -5211,6 +5275,7 @@ async function prCampAction(what, b) {
   if (demoOn && !local.includes(what) && ['ecrire', 'lancer-go', 'pause', 'reprendre', 'ajouter-etape', 'supprimer-etape', 'personnaliser'].includes(what)) { toast('Mode démo : rien n\'est enregistré'); return true; }
   const k = prCible?.campagne;
   switch (what) {
+    case 'lire-boite': { const r = await prLong('lire', () => prSend('POST', '/api/prospection/reponses/lire')); if (r && !r.error) toast(r.nouvelles ? `${r.nouvelles} nouvelle(s) réponse(s)` : 'Rien de nouveau'); return true; }
     case 'pv-prev': prPv = Math.max(0, prPv - 1); renderPr(); return true;
     case 'pv-next': prPv++; renderPr(); return true;
     case 'lancer': prBusy = 'lancer-confirm'; renderPr(); return true;
@@ -5250,6 +5315,21 @@ $('#pr-body').addEventListener('click', async e => {
     if (demoOn) return toast('Mode démo : rien n\'est enregistré');
     const r = await prSend('PATCH', `/api/prospection/cibles/${encodeURIComponent(prCible.slug)}/entreprises/${et.dataset.siren}`, { etat: et.dataset.prEtat });
     if (r.error) return toast(r.error, true);
+    return loadPr(true);
+  }
+  const oui = e.target.closest('[data-pr-oui]'), ign = e.target.closest('[data-pr-ign]'), rdv = e.target.closest('[data-pr-rdv]');
+  if (oui || ign || rdv) {
+    if (demoOn) return toast('Mode démo : rien n\'est enregistré');
+    const b = oui ?? ign ?? rdv, id = b.dataset.prOui ?? b.dataset.prIgn ?? b.dataset.prRdv, base = `/api/prospection/reponses/${encodeURIComponent(b.dataset.c)}/${encodeURIComponent(id)}`;
+    if (ign) { const r = await prSend('POST', `${base}/ignorer`); if (r.error) toast(r.error, true); return loadPr(true); }
+    if (rdv) { const r = await prSend('POST', `${base}/rdv`); if (r.error) toast(r.error, true); else toast('RDV noté'); return loadPr(true); }
+    b.disabled = true;
+    const rep = $('#pr-body').querySelector(`[data-pr-rep="${CSS.escape(id)}"]`)?.value, date = $('#pr-body').querySelector(`[data-pr-rel="${CSS.escape(id)}"]`)?.value;
+    const r = await prSend('POST', `${base}/oui`, { reponse: rep, date });
+    if (r.error) { b.disabled = false; return toast(r.error, true); }
+    if (r.copier) { try { await navigator.clipboard.writeText(r.copier); } catch { /* shown below */ } if (r.ouvrir) window.open(r.ouvrir.replace(/\/$/, ''), '_blank', 'noopener'); }
+    toast(r.envoye ? `Réponse envoyée à ${r.envoye}` : r.copier ? 'Réponse copiée : colle-la dans la conversation' : r.relance ? `Relance prévue le ${prDate(r.relance)}` : r.todo ? 'Appel ajouté à ta todo' : r.exclu ? 'Exclu de toutes les campagnes' : 'Fait');
+    if (r.crm_erreur) toast(`CRM : ${r.crm_erreur}`, true);
     return loadPr(true);
   }
   const st = e.target.closest('[data-pr-step]');
@@ -5294,6 +5374,13 @@ $('#pr-body').addEventListener('submit', async e => {
   e.preventDefault();
   const form = e.target, kind = form.dataset.prForm, fd = Object.fromEntries(new FormData(form));
   if (demoOn) return toast('Mode démo : rien n\'est enregistré');
+  if (kind === 'coller') {
+    prBusy = 'coller'; renderPr();
+    const r = await prSend('POST', '/api/prospection/reponses', { texte: fd.texte, prospect: fd.prospect || undefined });
+    prBusy = '';
+    if (r.error) { renderPr(); return toast(r.error, true); }
+    form.reset(); toast('Réponse classée'); return loadPr(true);
+  }
   if (kind === 'campagne') {
     const slug = fd.cible;
     prBusy = 'campagne'; renderPr();
