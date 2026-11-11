@@ -1674,7 +1674,7 @@ $('#propositions').addEventListener('keydown', e => { const sg = e.target.closes
 $('#rv-agent').addEventListener('click', e => { if (e.target.closest('b')) $('#propositions').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
 
 /* ---------- micro apps + runs ---------- */
-let cfg = { apps: [], gmail: {} }, runs = [];
+let cfg = { apps: [], mail: {} }, runs = [];
 function renderApps() {
   $('#apps').innerHTML = cfg.apps.map(a => {
     const running = runs.some(r => r.app === a.id && r.status === 'running');
@@ -3415,7 +3415,7 @@ async function loadDelegations() {
   const waiting = dgItems.filter(d => d.statut === 'bloque').length;
   const last = d => d.etapes?.at(-1)?.fin ?? d.etapes?.at(-1)?.debut ?? d.creeLe;
   $('#dg-meta').innerHTML = [running && `${running} en cours`, waiting && `${waiting} question${waiting > 1 ? 's' : ''}`,
-    !r.drafts && `<a href="/auth/google" title="Les agents ne peuvent pas encore déposer de brouillons Gmail : reconnecte Google pour l'autoriser">Autoriser les brouillons</a>`].filter(Boolean).join(' · ');
+    !r.drafts && `<span title="Les agents ne peuvent pas encore déposer de brouillons : il manque le jeton Infomaniak dans credentials/infomaniak.json">Brouillons indisponibles</span>`].filter(Boolean).join(' · ');
   $('#agents').innerHTML = dgItems.length ? dgItems.map(d => `<div class="ag dg" data-id="${esc(d.id)}">
       <i class="dot ${esc(d.statut)}${d.enCours ? ' live' : ''}"></i>
       <div class="ag-t"><b data-do="reply" title="Ouvrir l'échange avec l'agent">${esc(d.tache)}</b><small>${esc(DG_ST[d.statut] ?? d.statut)} · il y a ${rel(last(d))}</small></div>
@@ -3470,7 +3470,7 @@ async function dgOpen(id, toBottom) {
       <header><b>Rapport</b>${d.rapport ? `<button class="btn sm" id="dg-rep" aria-expanded="${dgReportOpen}">${dgReportOpen ? 'Replier' : 'Ouvrir'}</button>` : ''}</header>
       ${dgReportOpen ? `<div class="rep-full">${md(d.rapport)}</div>` : d.resume ? `<p>${esc(d.resume)}</p>` : ''}
       ${files.length ? `<div class="rep-files">${files.map(f => `<a href="/${esc(f)}" target="_blank" rel="noopener">${esc(f.split('/').pop())}</a>`).join('')}</div>` : ''}
-      ${d.brouillons.length ? `<p class="rep-mail">Brouillons Gmail : ${d.brouillons.map(b => `${esc(b.to)} « ${esc(b.subject)} »`).join(' ; ')}</p>` : ''}
+      ${d.brouillons.length ? `<p class="rep-mail">Brouillons : ${d.brouillons.map(b => `${esc(b.to)} « ${esc(b.subject)} »`).join(' ; ')}</p>` : ''}
     </section>` : '';
   // what the agent was handed at launch, readable as it got it
   if (dgCtx.id !== id) dgCtx = { id, open: false, text: null };

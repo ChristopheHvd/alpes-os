@@ -1,6 +1,6 @@
 // AlpesOS — local command centre.
 // One page, one address (http://localhost:4545), a window onto the second brain,
-// Gmail, the day's todo and headless micro-apps. It shows, it never stores truth.
+// the mailbox, the day's todo and headless micro-apps. It shows, it never stores truth.
 import express from 'express';
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -8,7 +8,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getGraph, readNote } from './lib/brain.js';
 import { readTodo, writeTodo, completeCarried, addItem, tidyTodo } from './lib/todo.js';
-import { makeGmail } from './lib/gmail.js';
+import { makeGoogle } from './lib/google.js';
+import { makeMail } from './lib/mail.js';
+import { makeSendLog } from './lib/mailsend.js';
 import { makeRunner } from './lib/runs.js';
 import { listProjects, updateProject, createProject } from './lib/projects.js';
 import { listClients, createClient } from './lib/clients.js';
@@ -76,14 +78,21 @@ bundle.configure({
   delays: { default: 15e3, [cfg.todoFile]: 60e3 },
 });
 const todoFile = path.join(cfg.secondBrain, cfg.todoFile);
-const gmail = makeGmail(path.join(ROOT, 'credentials'), cfg.port, { secondBrain: cfg.secondBrain });
+const google = makeGoogle(path.join(ROOT, 'credentials'), cfg.port);
+// Mail is the Infomaniak mailbox (cfg.mail; cfg.gmail is the section's former name).
+// Google stays for the calendar only.
+const mailCfg = { folder: 'INBOX', ...(cfg.mail ?? cfg.gmail ?? {}) };
+const mail = makeMail(path.join(ROOT, 'credentials'), {
+  secondBrain: cfg.secondBrain, mailbox: mailCfg.mailbox, fromName: mailCfg.fromName, folder: mailCfg.folder,
+  sendLog: makeSendLog(path.join(ROOT, 'output', 'mail-sent.json'), { cap: mailCfg.dailyCap ?? 15 }),
+});
 const standup = makeStandup(cfg.secondBrain);
 const mailState = makeMailState(path.join(ROOT, 'output', 'mail-state.json'));
 const calState = makeCalendarState(path.join(ROOT, 'output', 'calendar-state.json'));
 const projectsOrder = makeProjectsOrder(path.join(ROOT, 'output', 'projects-order.json'));
-const calendar = makeCalendar(() => gmail.accessToken(), () => gmail.status().hasCalendar, cfg.calendar ?? {});
+const calendar = makeCalendar(() => google.accessToken(), () => google.status().hasCalendar, cfg.calendar ?? {});
 // ALPES_OS_PORT lets a worktree run its own instance alongside the user's server.
-// gmail keeps cfg.port: Google only knows that redirect URI, so first-time OAuth
+// google keeps cfg.port: Google only knows that redirect URI, so first-time OAuth
 // has to happen on it.
 const PORT = Number(process.env.ALPES_OS_PORT) || cfg.port;
 const chatLog = makeChatLog(cfg.secondBrain);
@@ -144,7 +153,7 @@ const delegations = makeDelegations(ROOT, {
     const block = [`## ${new Date().toISOString().slice(0, 10)} · ${d.tache}`, '',
       `Statut : ${event === 'pret' ? 'terminé, à relire' : 'en attente de réponse'}${d.question ? ` — question : ${d.question}` : ''}`,
       d.resume ? `\n${d.resume}` : '',
-      d.brouillons.length ? `\nBrouillons Gmail : ${d.brouillons.map(b => `${b.to} « ${b.subject} »`).join(' ; ')}` : '',
+      d.brouillons.length ? `\nBrouillons mail : ${d.brouillons.map(b => `${b.to} « ${b.subject} »`).join(' ; ')}` : '',
       report ? `\n### Rapport\n\n${report.replace(/^#{1,3} /gm, '#### ')}` : '', ''].join('\n');
     bundle.append(path.join(cfg.secondBrain, 'brain', 'journal', 'delegations.md'), block, { header: DELEG_HEADER, subject: `Délégation : ${d.tache}`, why: `passage de l'agent délégué (${event})` });
   },
@@ -237,7 +246,7 @@ app.post('/api/cours/:deck/img', express.raw({ type: 'image/*', limit: '15mb' })
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/config', (req, res) => res.json({ testQueue: sbQueue !== CURATOR_QUEUE, apps: cfg.apps.map(a => ({ ...a, model: setting(a.id).model })), gmail: { label: cfg.gmail.label, ...gmail.status() }, brand: { company: branding.company, owner: branding.owner }, secondBrain: cfg.secondBrain }));
+app.get('/api/config', (req, res) => res.json({ testQueue: sbQueue !== CURATOR_QUEUE, apps: cfg.apps.map(a => ({ ...a, model: setting(a.id).model })), mail: mail.status(), brand: { company: branding.company, owner: branding.owner }, secondBrain: cfg.secondBrain }));
 
 // Memory — the visual second brain
 app.get('/api/graph', (req, res) => res.json(getGraph(cfg.secondBrain, cfg.brainFolders)));
@@ -268,23 +277,24 @@ app.get('/api/todo', (req, res) => res.json(readTodo(todoFile)));
 app.put('/api/todo', (req, res) => res.json(writeTodo(todoFile, Array.isArray(req.body.items) ? req.body.items : [], Array.isArray(req.body.later) ? req.body.later : undefined)));
 app.post('/api/todo/carried', (req, res) => res.json(completeCarried(todoFile, String(req.body.from), String(req.body.t), ['x', ' ', '>', '-'].includes(req.body.st) ? req.body.st : req.body.done !== false ? 'x' : ' ')));
 
-// Applications — Gmail
-app.get('/auth/google', (req, res) => { const u = gmail.authUrl(); u ? res.redirect(u) : res.status(400).send('credentials/client_secret.json manquant'); });
-app.get('/auth/callback', async (req, res) => { try { await gmail.exchange(String(req.query.code)); gmailCache = null; calCache = null; res.redirect('/'); } catch (e) { res.status(500).send(String(e)); } });
-let gmailCache = null;
+// Google — the calendar's OAuth
+app.get('/auth/google', (req, res) => { const u = google.authUrl(); u ? res.redirect(u) : res.status(400).send('credentials/client_secret.json manquant'); });
+app.get('/auth/callback', async (req, res) => { try { await google.exchange(String(req.query.code)); calCache = null; res.redirect('/'); } catch (e) { res.status(500).send(String(e)); } });
+// Mail — the Infomaniak mailbox
+let mailCache = null;
 // user decisions ride along with every inbox read
-const mailOpts = () => ({ ...cfg.gmail, filter: { ...(cfg.gmail.filter ?? {}), ...mailState.rules(), isHidden: id => mailState.isHidden(id) } });
-app.get('/api/gmail', async (req, res) => {
-  const st = gmail.status();
-  if (!st.hasSecret || !st.hasToken) return res.json({ needsAuth: true, ...st });
+const mailOpts = () => ({ ...mailCfg, filter: { ...(mailCfg.filter ?? {}), ...mailState.rules(), isHidden: id => mailState.isHidden(id) } });
+app.get('/api/mail', async (req, res) => {
+  const st = mail.status();
+  if (!st.hasToken) return res.json({ needsAuth: true, ...st });
   try {
-    if (!gmailCache || req.query.refresh || Date.now() - gmailCache.at > 120e3) gmailCache = { at: Date.now(), data: await gmail.flagged(mailOpts()) };
-    res.json({ ...gmailCache.data, hidden: mailState.hidden(), notes: mailState.get().notes, senders: mailState.get().senders });
+    if (!mailCache || req.query.refresh || Date.now() - mailCache.at > 120e3) mailCache = { at: Date.now(), data: await mail.flagged(mailOpts()) };
+    res.json({ ...mailCache.data, hidden: mailState.hidden(), notes: mailState.get().notes, senders: mailState.get().senders });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // Mail triage — what the user decided about each thread and each sender
-const dropCache = () => { gmailCache = null; };
+const dropCache = () => { mailCache = null; };
 app.get('/api/mail/state', (req, res) => res.json(mailState.get()));
 app.post('/api/mail/hide', (req, res) => { mailState.hide(String(req.body.id), { subject: req.body.subject, from: req.body.from }); dropCache(); res.json({ ok: true }); });
 app.post('/api/mail/unhide', (req, res) => { req.body.all ? mailState.unhideAll() : mailState.unhide(String(req.body.id)); dropCache(); res.json({ ok: true }); });
@@ -361,7 +371,7 @@ let pfEvents = null;
 app.get('/api/portfolio', async (req, res) => {
   let events = [];
   try {
-    if (gmail.status().hasCalendar) {
+    if (google.status().hasCalendar) {
       if (!pfEvents || Date.now() - pfEvents.at > 300e3) pfEvents = { at: Date.now(), events: (await calendar.upcoming({ ...calOpts(), days: 21, max: 40 })).events };
       events = pfEvents.events;
     }
@@ -374,7 +384,7 @@ app.get('/api/portfolio', async (req, res) => {
 let calCache = null;
 const calOpts = () => ({ days: 7, excludeOrganizers: calState.deniedOrganizers(), isHidden: id => calState.isHidden(id) });
 app.get('/api/calendar', async (req, res) => {
-  const st = gmail.status();
+  const st = google.status();
   if (!st.hasToken) return res.json({ needsAuth: true, events: [] });
   if (!st.hasCalendar) return res.json({ needsScope: true, events: [] });
   try {
@@ -390,7 +400,7 @@ app.post('/api/calendar/unhide', (req, res) => { req.body.all ? calState.unhideA
 app.post('/api/calendar/organizer', (req, res) => { calState.organizer(req.body.addr, req.body.rule ?? null); dropCalCache(); res.json({ ok: true }); });
 
 app.get('/api/calendar/list', async (req, res) => {
-  if (!gmail.status().hasCalendar) return res.json({ needsScope: true, calendars: [] });
+  if (!google.status().hasCalendar) return res.json({ needsScope: true, calendars: [] });
   try { res.json({ calendars: await calendar.calendars(), configured: cfg.calendar ?? {} }); }
   catch (e) { res.status(500).json({ error: e.message, calendars: [] }); }
 });
@@ -413,7 +423,7 @@ async function standupContext(slot) {
     agenda = c.events.map(e => ({ titre: e.title, debut: e.start, journee_entiere: e.allDay, avec: e.attendees, lieu: e.location, organisateur: e.organizer }));
   } catch (e) { agendaErreur = e.message.slice(0, 200); }
   try {
-    const g = await gmail.flagged({ ...mailOpts(), maxThreads: 8 });
+    const g = await mail.flagged({ ...mailOpts(), maxThreads: 8 });
     mails = g.threads.map(t => ({ de: t.from, objet: t.subject, extrait: t.snippet.slice(0, 160), recu: t.date, jours: daysSince(t.date), non_lu: t.unread, contact_connu: t.known }));
   } catch (e) { /* mail optional */ }
   return {
@@ -431,7 +441,7 @@ async function standupContext(slot) {
     projets: projects,
     agenda,
     agenda_erreur: agendaErreur,
-    agenda_ecriture: gmail.status().hasCalendarWrite,
+    agenda_ecriture: google.status().hasCalendarWrite,
     mails_a_traiter: mails,
     standups_recents: standup.last(3),
     // meetings brought in from Wispr Flow whose actions haven't been put to Christophe yet
@@ -460,7 +470,7 @@ async function createStandupEvents(date, slot, report) {
     for (const ev of Array.isArray(list) ? list : list.events ?? []) {
       const when = new Date(ev.start).toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
       if (sbQueue !== CURATOR_QUEUE) { lines.push(`- Non posé (instance de test) : ${ev.title} (${when})`); continue; }
-      if (!gmail.status().hasCalendarWrite) { lines.push(`- Non posé : ${ev.title} (${when}) — écriture agenda non autorisée, clique « Reconnecter Google »`); continue; }
+      if (!google.status().hasCalendarWrite) { lines.push(`- Non posé : ${ev.title} (${when}) — écriture agenda non autorisée, clique « Reconnecter Google »`); continue; }
       try { await calendar.createEvent(ev); lines.push(`- Posé : ${ev.title} (${when})`); }
       catch (e) { lines.push(`- Échec : ${ev.title} (${when}) — ${e.message.slice(0, 160)}`); }
     }
@@ -567,7 +577,7 @@ app.post('/api/todo/add', (req, res) => {
   catch (e) { res.status(400).json({ error: e.message }); }
 });
 
-app.get('/api/delegations', (req, res) => res.json({ items: delegations.list({ all: req.query.all === '1' }), drafts: gmail.status().hasDrafts }));
+app.get('/api/delegations', (req, res) => res.json({ items: delegations.list({ all: req.query.all === '1' }), drafts: mail.status().hasDrafts }));
 app.get('/api/delegations/skills', (req, res) => res.json(delegations.skills()));
 app.get('/api/delegations/:id', (req, res) => {
   const d = delegations.get(req.params.id);
@@ -596,17 +606,17 @@ app.post('/api/delegations/:id/:act', (req, res) => {
 app.post('/api/mail/draft', async (req, res) => {
   const { id, to, cc, subject, body, delegation } = req.body ?? {};
   if (!to || !subject || !body) return res.status(400).json({ error: 'destinataire, objet et corps sont requis' });
-  if (!gmail.status().hasDrafts) return res.status(403).json({ error: "les brouillons Gmail ne sont pas autorisés : Christophe doit cliquer « Reconnecter Google » dans AlpesOS. Note le texte du mail dans RAPPORT.md en attendant." });
+  if (!mail.status().hasDrafts) return res.status(403).json({ error: "la boîte mail n'est pas reliée : il manque le jeton Infomaniak (credentials/infomaniak.json). Note le texte du mail dans RAPPORT.md en attendant." });
   if (id && delegation && !delegations.ownsDraft(String(delegation), String(id))) return res.status(403).json({ error: "ce brouillon n'a pas été créé par cette tâche : tu ne peux modifier que les tiens" });
   try {
-    const d = id ? await gmail.updateDraft(String(id), { to, cc, subject, body }) : await gmail.createDraft({ to, cc, subject, body });
+    const d = id ? await mail.updateDraft(String(id), { to, cc, subject, body }) : await mail.createDraft({ to, cc, subject, body });
     if (delegation) delegations.noteDraft(String(delegation), { to, subject, id: d.id });
     res.json(d);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/calendar/event', async (req, res) => {
-  if (!gmail.status().hasCalendarWrite) return res.status(403).json({ error: "l'écriture agenda n'est pas autorisée : reconnecte Google depuis le widget Aujourd'hui" });
+  if (!google.status().hasCalendarWrite) return res.status(403).json({ error: "l'écriture agenda n'est pas autorisée : reconnecte Google depuis le widget Aujourd'hui" });
   try { const e = await calendar.createEvent(req.body ?? {}); dropCalCache(); res.json(e); }
   catch (e) { res.status(400).json({ error: e.message }); }
 });
@@ -1169,13 +1179,13 @@ async function moneyContext(since) {
   const mails = [], extraits = {};
   let mailErreur = null;
   try {
-    if (gmail.status().hasToken) {
+    if (mail.status().hasToken) {
       const from = Math.max(Date.parse(since ?? '') || 0, Date.now() - 7 * 864e5);
-      const { threads } = await gmail.flagged({ ...mailOpts(), maxThreads: 20 });
+      const { threads } = await mail.flagged({ ...mailOpts(), maxThreads: 20 });
       for (const t of threads.filter(t => Date.parse(t.date) > from).slice(0, 8)) {
         const c = mailClient(t, clients);
         let messages;
-        try { messages = await gmail.threadText(t.id); } catch (e) { messages = [{ de: t.from, date: t.date, texte: t.snippet }]; }
+        try { messages = await mail.threadText(t.id); } catch (e) { messages = [{ de: t.from, date: t.date, texte: t.snippet }]; }
         mails.push({ id: t.id, de: t.from, objet: t.subject, date: t.date, ...(c ? { client: c.slug } : {}), messages });
         if (c && !extraits[c.slug]) extraits[c.slug] = [...priceLines(bundle.read(path.join(cfg.secondBrain, c.id))),
           ...notes.filter(n => clientOf(n) === c.slug).flatMap(n => priceLines(bundle.read(path.join(cfg.secondBrain, n.id))).map(l => `${n.id} : ${l}`))].slice(0, 20);
@@ -1227,8 +1237,8 @@ async function dossierFor({ tache, slug = '', objectif = '', etapes = [], why = 
   }
   for (const r of refs.filter(r => r.type === 'mail')) {
     try {
-      const msgs = await gmail.threadText(r.id, { last: 10, maxChars: 8000 });
-      sections.push({ titre: r.label, texte: msgs.map(m => `**${m.de}** · ${m.date.slice(0, 16).replace('T', ' ')}\n\n${m.texte}`).join('\n\n---\n\n'), chemin: `fil Gmail ${r.id} (outil lister_mails)` });
+      const msgs = await mail.threadText(r.id, { last: 10, maxChars: 8000 });
+      sections.push({ titre: r.label, texte: msgs.map(m => `**${m.de}** · ${m.date.slice(0, 16).replace('T', ' ')}\n\n${m.texte}`).join('\n\n---\n\n'), chemin: `fil mail ${r.id} (outil lister_mails)` });
     } catch (e) { /* a mail out of reach leaves the rest of the file */ }
   }
   if (names.length) {
@@ -1316,7 +1326,7 @@ app.delete('/api/reglages/prompts/:id', (req, res) => {
 // the MCP servers of ~/.claude.json the agents may get; only switched off here, never removed
 // from there. dashboard is AlpesOS itself: always given.
 const connectors = () => [
-  { name: 'dashboard', does: 'lecture (second brain, todo, agenda, mails) et brouillons Gmail', fixed: true },
+  { name: 'dashboard', does: 'lecture (second brain, todo, agenda, mails) et brouillons mail (boîte Infomaniak)', fixed: true },
   ...listMcp().filter(c => c.name !== 'dashboard').map(c => ({ ...c, agents: reglages.mcpOn(c.name) })),
 ];
 app.put('/api/reglages/connectors/:name', (req, res) => {
@@ -1382,10 +1392,11 @@ app.post('/api/reveal', (req, res) => {
 // Loopback only: the API starts Claude runs and serves local files, with no
 // authentication — nothing on the network may reach it.
 app.listen(PORT, '127.0.0.1', () => {
-  const st = gmail.status();
+  const st = google.status();
   console.log(`Alpes IA OS  →  http://localhost:${PORT}`);
   console.log(`second brain: ${cfg.secondBrain}`);
-  if (!st.hasSecret) console.log('gmail: credentials/client_secret.json manquant (Google Cloud Console → OAuth client "Desktop app")');
-  else if (!st.hasToken) console.log(`gmail: ouvrir http://localhost:${PORT}/auth/google pour autoriser`);
-  else console.log('gmail: autorisé');
+  if (!st.hasSecret) console.log('agenda: credentials/client_secret.json manquant (Google Cloud Console → OAuth client "Desktop app")');
+  else if (!st.hasToken) console.log(`agenda: ouvrir http://localhost:${PORT}/auth/google pour autoriser`);
+  else console.log('agenda: autorisé');
+  console.log(mail.status().hasToken ? `mail: ${mailCfg.mailbox ?? 'mail.mailbox manquant dans config.json'}` : 'mail: credentials/infomaniak.json manquant (jeton API Infomaniak)');
 });

@@ -20,7 +20,7 @@ affichées par un jeu fictif.
 | Second brain | Le graphe force-directed : un nœud par note, une arête par lien markdown. Filtre par domaine et par texte, fiche de concept, champ « Interroger » |
 | Outils | Les micro apps (une skill Claude Code lancée en mode headless) et les supports de formation |
 
-Gmail et l'agenda ne s'affichent plus, mais l'assistant et le stand-up continuent de les lire.
+La boîte mail et l'agenda ne s'affichent plus, mais l'assistant et le stand-up continuent de les lire.
 
 ## Installation
 
@@ -31,14 +31,24 @@ cp config/branding.example.json config/branding.json
 npm start                      # http://localhost:4545
 ```
 
-Renseigner dans `config/config.json` le chemin du second brain et le label Gmail,
+Renseigner dans `config/config.json` le chemin du second brain et l'adresse de la boîte mail,
 puis dans `config/branding.json` l'identité et les coordonnées bancaires qui
 alimentent les documents générés. Ces deux fichiers ne sont jamais versionnés.
 
-### Gmail et Google Calendar
+### Boîte mail (Infomaniak)
+
+Créer un jeton API dans le Manager Infomaniak (page « Jetons API ») avec le scope `mail`,
+puis le déposer dans `credentials/infomaniak.json` : `{ "token": "…" }`.
+`mail.mailbox` dans `config/config.json` dit quelle boîte lire (le jeton en voit
+plusieurs). Lecture, tri et brouillons passent par l'API Mail d'Infomaniak.
+L'envoi (`mail.send`, pour la prospection) exige une confirmation de l'appelant, reste
+en texte brut sans pixel de suivi, plafonné à `mail.dailyCap` envois par jour (15 par
+défaut), et refuse toute adresse qui a rebondi (`output/mail-sent.json`).
+
+### Google Calendar
 
 Créer un client OAuth de type « Desktop app » dans Google Cloud Console, activer
-les API Gmail et Calendar, puis déposer le fichier dans `credentials/client_secret.json`.
+l'API Calendar, puis déposer le fichier dans `credentials/client_secret.json`.
 Le premier lancement propose un lien d'autorisation. Les jetons restent en local.
 
 ### LinkedIn
@@ -108,7 +118,9 @@ de tri du courrier.
 ```
 server.js            API Express, une route par couche
 lib/brain.js         indexe le second brain en graphe
-lib/gmail.js         lecture Gmail via OAuth
+lib/mail.js          boîte mail Infomaniak : lecture, brouillons, envoi plafonné
+lib/mailsend.js      registre d'envoi : plafond du jour, rebonds
+lib/google.js        OAuth Google, pour l'agenda
 lib/mailfilter.js    tri du courrier sur en-têtes et expéditeur
 lib/mailstate.js     décisions de tri persistées
 lib/calendar.js      événements à venir
