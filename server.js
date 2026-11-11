@@ -991,48 +991,51 @@ app.get('/api/echanges', (req, res) => {
     rangement: sujets.etat(),
   });
 });
-// an answer joins its subject: it replies to the partner's last message there, or opens with the subject's title
-async function envoyerDansSujet(sid, texte, partage) {
+// A conversation is named by one of its messages: its subject id changes when the filing agent
+// files it. An answer replies to the partner's latest question still unanswered, else to their
+// latest message, or opens with the subject's title.
+function filDe(ancre) {
   const e = echange();
   if (!e) throw Object.assign(new Error('aucun partenaire connecté'), { status: 409 });
-  const g = sujets.grouper(e.messages).find(x => x.id === sid);
-  if (!g) throw Object.assign(new Error('sujet inconnu'), { status: 404 });
-  const dernier = g.messages.filter(m => m.sens === 'recu').at(-1);
-  const lu = await partenaires.envoyerMessage(e.c.id, dernier ? { texte, enReponseA: dernier.id, partage } : { type: 'info', sujet: g.titre, texte, partage });
-  const cible = sid.startsWith('brut:') ? sujets.creer(g.titre) : sid;
-  if (sid.startsWith('brut:')) for (const m of g.messages) sujets.affecter(m.id, cible);
-  sujets.affecter(lu.id, cible);
+  const g = sujets.grouper(e.messages).find(x => x.messages.some(m => m.id === ancre));
+  if (!g) throw Object.assign(new Error('conversation inconnue'), { status: 404 });
+  return { e, g };
+}
+async function envoyerDansFil(ancre, texte, partage) {
+  const { e, g } = filDe(ancre);
+  const recus = g.messages.filter(m => m.sens === 'recu');
+  const cible = recus.filter(m => m.type === 'question' && !m.repondu).at(-1) ?? recus.at(-1);
+  const lu = await partenaires.envoyerMessage(e.c.id, cible ? { texte, enReponseA: cible.id, partage } : { type: 'info', sujet: g.titre, texte, partage });
+  const sid = g.id.startsWith('brut:') ? sujets.creer(g.titre) : g.id;
+  if (g.id.startsWith('brut:')) for (const m of g.messages) sujets.affecter(m.id, sid);
+  sujets.affecter(lu.id, sid);
   return lu;
 }
 const echangeErr = (res, e) => res.status(e.status >= 400 && e.status < 600 ? e.status : 502).json({ error: e.message });
-app.post('/api/echanges/sujets/:sid/messages', async (req, res) => {
-  try { res.json(await envoyerDansSujet(req.params.sid, req.body?.texte, !!req.body?.partage)); } catch (e) { echangeErr(res, e); }
-});
+// one send at a time per conversation: a second click while the first is on its way is refused
+const filsOccupes = new Set();
+async function unSeul(ancre, res, fn) {
+  if (filsOccupes.has(ancre)) return res.status(409).json({ error: 'un envoi est déjà en cours dans cette conversation' });
+  filsOccupes.add(ancre);
+  try { res.json(await fn()); } catch (e) { echangeErr(res, e); } finally { filsOccupes.delete(ancre); }
+}
+app.post('/api/echanges/fils/:ancre/messages', (req, res) => unSeul(req.params.ancre, res, () => envoyerDansFil(req.params.ancre, req.body?.texte, !!req.body?.partage)));
 // Christophe chose that the agent's answer leaves at once, copied to the shared space when there is one
-const agentEnCours = new Set();
-app.post('/api/echanges/sujets/:sid/agent', async (req, res) => {
-  const sid = req.params.sid;
-  if (agentEnCours.has(sid)) return res.status(409).json({ error: 'l\'agent répond déjà' });
-  agentEnCours.add(sid);
-  try {
-    const e = echange();
-    const g = e && sujets.grouper(e.messages).find(x => x.id === sid);
-    if (!g) throw Object.assign(new Error('sujet inconnu'), { status: 404 });
-    const texte = await reponseAgent(input => askClaude(cfg.claude.bin, { ...setting('reponse-partenaire'), system: reglages.prompt('reponse-partenaire', REPONSE_SYSTEM), schema: REPONSE_SCHEMA }, input), g);
-    const partage = !!partenaires.etat().connexions.find(x => x.id === e.c.id)?.partage;
-    res.json(await envoyerDansSujet(sid, texte, partage));
-  } catch (e) { echangeErr(res, e); } finally { agentEnCours.delete(sid); }
-});
-app.post('/api/echanges/messages', async (req, res) => {
-  try {
-    const e = echange();
-    if (!e) throw Object.assign(new Error('aucun partenaire connecté'), { status: 409 });
-    const { type, sujet, texte, partage } = req.body ?? {};
-    const lu = await partenaires.envoyerMessage(e.c.id, { type, sujet, texte, partage: !!partage });
-    sujets.affecter(lu.id, sujets.creer(lu.sujet));
-    res.json(lu);
-  } catch (e) { echangeErr(res, e); }
-});
+app.post('/api/echanges/fils/:ancre/agent', (req, res) => unSeul(req.params.ancre, res, async () => {
+  const { e, g } = filDe(req.params.ancre);
+  const texte = await reponseAgent(input => askClaude(cfg.claude.bin, { ...setting('reponse-partenaire'), system: reglages.prompt('reponse-partenaire', REPONSE_SYSTEM), schema: REPONSE_SCHEMA }, input), g);
+  const partage = !!partenaires.etat().connexions.find(x => x.id === e.c.id)?.partage;
+  // the conversation may have been filed meanwhile: its anchor still finds it
+  return envoyerDansFil(req.params.ancre, texte, partage);
+}));
+app.post('/api/echanges/messages', (req, res) => unSeul('nouveau', res, async () => {
+  const e = echange();
+  if (!e) throw Object.assign(new Error('aucun partenaire connecté'), { status: 409 });
+  const { type, sujet, texte, partage } = req.body ?? {};
+  const lu = await partenaires.envoyerMessage(e.c.id, { type, sujet, texte, partage: !!partage });
+  sujets.affecter(lu.id, sujets.creer(lu.sujet));
+  return lu;
+}));
 app.post('/api/connexions/missions/:id/terminer', async (req, res) => {
   try { res.json(await partenaires.terminer(req.params.id, req.body?.message)); } catch (e) { res.status(e.status ?? 400).json({ error: e.message }); }
 });

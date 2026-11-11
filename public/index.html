@@ -3974,7 +3974,9 @@ function cxFiche(c, act, r) {
 }
 /* ---------- échanges: the partner's missions, and the messages gathered by subject ---------- */
 // #echanges, #echanges/repondre/<message id> (from Aujourd'hui: opens the subject holding it)
-let ec = null, ecSig = '', ecOpen = null, ecTout = false, ecForm = null, ecPlein = new Set(), ecAgent = new Set();
+// a conversation is followed by one of its message ids: its subject id changes once it is filed
+let ec = null, ecSig = '', ecOpen = null, ecTout = false, ecForm = null, ecPlein = new Set(), ecAgent = new Set(), ecEnvoi = new Set();
+const ecDans = (s, set) => s.messages.some(m => set.has(m.id));
 const ecRoute = () => {
   const m = location.hash.match(/^#echanges(?:\/repondre\/([^/]+))?$/);
   return m && { repondre: m[1] ? decodeURIComponent(m[1]) : null };
@@ -3988,11 +3990,12 @@ async function loadEc(force) {
   try { ec = await api(`/api/echanges${ecTout ? '?tout=1' : ''}`); } catch (e) { return; }
   const r = ecRoute();
   if (r.repondre && ec.sujets) {
-    const s = ec.sujets.find(x => x.messages.some(m => m.id === r.repondre));
-    if (s) ecOpen = s.id;
+    // an older question is beyond the 30 days: look again among all of them
+    if (!ec.sujets.some(x => x.messages.some(m => m.id === r.repondre)) && !ecTout && ec.caches) { ecTout = true; return loadEc(force); }
+    ecOpen = r.repondre;
     window.history.replaceState(null, '', '#echanges');
   }
-  const sig = JSON.stringify([ec, ecOpen, ecForm, ecTout, [...ecPlein], [...ecAgent]]);
+  const sig = JSON.stringify([ec, ecOpen, ecForm, ecTout, [...ecPlein], [...ecAgent], [...ecEnvoi]]);
   if (force || sig !== ecSig) { ecSig = sig; renderEc(); }
 }
 function ecMission(m, p) {
@@ -4024,21 +4027,21 @@ function ecMissions() {
   </aside>`;
 }
 function ecSujet(s, p) {
-  const der = s.messages.at(-1), open = ecOpen === s.id;
+  const der = s.messages.at(-1), open = !!ecOpen && s.messages.some(m => m.id === ecOpen);
   const who = m => (m.sens === 'recu' ? cxFirst(p) : 'Toi');
   const meta = `<span class="ec-meta"><span>${esc(cxWhen(der.quand))}</span>${s.note ? '<span class="ec-noted">Noté</span>' : ''}</span>`;
-  const head = `<button type="button" class="ec-head" data-sujet="${esc(s.id)}" aria-expanded="${open}"><span class="ec-t">${esc(s.titre)}${s.sansReponse ? '<span class="ec-pill">Sans réponse</span>' : ''}</span>${meta}
+  const head = `<button type="button" class="ec-head" data-sujet="${esc(der.id)}" aria-expanded="${open}"><span class="ec-t">${esc(s.titre)}${s.sansReponse ? '<span class="ec-pill">Sans réponse</span>' : ''}</span>${meta}
     ${open ? '' : `<span class="ec-last">${esc(who(der))} · ${esc(der.sujet)}</span>`}</button>`;
   if (!open) return `<div class="ec-th">${head}</div>`;
-  const plein = ecPlein.has(s.id), vus = plein ? s.messages : s.messages.slice(-3), caches = s.messages.length - vus.length;
+  const plein = ecDans(s, ecPlein), vus = plein ? s.messages : s.messages.slice(-3), caches = s.messages.length - vus.length;
   const bulle = m => `<div class="ec-b${m.sens === 'recu' ? '' : ' me'}"><div class="ec-bh"><b>${esc(who(m))}</b><span>${esc(cxWhen(m.quand))}</span></div><div class="cx-md">${md(cxLiens(m.texte))}</div></div>`;
-  const agent = ecAgent.has(s.id);
+  const agent = ecDans(s, ecAgent), envoi = ecDans(s, ecEnvoi);
   return `<div class="ec-th open">${head}
-    <div class="ec-conv">${caches ? `<button type="button" class="ec-fold" data-plein="${esc(s.id)}">${caches} message${caches > 1 ? 's' : ''} plus ancien${caches > 1 ? 's' : ''}</button>` : ''}${vus.map(bulle).join('')}</div>
-    <form class="ec-form" data-rep="${esc(s.id)}">
-      <textarea data-k="ec-rep-${esc(s.id)}" name="texte" required placeholder="Ta réponse, en Markdown" aria-label="Réponse dans ${esc(s.titre)}"></textarea>
-      <div class="ec-ra">${ec.partage ? `<label><input type="checkbox" name="partage" data-k="ec-chk-${esc(s.id)}" checked>Copie dans l'espace partagé</label>` : ''}<span class="sp"></span>
-        <button type="button" class="btn" data-agent="${esc(s.id)}"${agent ? ' disabled' : ''}>${agent ? 'L\'agent répond…' : 'Faire répondre l\'agent'}</button><button type="submit" class="btn acc">Répondre</button></div>
+    <div class="ec-conv">${caches ? `<button type="button" class="ec-fold" data-plein="${esc(der.id)}">${caches} message${caches > 1 ? 's' : ''} plus ancien${caches > 1 ? 's' : ''}</button>` : ''}${vus.map(bulle).join('')}</div>
+    <form class="ec-form" data-rep="${esc(ecOpen)}">
+      <textarea data-k="ec-rep" name="texte" required placeholder="Ta réponse, en Markdown" aria-label="Réponse dans ${esc(s.titre)}"></textarea>
+      <div class="ec-ra">${ec.partage ? `<label><input type="checkbox" name="partage" data-k="ec-chk" checked>Copie dans l'espace partagé</label>` : ''}<span class="sp"></span>
+        <button type="button" class="btn" data-agent="${esc(ecOpen)}"${agent || envoi ? ' disabled' : ''}>${agent ? 'L\'agent répond…' : 'Faire répondre l\'agent'}</button><button type="submit" class="btn acc"${agent || envoi ? ' disabled' : ''}>Répondre</button></div>
     </form></div>`;
 }
 function ecMessages() {
@@ -4068,7 +4071,7 @@ $('#ec-body').addEventListener('click', async e => {
   const b = e.target.closest('button');
   if (!b) return;
   if ('ecForm' in b.dataset) { ecForm = b.dataset.ecForm || null; renderEc(); $('#ec-body').querySelector('.ec-form:not([data-rep]) :is(input:not([type="date"]):not([type="checkbox"]), textarea)')?.focus(); return; }
-  if (b.dataset.sujet) { ecOpen = ecOpen === b.dataset.sujet ? null : b.dataset.sujet; renderEc(); return; }
+  if (b.dataset.sujet) { const s = ec.sujets.find(x => x.messages.some(m => m.id === b.dataset.sujet)); ecOpen = s && ecOpen && ecDans(s, new Set([ecOpen])) ? null : b.dataset.sujet; renderEc(); return; }
   if (b.dataset.plein) { ecPlein.add(b.dataset.plein); renderEc(); return; }
   if ('tout' in b.dataset) { ecTout = !ecTout; await loadEc(true); return; }
   let r = null;
@@ -4082,7 +4085,7 @@ $('#ec-body').addEventListener('click', async e => {
     } else if (b.dataset.agent) {
       const sid = b.dataset.agent;
       ecAgent.add(sid); renderEc();
-      try { r = await cxSend(`/api/echanges/sujets/${encodeURIComponent(sid)}/agent`, {}); } finally { ecAgent.delete(sid); }
+      try { r = await cxSend(`/api/echanges/fils/${encodeURIComponent(sid)}/agent`, {}); } finally { ecAgent.delete(sid); }
       if (!r.error) toast(`Réponse de l'agent envoyée à ${ec.partenaire}`);
     } else return;
     if (r?.error) toast(r.error, true);
@@ -4097,9 +4100,14 @@ $('#ec-body').addEventListener('submit', async e => {
     let r;
     if (f.id === 'ec-mission') r = await cxSend(`/api/connexions/${encodeURIComponent(ec.connexion)}/missions`, v);
     else if (f.id === 'ec-sujet') r = await cxSend('/api/echanges/messages', { sujet: v.sujet, texte: v.texte, type: v.question ? 'question' : 'info', partage: !!v.partage });
-    else if (f.dataset.rep) r = await cxSend(`/api/echanges/sujets/${encodeURIComponent(f.dataset.rep)}/messages`, { texte: v.texte, partage: !!v.partage });
-    else return;
+    else if (f.dataset.rep) {
+      ecEnvoi.add(f.dataset.rep);
+      try { r = await cxSend(`/api/echanges/fils/${encodeURIComponent(f.dataset.rep)}/messages`, { texte: v.texte, partage: !!v.partage }); } finally { ecEnvoi.delete(f.dataset.rep); }
+    } else return;
     if (r.error) throw new Error(r.error);
+    // the page may have been redrawn meanwhile: empty the reply on screen, not the form sent
+    const t = $('#ec-body').querySelector('[data-k="ec-rep"]');
+    if (f.dataset.rep && t) t.value = '';
     f.reset();
     toast(f.id === 'ec-mission' ? `Mission confiée à ${ec.partenaire}` : `Message envoyé à ${ec.partenaire}`);
     ecForm = null;
@@ -4224,10 +4232,12 @@ $('#cx-body').addEventListener('click', async e => {
   if (r?.error) toast(r.error, true);
   loadCx(true);
 });
+// the messages moved to Échanges: an old reply link, kept or opened from a notification, lands there
+const cxVersEc = () => { const r = cxRoute(); if (r?.vue !== 'repondre') return false; location.replace(`#echanges/repondre/${encodeURIComponent(r.cle ?? '')}`); return true; };
+cxVersEc();
 addEventListener('hashchange', () => {
-  const r = cxRoute();
-  if (r?.vue === 'repondre') { location.replace(`#echanges/repondre/${encodeURIComponent(r.cle ?? '')}`); return; }
-  if (r) { cxForm = null; loadCx(true); }
+  if (cxVersEc()) return;
+  if (cxRoute()) { cxForm = null; loadCx(true); }
 });
 
 /* ---------- crm: the sales follow-up the partners share ---------- */
