@@ -1407,9 +1407,11 @@ const prospection = makeProspection(path.join(ROOT, 'output', 'prospection'), {
   exclusionsOf: () => {
     let crm = [];
     try { crm = partenaires.etat().connexions.flatMap(c => partenaires.suivi.crm(c.id).entreprises?.map(e => e.nom) ?? []); } catch { /* no relay */ }
-    return { clients: listClients(cfg.secondBrain).map(c => c.title), crm, partenaire: [] };
+    // the shared CRM is Marc's follow-up of AlpesIA's prospection: a company there is his
+    return { clients: listClients(cfg.secondBrain).map(c => c.title), crm: [], partenaire: crm };
   },
 });
+const prAsync = fn => async (req, res) => { try { res.json(await fn(req)); } catch (e) { res.status(/introuvable/.test(e.message) ? 404 : 400).json({ error: e.message }); } };
 const prOk = (res, fn) => { try { res.json(fn()); } catch (e) { res.status(/introuvable/.test(e.message) ? 404 : 400).json({ error: e.message }); } };
 const prAsk = (id, opts) => prIa.ask({ bin: cfg.claude.bin, ...setting(id), system: reglages.prompt(id, FUNCTIONS.find(f => f.id === id)?.prompt), cwd: ROOT, ...opts });
 async function interpreterCible(phrase) {
@@ -1440,12 +1442,25 @@ app.post('/api/prospection/cibles/:slug/enrichir', (req, res) => prOk(res, () =>
   return prospection.get(req.params.slug);
 }));
 app.patch('/api/prospection/cibles/:slug/entreprises/:siren', (req, res) => prOk(res, () => prospection.choisir(req.params.slug, req.params.siren, req.body?.etat, req.body?.raison)));
+// the companies Marc already follows: ask him to introduce Christophe rather than cold-contact them
+app.post('/api/prospection/cibles/:slug/presentations', prAsync(async req => {
+  const c = prospection.get(req.params.slug);
+  const list = c.entreprises.filter(e => e.etat === 'ecartee' && /connue de Marc/.test(e.raison ?? '') && !e.presentation_demandee);
+  if (!list.length) throw new Error('aucune présentation à demander');
+  const cx = partenaires.etat().connexions[0];
+  if (!cx) throw new Error('relais avec Marc non configuré');
+  const lignes = list.map(e => `- ${e.enseigne || e.nom} (${e.ville})${e.dirigeants?.[0] ? `, ${e.dirigeants[0].prenom} ${e.dirigeants[0].nom}` : ''}`).join('\n');
+  await partenaires.envoyerMessage(cx.id, { type: 'question', sujet: `Présentations : ${c.titre}`,
+    texte: `Je prospecte la cible « ${c.titre} » (${c.offre || 'Alpes IA'}). Tu suis déjà ces entreprises :\n${lignes}\n\nPeux-tu me présenter à celles où c'est pertinent, ou me dire lesquelles laisser de côté ?` });
+  const at = new Date().toISOString();
+  prospection.mutate(req.params.slug, x => { for (const e of x.entreprises) if (list.some(l => l.siren === e.siren)) e.presentation_demandee = at; });
+  return { demandees: list.length };
+}));
 app.get('/api/prospection/exclusions', (req, res) => prOk(res, () => prospection.exclusions()));
 app.post('/api/prospection/exclusions', (req, res) => prOk(res, () => prospection.exclure(req.body ?? {})));
 
 // ---- campaigns: the sequence, Waalaxy for LinkedIn, the mailbox for e-mails ----
 const waalaxy = makeWaalaxy(path.join(ROOT, 'credentials', 'waalaxy.json'));
-const prAsync = fn => async (req, res) => { try { res.json(await fn(req)); } catch (e) { res.status(/introuvable/.test(e.message) ? 404 : 400).json({ error: e.message }); } };
 const cibleIa = c => ({ titre: c.titre, pourquoi: c.pourquoi, moments: c.moments, offre: c.offre, lien: c.lien || '(pas encore de lien : écris {lien} quand même)' });
 async function ecrireSequence(slug, consigne = '') {
   const c = prospection.get(slug);
@@ -1525,8 +1540,14 @@ async function exclureProspect(slug, siren, raison, reponseId = null) {
   if (e.contact?.linkedin && waalaxy.actif()) {
     try { const npc = (await waalaxy.listes()).find(l => l.ne_pas_contacter); if (npc) wx = (await waalaxy.ajouter([e.contact.linkedin], { liste: npc.id }))[0]; } catch (err) { wx = { ok: false, code: err.message }; }
   }
-  if (reponseId) prospection.traiter(slug, reponseId, { etat: 'traitee', note: `exclu${wx?.ok ? ', ajouté à « Ne pas contacter » dans Waalaxy' : ''}` });
-  return { exclu: true, waalaxy: wx };
+  // Marc prospects for AlpesIA too: an opt-out holds for both
+  let marc = false;
+  try {
+    const cx = partenaires.etat().connexions[0];
+    if (cx) { await partenaires.envoyerMessage(cx.id, { type: 'info', sujet: 'Ne plus contacter', texte: `${e.enseigne || e.nom} (${e.ville}, SIREN ${siren})${e.dirigeants?.[0] ? `, ${e.dirigeants[0].prenom} ${e.dirigeants[0].nom}` : ''} demande à ne plus être contacté par AlpesIA. Je l'ai retiré de mes campagnes : à retirer aussi des tiennes.` }); marc = true; }
+  } catch (err) { console.warn('prospection : exclusion non transmise à Marc', err.message); }
+  if (reponseId) prospection.traiter(slug, reponseId, { etat: 'traitee', note: ['exclu', wx?.ok && 'ajouté à « Ne pas contacter » dans Waalaxy', marc && 'Marc prévenu'].filter(Boolean).join(', ') });
+  return { exclu: true, waalaxy: wx, marc };
 }
 // the replies to campaign e-mails, read in the Infomaniak mailbox
 async function lireReponses() {

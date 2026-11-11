@@ -3328,6 +3328,7 @@ const CHAT_TOOLS = {
   lancer_campagne: ['Prépare un lancement', a => `Proposition : lancer ${esc(a.cible)}`],
   lire_reponses_prospection: ['Regarde les réponses', () => 'Réponses des prospects', 'les réponses'],
   noter_reponse: ['Prépare une réponse reçue', () => 'Proposition : réponse LinkedIn'],
+  demander_presentations: ['Prépare une demande à Marc', a => `Proposition : présentations ${esc(a.cible)}`],
   modifier_cible: ['Prépare un changement de cible', a => `Proposition : cible ${esc(a.cible)}`],
   lister_clients: ['Regarde les clients', () => 'Liste des clients', 'les clients'],
   lire_finances: ['Regarde les finances', () => 'Lecture du suivi financier', 'les finances'],
@@ -4952,9 +4953,10 @@ function demoProspection() {
     E('100000003', 'Peinture Démo', 'Annecy', '12', ['Léa', 'Démo', 'Gérante'], { email: 'lea@demo.fr', email_type: 'nominatif', linkedin: 'https://www.linkedin.com/in/demo' }, [{ quoi: 'Nouveau siège', date: '2026-03-01', source: 'BODACC' }]),
     E('100000004', 'Charpentes Fictives', 'Seynod', '11', null, {}, [], 'a_trier', 'aucun dirigeant nommé'),
     E('100000005', 'Électricité Exemple', 'Rumilly', '12', ['Sacha', 'Exemple', 'Gérant'], {}, [], 'ecartee', 'procédure collective (BODACC, 2026-05-02)'),
+    E('100000006', 'Isolation Modèle', 'Annemasse', '11', ['Noa', 'Modèle', 'Gérant'], {}, [], 'ecartee', 'connue de Marc (CRM partagé)'),
   ];
   const c = { slug: 'demo-batiment', titre: 'Bâtiment 74', statut: 'active', pourquoi: 'Les dirigeants font leurs devis le soir, après le chantier.', moments: ['Recrutement administratif', 'Nouveau dirigeant', 'Agrandissement'], offre: 'Devis et relances automatisés', lien: '', criteres: { naf: ['43.32A', '43.21A'], departements: ['74'], codes_postaux: [], tranches: ['11', '12'] }, recherche: { etat: 'fini', fin: new Date().toISOString(), total: 141 }, entreprises: ents, demo: true };
-  const resume = { slug: c.slug, titre: c.titre, statut: 'active', criteres: c.criteres, offre: c.offre, pourquoi: c.pourquoi, recherche: c.recherche, retenues: 3, a_trier: 1, ecartees: 1, total: 5, avec_email: 2, avec_linkedin: 2, avec_tel: 2, avec_moment: 2, campagne: null };
+  const resume = { slug: c.slug, titre: c.titre, statut: 'active', criteres: c.criteres, offre: c.offre, pourquoi: c.pourquoi, recherche: c.recherche, retenues: 3, a_trier: 1, ecartees: 2, total: 6, avec_email: 2, avec_linkedin: 2, avec_tel: 2, avec_moment: 2, campagne: null };
   return { demo: true, liste: { cibles: [resume], exclusions: 0 }, cible: c };
 }
 
@@ -4963,7 +4965,7 @@ async function loadPr(force) {
   if (!r) return;
   const hash = location.hash, demo = demoOn;
   let liste, cible = null;
-  if (demo) { const d = demoProspection(); liste = d.liste; cible = r.slug ? d.cible : null; }
+  if (demo) { const d = demoProspection(); liste = d.liste; cible = r.slug ? d.cible : null; prReps = []; prPros = []; prAppels = []; }
   else {
     liste = await api('/api/prospection').catch(() => null);
     if (r.slug) cible = await api(`/api/prospection/cibles/${encodeURIComponent(r.slug)}`).then(x => (x.error ? null : x)).catch(() => null);
@@ -5068,7 +5070,7 @@ function prCiblePage() {
       <td>${d ? `${esc(d.prenom)} ${esc(d.nom)}<small>${esc(d.qualite)}${e.via_holding ? ` · via ${esc(e.via_holding)}` : ''}</small>` : '<span class="muted">aucun nommé</span>'}</td>
       <td>${mail(e)}</td><td>${yes(e.contact?.linkedin)}</td><td>${yes(e.contact?.telephone)}</td>
       <td>${e.signaux?.length ? esc(e.signaux[0].quoi) + `<small>${prMois(e.signaux[0].date)}</small>` : ''}</td>
-      <td>${e.raison ? `<small style="margin-bottom:3px">${esc(e.raison)}</small>` : ''}<span class="pr-acts">${act(e)}</span></td></tr>
+      <td>${e.raison ? `<small style="margin-bottom:3px">${esc(e.raison)}${e.presentation_demandee ? `, présentation demandée le ${prDate(e.presentation_demandee)}` : ''}</small>` : ''}<span class="pr-acts">${act(e)}</span></td></tr>
       ${open ? `<tr class="pr-fiche"><td colspan="8">${prFiche(e)}</td></tr>` : ''}`;
   }).join('');
   return `<a class="more" href="#prospection">← Cibles</a>
@@ -5079,6 +5081,7 @@ function prCiblePage() {
       <div><dt>Pourquoi eux</dt><dd>${esc(c.pourquoi || '–')}</dd></div>
       <div><dt>Moments où ils achètent</dt><dd>${esc(c.moments?.join(' · ') || '–')}</dd></div>
       <div><dt>Offre</dt><dd>${esc(c.offre || '–')}${c.lien ? `<br><a class="more" href="${esc(c.lien)}" target="_blank" rel="noopener">${esc(c.lien)}</a>` : ''}</dd></div></dl>`}
+    ${prMarc(c)}
     <div class="pane">
       <div class="pr-crit">${chips}<span class="sp" style="flex:1"></span>${statut}<button class="btn" data-pr="chercher"${s?.etat === 'en_cours' ? ' disabled' : ''}>${s ? 'Relancer la recherche' : 'Chercher les entreprises'}</button></div>
       <div class="pr-bar"><div class="cx-seg seg">${seg}</div><span class="sp"></span>
@@ -5087,6 +5090,12 @@ function prCiblePage() {
       ${list.length ? `<div class="pr-wrap"><table class="pr-tbl"><thead><tr><th>Entreprise</th><th>Salariés</th><th>Dirigeant</th><th>E-mail</th><th>LinkedIn</th><th>Tél.</th><th>Moment</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`
         : `<div class="pr-empty">${s?.etat === 'en_cours' ? 'Recherche en cours…' : 'Aucune entreprise ici.'}</div>`}
     </div>`;
+}
+function prMarc(c) {
+  const l = c.entreprises.filter(e => e.etat === 'ecartee' && /connue de Marc/.test(e.raison ?? ''));
+  if (!l.length) return '';
+  const todo = l.filter(e => !e.presentation_demandee);
+  return `<div class="cx-alert" style="margin-bottom:14px"><span>Marc suit déjà ${l.length} de ces entreprises${todo.length < l.length ? ` · présentations demandées pour ${l.length - todo.length}` : ''}.</span>${todo.length ? `<button class="btn" data-pr="presentations">Lui demander des présentations</button>` : ''}</div>`;
 }
 function prEnrich(c, ret) {
   const en = c.enrichissement, reste = ret.filter(e => !e.contact?.recherche_le).length;
@@ -5355,6 +5364,9 @@ $('#pr-body').addEventListener('click', async e => {
     else if (what === 'chercher') {
       const r = await prSend('POST', `/api/prospection/cibles/${encodeURIComponent(prCible.slug)}/recherche`);
       if (r.error) toast(r.error, true); else loadPr(true);
+    } else if (what === 'presentations') {
+      const r = await prSend('POST', `/api/prospection/cibles/${encodeURIComponent(prCible.slug)}/presentations`);
+      if (r.error) toast(r.error, true); else { toast(`Demande envoyée à Marc pour ${r.demandees} entreprise(s)`); loadPr(true); }
     } else if (what === 'enrichir') {
       const r = await prSend('POST', `/api/prospection/cibles/${encodeURIComponent(prCible.slug)}/enrichir`, {});
       if (r.error) toast(r.error, true); else { toast('Recherche des coordonnées lancée'); loadPr(true); }
