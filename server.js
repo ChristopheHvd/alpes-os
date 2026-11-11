@@ -13,6 +13,9 @@ import { makeMail } from './lib/mail.js';
 import { makeSendLog } from './lib/mailsend.js';
 import { makeProspection } from './lib/prospection.js';
 import * as prIa from './lib/prospection-ia.js';
+import * as prCp from './lib/campagne.js';
+import { tick as prTick, ouvert as prOuvert } from './lib/prospection-envoi.js';
+import { makeWaalaxy } from './lib/waalaxy.js';
 import { makeRunner } from './lib/runs.js';
 import { listProjects, updateProject, createProject } from './lib/projects.js';
 import { listClients, createClient } from './lib/clients.js';
@@ -113,6 +116,7 @@ const FUNCTIONS = [
   { id: 'curateur', name: 'Second cerveau', model: [cfg.claude.defaultModel], skill: 'second-brain-curator' },
   { id: 'sujets', name: 'Échanges : rangement par sujet', model: ['claude-haiku-5-5'], prompt: SUJETS_SYSTEM },
   { id: 'reponse-partenaire', name: 'Échanges : réponse par l\'agent', model: [cfg.claude.defaultModel], prompt: REPONSE_SYSTEM },
+  { id: 'prospection-messages', name: 'Prospection : messages des campagnes', model: [cfg.prospection?.model, 'claude-opus-5-5'], effort: ['medium'], prompt: prIa.MESSAGES_SYSTEM },
   { id: 'prospection-recherche', name: 'Prospection : recherche des coordonnées', model: [cfg.prospection?.model, 'claude-sonnet-5-5'], effort: ['low'], prompt: prIa.RECHERCHE_SYSTEM },
   { id: 'prospection-cible', name: 'Prospection : cible à partir d\'une phrase', model: [cfg.prospection?.model, 'claude-sonnet-5-5'], effort: ['low'], prompt: prIa.CIBLE_SYSTEM },
 ];
@@ -1437,6 +1441,74 @@ app.post('/api/prospection/cibles/:slug/enrichir', (req, res) => prOk(res, () =>
 app.patch('/api/prospection/cibles/:slug/entreprises/:siren', (req, res) => prOk(res, () => prospection.choisir(req.params.slug, req.params.siren, req.body?.etat, req.body?.raison)));
 app.get('/api/prospection/exclusions', (req, res) => prOk(res, () => prospection.exclusions()));
 app.post('/api/prospection/exclusions', (req, res) => prOk(res, () => prospection.exclure(req.body ?? {})));
+
+// ---- campaigns: the sequence, Waalaxy for LinkedIn, the mailbox for e-mails ----
+const waalaxy = makeWaalaxy(path.join(ROOT, 'credentials', 'waalaxy.json'));
+const prAsync = fn => async (req, res) => { try { res.json(await fn(req)); } catch (e) { res.status(/introuvable/.test(e.message) ? 404 : 400).json({ error: e.message }); } };
+const cibleIa = c => ({ titre: c.titre, pourquoi: c.pourquoi, moments: c.moments, offre: c.offre, lien: c.lien || '(pas encore de lien : écris {lien} quand même)' });
+async function ecrireSequence(slug, consigne = '') {
+  const c = prospection.get(slug);
+  const etapes = c.campagne?.etapes ?? prCp.etapesParDefaut();
+  const r = await prAsk('prospection-messages', { schema: prIa.MESSAGES_SCHEMA, timeoutMs: 240e3, input: { cible: cibleIa(c), etapes: etapes.map(({ id, canal, titre, delai }) => ({ id, canal, titre, delai })), consigne } });
+  const byId = Object.fromEntries(r.etapes.map(x => [x.id, x]));
+  prospection.preparerCampagne(slug, etapes.map(s => ({ ...s, objet: s.canal === 'email' ? (byId[s.id]?.objet ?? s.objet) : '', texte: byId[s.id]?.texte ?? s.texte })));
+  return prospection.get(slug);
+}
+async function reecrire(slug, etapeId, consigne) {
+  const c = prospection.get(slug), s = c.campagne?.etapes.find(x => x.id === etapeId);
+  if (!s) throw new Error('étape introuvable');
+  if (!String(consigne ?? '').trim()) throw new Error('dis ce qu\'il faut changer');
+  const r = await prAsk('prospection-messages', { system: prIa.REECRIRE_SYSTEM, schema: prIa.REECRIRE_SCHEMA, timeoutMs: 180e3, input: { cible: cibleIa(c), etape: s, consigne } });
+  prospection.modifierCampagne(slug, { etapes: c.campagne.etapes.map(x => (x.id === etapeId ? { ...x, objet: x.canal === 'email' ? r.objet : '', texte: r.texte } : x)) });
+  return prospection.get(slug);
+}
+// one personal first e-mail for each prospect with a buying moment
+async function personnaliser(slug) {
+  const c = prospection.get(slug), first = c.campagne?.etapes.find(s => s.canal === 'email');
+  if (!first) throw new Error('aucune étape e-mail');
+  const list = c.entreprises.filter(e => e.etat === 'retenue' && e.signaux?.length && prCp.emailEnvoyable(e.contact) && !e.prospect?.perso?.[first.id]);
+  for (let i = 0; i < list.length; i += 10) {
+    const part = list.slice(i, i + 10);
+    const r = await prAsk('prospection-messages', { system: prIa.PERSO_SYSTEM, schema: prIa.PERSO_SCHEMA, timeoutMs: 300e3,
+      input: { cible: cibleIa(c), premier_email: { objet: first.objet, texte: first.texte }, entreprises: part.map(e => ({ siren: e.siren, entreprise: e.enseigne || e.nom, ville: e.ville, dirigeant: e.dirigeants?.[0] ?? null, moments: e.signaux })) } });
+    prospection.personnaliser(slug, r.messages);
+  }
+  return { personnalises: list.length, cible: prospection.get(slug) };
+}
+async function pousserWaalaxy(slug) {
+  const c = prospection.get(slug), w = c.campagne?.waalaxy;
+  if (!w?.liste_id) return { envoyes: 0, raison: 'aucune liste Waalaxy choisie' };
+  const todo = c.entreprises.filter(e => e.prospect?.statut === 'en_sequence' && e.contact?.linkedin && !e.prospect.waalaxy?.ok);
+  if (!todo.length) return { envoyes: 0 };
+  const res = await waalaxy.ajouter(todo.map(e => e.contact.linkedin), { liste: w.liste_id, campagne: w.campagne_id || null });
+  prospection.mutate(slug, x => { for (const r of res) { const e = x.entreprises.find(y => y.contact?.linkedin === r.url); if (e?.prospect) e.prospect.waalaxy = { ok: r.ok, code: r.code, campagne: r.campagne, at: new Date().toISOString() }; } });
+  return { envoyes: res.filter(r => r.ok).length, refuses: res.filter(r => !r.ok).length };
+}
+app.get('/api/prospection/waalaxy', prAsync(async () => (waalaxy.actif() ? { actif: true, listes: await waalaxy.listes(), campagnes: await waalaxy.campagnes() } : { actif: false })));
+app.post('/api/prospection/cibles/:slug/campagne', prAsync(req => ecrireSequence(req.params.slug, req.body?.consigne)));
+app.patch('/api/prospection/cibles/:slug/campagne', (req, res) => prOk(res, () => { prospection.modifierCampagne(req.params.slug, req.body ?? {}); return prospection.get(req.params.slug); }));
+app.post('/api/prospection/cibles/:slug/campagne/reecrire', prAsync(req => reecrire(req.params.slug, req.body?.etape, req.body?.consigne)));
+app.post('/api/prospection/cibles/:slug/campagne/personnaliser', prAsync(req => personnaliser(req.params.slug)));
+app.post('/api/prospection/cibles/:slug/campagne/lancer', prAsync(async req => {
+  const r = prospection.lancer(req.params.slug);
+  let w = { envoyes: 0 };
+  try { w = await pousserWaalaxy(req.params.slug); } catch (e) { w = { envoyes: 0, erreur: e.message }; }
+  return { ajoutes: r.ajoutes, waalaxy: w, cible: prospection.get(req.params.slug) };
+}));
+app.post('/api/prospection/cibles/:slug/campagne/pause', (req, res) => prOk(res, () => { prospection.pause(req.params.slug, !!req.body?.on); return prospection.get(req.params.slug); }));
+app.get('/api/prospection/appels', (req, res) => prOk(res, () => prospection.appels()));
+app.post('/api/prospection/appels', (req, res) => prOk(res, () => {
+  const { cible, siren, etape, issue, note } = req.body ?? {};
+  if (issue === 'reporter') return prospection.reporter(cible, siren, etape, prCp.plus(prCp.jour(new Date()), Number(req.body?.jours) || 2));
+  return prospection.noter(cible, siren, { etape, canal: 'appel', status: issue === 'joint' ? 'joint' : 'pas_joint', note: String(note ?? '').slice(0, 500) });
+}));
+// the clock: only the real instance sends, unless a test asks for it
+const prAuto = sbQueue === CURATOR_QUEUE || process.env.ALPES_OS_PROSPECTION_AUTO === '1';
+async function prPasse() {
+  if (!prOuvert()) return;
+  try { const r = await prTick({ prospection, mail, log: m => console.warn(m) }); if (r.envoyes) console.log(`prospection : ${r.envoyes} e-mail(s) envoyé(s)`); } catch (e) { console.warn('prospection :', e.message); }
+}
+if (prAuto) setInterval(prPasse, 10 * 60e3).unref();
 
 app.listen(PORT, '127.0.0.1', () => {
   const st = google.status();
