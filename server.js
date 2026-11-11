@@ -1467,7 +1467,8 @@ async function ecrireSequence(slug, consigne = '') {
   const etapes = c.campagne?.etapes ?? prCp.etapesParDefaut();
   const r = await prAsk('prospection-messages', { schema: prIa.MESSAGES_SCHEMA, timeoutMs: 240e3, input: { cible: cibleIa(c), etapes: etapes.map(({ id, canal, titre, delai }) => ({ id, canal, titre, delai })), consigne } });
   const byId = Object.fromEntries(r.etapes.map(x => [x.id, x]));
-  prospection.preparerCampagne(slug, etapes.map(s => ({ ...s, objet: s.canal === 'email' ? (byId[s.id]?.objet ?? s.objet) : '', texte: byId[s.id]?.texte ?? s.texte })));
+  const now = prospection.get(slug).campagne?.etapes ?? etapes;
+  prospection.preparerCampagne(slug, now.map(s => ({ ...s, objet: s.canal === 'email' ? (byId[s.id]?.objet ?? s.objet) : '', texte: byId[s.id]?.texte ?? s.texte })));
   return prospection.get(slug);
 }
 async function reecrire(slug, etapeId, consigne) {
@@ -1475,7 +1476,10 @@ async function reecrire(slug, etapeId, consigne) {
   if (!s) throw new Error('étape introuvable');
   if (!String(consigne ?? '').trim()) throw new Error('dis ce qu\'il faut changer');
   const r = await prAsk('prospection-messages', { system: prIa.REECRIRE_SYSTEM, schema: prIa.REECRIRE_SCHEMA, timeoutMs: 180e3, input: { cible: cibleIa(c), etape: s, consigne } });
-  prospection.modifierCampagne(slug, { etapes: c.campagne.etapes.map(x => (x.id === etapeId ? { ...x, objet: x.canal === 'email' ? r.objet : '', texte: r.texte } : x)) });
+  // the steps may have changed during the call: only this one is rewritten
+  const now = prospection.get(slug).campagne.etapes;
+  if (!now.some(x => x.id === etapeId)) throw new Error('étape retirée pendant la réécriture');
+  prospection.modifierCampagne(slug, { etapes: now.map(x => (x.id === etapeId ? { ...x, objet: x.canal === 'email' ? r.objet : '', texte: r.texte } : x)) });
   return prospection.get(slug);
 }
 // one personal first e-mail for each prospect with a buying moment
@@ -1554,12 +1558,12 @@ async function lireReponses() {
   const who = new Map();
   let since = null;
   for (const c of prospection.lister()) {
-    if (!c.campagne || c.campagne.etat === 'brouillon') continue;
+    if (!c.campagne) continue;
     for (const e of c.entreprises) {
-      const sent = (e.prospect?.faits ?? []).filter(f => f.canal === 'email' && f.status === 'envoye');
-      if (!sent.length || e.prospect.statut === 'exclu') continue;
-      who.set(e.contact.email.toLowerCase(), { slug: c.slug, siren: e.siren });
-      if (!since || sent[0].at < since) since = sent[0].at;
+      // the addresses actually mailed, even if a later research found a better one
+      const sent = (e.prospect?.faits ?? []).filter(f => f.canal === 'email' && ['envoye', 'incertain'].includes(f.status) && f.to);
+      for (const f of sent) who.set(f.to.toLowerCase(), { slug: c.slug, siren: e.siren });
+      if (sent.length && (!since || sent[0].at < since)) since = sent[0].at;
     }
   }
   if (!who.size) return 0;
@@ -1569,9 +1573,17 @@ async function lireReponses() {
     const r = prospection.ajouterReponse(w.slug, { siren: w.siren, canal: 'email', texte: m.texte, de: m.de, nom: m.nom, sujet: m.sujet, uid: m.uid, thread: m.thread, messageId: m.messageId, date: m.date });
     if (!r) continue;
     n++;
-    classerReponse(w.slug, r).catch(err => console.warn('prospection : lecture de réponse', err.message));
+    relire(w.slug, r);
   }
+  // a reply whose reading failed is read again on the next pass
+  for (const r of prospection.reponses()) if (r.etat === 'a_classer' && Date.now() - Date.parse(r.date) > 2 * 60e3) relire(r.cible, r);
   return n;
+}
+const enLecture = new Set();
+function relire(slug, r) {
+  if (enLecture.has(r.id)) return;
+  enLecture.add(r.id);
+  classerReponse(slug, r).catch(err => console.warn('prospection : lecture de réponse', err.message)).finally(() => enLecture.delete(r.id));
 }
 app.get('/api/prospection/reponses', (req, res) => prOk(res, () => ({
   reponses: prospection.reponses(),
@@ -1646,11 +1658,21 @@ app.post('/api/prospection/reponses/:cible/:id/oui', prAsync(async req => {
 
 // the clock: only the real instance sends, unless a test asks for it
 const prAuto = sbQueue === CURATOR_QUEUE || process.env.ALPES_OS_PROSPECTION_AUTO === '1';
+// Replies and bounces are read at every pass, day and night; e-mails only leave on working
+// hours, and never when the replies could not be read (a reply might be missed).
+let prEnCours = false;
 async function prPasse() {
-  if (!prOuvert()) return;
-  try { await lireReponses(); } catch (e) { console.warn('prospection : réponses', e.message); }
-  try { const r = await prTick({ prospection, mail, log: m => console.warn(m) }); if (r.envoyes) console.log(`prospection : ${r.envoyes} e-mail(s) envoyé(s)`); } catch (e) { console.warn('prospection :', e.message); }
+  if (prEnCours) return;
+  prEnCours = true;
+  try {
+    try { await mail.scanBounces(); } catch (e) { console.warn('prospection : rebonds', e.message); }
+    try { await lireReponses(); } catch (e) { console.warn('prospection : réponses, envois suspendus', e.message); return; }
+    if (!prOuvert()) return;
+    const r = await prTick({ prospection, mail, log: m => console.warn(m) });
+    if (r.envoyes) console.log(`prospection : ${r.envoyes} e-mail(s) envoyé(s)`);
+  } catch (e) { console.warn('prospection :', e.message); } finally { prEnCours = false; }
 }
+prospection.reprise();
 if (prAuto) setInterval(prPasse, 10 * 60e3).unref();
 
 app.listen(PORT, '127.0.0.1', () => {
