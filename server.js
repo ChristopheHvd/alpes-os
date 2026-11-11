@@ -33,6 +33,8 @@ import { assemble, namesOf, mentions, journalEntries } from './lib/dossier.js';
 import { makeReview, SYSTEM as REVIEW_SYSTEM } from './lib/review.js';
 import { makeReglages, pick, MODELS, EFFORTS } from './lib/reglages.js';
 import { makePartenaires, evenementFait, deposerEvenement } from './lib/partenaires.js';
+import { makeEchanges } from './lib/partage.js';
+import { askClaude, fichesPartenaire, makeMemoire, makeSujets, reponseAgent, REPONSE_SCHEMA, REPONSE_SYSTEM, SUJETS_SCHEMA, SUJETS_SYSTEM } from './lib/echange.js';
 import { claudeActivity } from './lib/activity.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -98,6 +100,8 @@ const FUNCTIONS = [
   { id: 'linkedin', name: 'Post LinkedIn', model: [cfg.linkedin?.model, 'claude-opus-5'], skill: 'linkedin-post' },
   ...cfg.apps.map(a => ({ id: a.id, name: a.name, model: [a.model, cfg.claude.defaultModel], skill: a.skill?.replace(/^\//, ''), uses: a.skillsUsed ?? [] })),
   { id: 'curateur', name: 'Second cerveau', model: [cfg.claude.defaultModel], skill: 'second-brain-curator' },
+  { id: 'sujets', name: 'Échanges : rangement par sujet', model: ['claude-haiku-5-5'], prompt: SUJETS_SYSTEM },
+  { id: 'reponse-partenaire', name: 'Échanges : réponse par l\'agent', model: [cfg.claude.defaultModel], prompt: REPONSE_SYSTEM },
 ];
 function setting(id) {
   const f = FUNCTIONS.find(x => x.id === id) ?? {};
@@ -905,13 +909,16 @@ const propositions = makePropositions(path.join(ROOT, 'output', 'propositions.js
 // missions become propositions or delegations depending on the level set per connection;
 // the sales follow-up they share is kept as a copy in output/crm/ (lib/suivi.js).
 // Off until credentials/relais.json exists (scripts/relais-inscription.js).
+// the shared space's echanges/ folder, read through the user's `partage` MCP server
+const echanges = makeEchanges({ dir: path.join(ROOT, 'output'), nouveaux: m => partenaires.surPartage(m) });
 const partenaires = makePartenaires({
   dir: path.join(ROOT, 'output'), credentials: path.join(ROOT, 'credentials', 'relais.json'),
-  propositions, delegations,
+  propositions, delegations, echanges,
   // only the notable facts of the shared sales follow-up reach the curator; the rest lives in output/crm/
   marquant: fait => deposerEvenement(sbQueue, evenementFait(fait)),
 });
 partenaires.demarrer();
+echanges.demarrer();
 const relaisErr = (res, e) => res.status(e.status >= 400 && e.status < 600 ? e.status : 502).json({ error: e.message });
 app.get('/api/connexions', (req, res) => res.json(partenaires.etat()));
 app.post('/api/connexions/invitations', async (req, res) => {
@@ -950,6 +957,98 @@ app.post('/api/connexions/:id/suivi/affaires/:ref/contacts', (req, res) => suivi
 app.post('/api/connexions/:id/suivi/affaires/:ref/rendez-vous/:rdv', (req, res) => suiviOk(res, () => partenaires.suivi.compteRendu(req.params.id, req.params.ref, req.params.rdv, req.body?.texte)));
 app.post('/api/connexions/:id/suivi/notes/:note/vu', (req, res) => suiviOk(res, () => partenaires.suivi.vu(req.params.id, req.params.note)));
 app.post('/api/connexions/:id/suivi/suppressions/:sid', (req, res) => suiviOk(res, () => partenaires.suivi.repondreSuppression(req.params.id, req.params.sid, !!req.body?.supprimer)));
+// Échanges: the messages with the partner gathered by subject, its missions, and the second brain kept in step
+const sujets = makeSujets({
+  file: path.join(ROOT, 'output', 'sujets.json'),
+  ranger: input => askClaude(cfg.claude.bin, { ...setting('sujets'), system: reglages.prompt('sujets', SUJETS_SYSTEM), schema: SUJETS_SCHEMA }, input),
+});
+const memoire = makeMemoire({ root: cfg.secondBrain, queue: sbQueue, file: path.join(ROOT, 'output', 'echanges-memoire.json') });
+function echange() {
+  const c = partenaires.connexionEchange();
+  if (!c) return null;
+  const act = partenaires.activite(c.id);
+  const messages = act.messages.filter(m => m.type !== 'donnee').map(m => ({ ...m, enReponseA: m.enReponseA?.id ?? null }));
+  return { c, court: partenaires.etat().connexions.find(x => x.id === c.id)?.court ?? 'Partenaire', act, messages };
+}
+// a test instance only files and hands over when asked (ALPES_OS_ECHANGES_AUTO=1): each filing is a real run
+const ECHANGES_AUTO = sbQueue === CURATOR_QUEUE || process.env.ALPES_OS_ECHANGES_AUTO === '1';
+async function echangesPasse() {
+  const e = echange();
+  if (!e) return;
+  await sujets.passe(e.messages);
+  try { memoire.confier(e.messages.map(m => ({ ...m, sujetTitre: sujets.titre(sujets.de(m.id)) })), { partenaire: e.court }); } catch (err) { console.error('echanges', err.message); }
+}
+if (ECHANGES_AUTO) {
+  setTimeout(echangesPasse, 30e3).unref();
+  setInterval(echangesPasse, 2 * 60e3).unref();
+}
+const JOURS = 30;
+app.get('/api/echanges', (req, res) => {
+  const e = echange();
+  if (!e) return res.json({ partenaire: null });
+  const depuis = new Date(Date.now() - JOURS * 864e5).toISOString();
+  const groupes = sujets.grouper(e.messages);
+  const visibles = req.query.tout ? groupes : groupes.filter(g => g.messages.at(-1).quand >= depuis);
+  res.json({
+    partenaire: e.court, connexion: e.c.id, partage: !!partenaires.etat().connexions.find(x => x.id === e.c.id)?.partage,
+    missions: { enCours: e.act.enCours, terminees: e.act.terminees },
+    sujets: visibles.map(g => ({
+      id: g.id, titre: g.titre, messages: g.messages,
+      sansReponse: g.messages.some(m => m.type === 'question' && !m.repondu),
+      note: g.messages.every(m => memoire.note(m.id)),
+    })),
+    caches: groupes.length - visibles.length,
+    rangement: sujets.etat(),
+  });
+});
+// A conversation is named by one of its messages: its subject id changes when the filing agent
+// files it. An answer replies to the partner's latest question still unanswered, else to their
+// latest message, or opens with the subject's title.
+function filDe(ancre) {
+  const e = echange();
+  if (!e) throw Object.assign(new Error('aucun partenaire connecté'), { status: 409 });
+  const g = sujets.grouper(e.messages).find(x => x.messages.some(m => m.id === ancre));
+  if (!g) throw Object.assign(new Error('conversation inconnue'), { status: 404 });
+  return { e, g };
+}
+async function envoyerDansFil(ancre, texte, partage) {
+  const { e, g } = filDe(ancre);
+  const recus = g.messages.filter(m => m.sens === 'recu');
+  const cible = recus.filter(m => m.type === 'question' && !m.repondu).at(-1) ?? recus.at(-1);
+  const lu = await partenaires.envoyerMessage(e.c.id, cible ? { texte, enReponseA: cible.id, partage } : { type: 'info', sujet: g.titre, texte, partage });
+  const sid = g.id.startsWith('brut:') ? sujets.creer(g.titre) : g.id;
+  if (g.id.startsWith('brut:')) for (const m of g.messages) sujets.affecter(m.id, sid);
+  sujets.affecter(lu.id, sid);
+  return lu;
+}
+const echangeErr = (res, e) => res.status(e.status >= 400 && e.status < 600 ? e.status : 502).json({ error: e.message });
+// one send at a time per conversation: a second click while the first is on its way is refused
+const filsOccupes = new Set();
+async function unSeul(ancre, res, fn) {
+  if (filsOccupes.has(ancre)) return res.status(409).json({ error: 'un envoi est déjà en cours dans cette conversation' });
+  filsOccupes.add(ancre);
+  try { res.json(await fn()); } catch (e) { echangeErr(res, e); } finally { filsOccupes.delete(ancre); }
+}
+app.post('/api/echanges/fils/:ancre/messages', (req, res) => unSeul(req.params.ancre, res, () => envoyerDansFil(req.params.ancre, req.body?.texte, !!req.body?.partage)));
+// Christophe chose that the agent's answer leaves at once, copied to the shared space when there is one
+app.post('/api/echanges/fils/:ancre/agent', (req, res) => unSeul(req.params.ancre, res, async () => {
+  const { e, g } = filDe(req.params.ancre);
+  // what Christophe knows: the shared space's documents and his files on the partner, money left out
+  const espacePartage = await echanges.documents().catch(err => { console.error('echanges', err.message); return []; });
+  const texte = await reponseAgent(input => askClaude(cfg.claude.bin, { ...setting('reponse-partenaire'), system: reglages.prompt('reponse-partenaire', REPONSE_SYSTEM), schema: REPONSE_SCHEMA }, input), g,
+    { espacePartage, fiches: fichesPartenaire(cfg.secondBrain) });
+  const partage = !!partenaires.etat().connexions.find(x => x.id === e.c.id)?.partage;
+  // the conversation may have been filed meanwhile: its anchor still finds it
+  return envoyerDansFil(req.params.ancre, texte, partage);
+}));
+app.post('/api/echanges/messages', (req, res) => unSeul('nouveau', res, async () => {
+  const e = echange();
+  if (!e) throw Object.assign(new Error('aucun partenaire connecté'), { status: 409 });
+  const { type, sujet, texte, partage } = req.body ?? {};
+  const lu = await partenaires.envoyerMessage(e.c.id, { type, sujet, texte, partage: !!partage });
+  sujets.affecter(lu.id, sujets.creer(lu.sujet));
+  return lu;
+}));
 app.post('/api/connexions/missions/:id/terminer', async (req, res) => {
   try { res.json(await partenaires.terminer(req.params.id, req.body?.message)); } catch (e) { res.status(e.status ?? 400).json({ error: e.message }); }
 });
