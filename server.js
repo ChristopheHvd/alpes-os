@@ -4,6 +4,7 @@
 import express from 'express';
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getGraph, readNote } from './lib/brain.js';
@@ -17,6 +18,7 @@ import * as prCp from './lib/campagne.js';
 import { tick as prTick, ouvert as prOuvert } from './lib/prospection-envoi.js';
 import { makeWaalaxy } from './lib/waalaxy.js';
 import { makeRunner } from './lib/runs.js';
+import { pendingReunions } from './lib/reunions.js';
 import { listProjects, updateProject, createProject } from './lib/projects.js';
 import { listClients, createClient } from './lib/clients.js';
 import { portfolio } from './lib/portfolio.js';
@@ -844,9 +846,12 @@ app.post('/api/linkedin/:plan/:id/visual', express.raw({ type: () => true, limit
 });
 
 // Second brain sync — what is waiting for the curator, and a way to run it
+// phone meetings archived by Alpes Vocal, collected by the curator itself
+const REUNIONS_DIR = cfg.reunions ?? path.join(os.homedir(), 'kDrive', 'ALPES IA', 'Réunions');
+const reunionsWaiting = () => pendingReunions(REUNIONS_DIR, CURATOR_QUEUE).length;
 const CURATOR = {
   id: 'curator', name: 'Second cerveau', description: 'Intègre les changements en attente', skill: '/second-brain-curator',
-  model: cfg.claude.defaultModel, output: 'output/curator', addDirs: [cfg.drive],
+  model: cfg.claude.defaultModel, output: 'output/curator', addDirs: [cfg.drive, REUNIONS_DIR],
   actions: [{ id: 'integrer', label: 'Intégrer les changements', placeholder: '' }],
 };
 let curatorRun = null;
@@ -856,10 +861,10 @@ function integrate(reason) {
   bundle.flush();
   const st = bundle.status();
   if (st.locked) return { error: 'le curateur tient déjà le verrou (curator.lock)' };
-  if (!st.inbox && !st.processing) return { error: 'rien à intégrer' };
+  if (!st.inbox && !st.processing && !reunionsWaiting()) return { error: 'rien à intégrer' };
   curatorRun = runner.start({
     app: CURATOR, action: CURATOR.actions[0], ...setting('curateur'),
-    brief: `Traite la file du Second Brain, brain/inbox (${reason}). Suis ton protocole exclusif : verrou atomique, arbre propre sur main, dépôts dans l'ordre (documents rangés dans Drive), lint, commit et push, archivage, libération du verrou. Si un événement est en conflit, laisse-le dans processing et explique le point à trancher.`,
+    brief: `Traite la file du Second Brain, brain/inbox, et les réunions de ${REUNIONS_DIR} (${reason}). Suis ton protocole exclusif : verrou atomique, arbre propre sur main, dépôts dans l'ordre (documents rangés dans Drive), lint, commit et push, archivage, libération du verrou. Si un événement est en conflit, laisse-le dans processing et explique le point à trancher.`,
   });
   waitRun(curatorRun).then(() => bundle.settle());
   return { run: curatorRun };
@@ -913,12 +918,12 @@ async function brainPass() {
   try {
     bundle.flush();
     const st = bundle.status();
-    if (st.inbox && !st.locked && brainClean()) integrate('passage automatique');
+    if ((st.inbox || reunionsWaiting()) && !st.locked && brainClean()) integrate('passage automatique');
   } catch (e) { console.error('curator', e.message); }
 }
 setInterval(brainPass, 2 * 60 * 60e3).unref();
-// a restart shouldn't delay new meetings by two hours: look once shortly after start
-if (MEET_AUTO) setTimeout(() => collectMeetings('au démarrage'), 2 * 60e3).unref();
+// a restart shouldn't delay new meetings by two hours: one pass shortly after start
+setTimeout(brainPass, 2 * 60e3).unref();
 
 // Propositions — tasks suggested for today (hourly review, SIMATIS missions) waiting
 // on Christophe: accepted they join today's todo, "plus tard" goes to Plus tard
