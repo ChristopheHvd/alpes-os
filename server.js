@@ -912,7 +912,7 @@ app.get('/api/meetings', (req, res) => res.json({ ...meetings.state(), run: runI
 const MEET_AUTO = sbQueue === CURATOR_QUEUE || process.env.ALPES_OS_MEET_AUTO === '1';
 // only new events trigger the automatic pass: one stuck in processing needs a human
 async function brainPass() {
-  if (MEET_AUTO) {
+  if (MEET_AUTO && meetings.worthRunning()) {
     try { await collectMeetings('passage automatique').done; } catch (e) { console.error('meetings', e.message); }
   }
   try {
