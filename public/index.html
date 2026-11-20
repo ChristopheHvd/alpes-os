@@ -1303,6 +1303,14 @@ a.pf-card.res-cours p { color: var(--accent); }
 .pr-fold li { margin: 3px 0; }
 .pr-clip { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 46ch; }
 
+.rv-ask { margin: 10px 0; padding: 10px 12px; border-radius: 8px; background: var(--accent-soft); font-size: 13px; }
+.rv-ask-q { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.rv-ask ul, .rv-shut ul { margin: 6px 0 0; padding-left: 18px; }
+.rv-ask li, .rv-shut li { margin: 3px 0; }
+.rv-ask small, .rv-shut small { display: block; color: var(--ink-3); font-size: 12px; }
+.rv-shut { margin: 8px 0; font-size: 13px; color: var(--ink-2); }
+.rv-shut summary { cursor: pointer; }
+.rv-shut .lnk { background: none; border: 0; padding: 0; color: var(--ink-2); text-decoration: underline; cursor: pointer; font: inherit; }
 </style>
 </head>
 <body>
@@ -1725,8 +1733,18 @@ function rvRender() {
       <button class="btn sm ghost" id="rv-run"${r.running ? ' disabled' : ''}>${r.running ? 'En cours…' : 'Relancer'}</button></div>
     ${rvToday(r.at) && sum ? sum : ''}
     ${failed ? `<p class="rv-err">La dernière revue a échoué : ${esc(String(r.error).slice(0, 160))}</p>` : ''}
+    ${rvReal(r)}
     ${shown.length ? `<div class="rv-list">${list}</div>` : ''}
   </section>`;
+}
+// what the review checked against reality: doubtful ones asked in one go, closed ones folded
+function rvReal(r) {
+  if (!rvToday(r.at) || demoOn) return '';
+  const ask = r.a_confirmer ?? [], shut = r.fermees ?? [];
+  const lab = x => x.statut === 'depassee' ? 'dépassée' : 'faite';
+  return `${ask.length ? `<div class="rv-ask"><div class="rv-ask-q"><b>${ask.length > 1 ? `Ces ${ask.length} tâches semblent faites ou dépassées` : 'Cette tâche semble faite ou dépassée'}</b><button class="btn sm acc" data-rv="confirmer">Oui</button></div>
+      <ul>${ask.map(x => `<li>${esc(x.t)}<small>${lab(x)} · ${esc(x.preuve)}</small></li>`).join('')}</ul></div>` : ''}
+    ${shut.length ? `<details class="rv-shut"><summary>Fermées par la revue</summary><ul>${shut.map(x => `<li>${esc(x.t)}<small>${lab(x)} · ${esc(x.preuve)} · <button class="lnk" data-rv="rouvrir" data-t="${esc(x.t)}">Rouvrir</button></small></li>`).join('')}</ul></details>` : ''}`;
 }
 function rvAgent() {
   const r = review ?? {};
@@ -1769,8 +1787,14 @@ async function rvDecide(id, act) {
   else if (todo.bumped) toast(`Limite de ${todo.max} tâches : ${todo.bumped} passée${todo.bumped > 1 ? 's' : ''} dans « Plus tard »`);
   else if (act === 'later') toast('Ajoutée à « Plus tard »');
 }
-$('#propositions').addEventListener('click', e => {
+$('#propositions').addEventListener('click', async e => {
   const b = e.target.closest('button');
+  if (b?.dataset.rv) {
+    const r = await fetch(`/api/review/${b.dataset.rv}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ t: b.dataset.t }) }).then(x => x.json()).catch(err => ({ error: err.message }));
+    if (r.error) return toast(r.error, true);
+    review = { ...review, ...r }; rvRender(); loadTodo();
+    return toast(b.dataset.rv === 'rouvrir' ? 'Tâche rouverte' : 'Tâches fermées');
+  }
   if (b?.id === 'rv-run') rvRun();
   else if (b?.dataset.do) rvDecide(b.closest('.sg').dataset.id, b.dataset.do);
   else if (b?.dataset.go) {
