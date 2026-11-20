@@ -12,6 +12,7 @@ import { readTodo, writeTodo, completeCarried, addItem, tidyTodo } from './lib/t
 import { makeGoogle } from './lib/google.js';
 import { makeMail } from './lib/mail.js';
 import { makeSendLog } from './lib/mailsend.js';
+import { makeInfomaniakCalendar } from './lib/calendar-infomaniak.js';
 import { makeProspection } from './lib/prospection.js';
 import * as prIa from './lib/prospection-ia.js';
 import * as prCp from './lib/campagne.js';
@@ -30,7 +31,7 @@ import { makeProjectsOrder } from './lib/projectsorder.js';
 import { searchBrain } from './lib/search.js';
 import { makeChat, SYSTEM as CHAT_SYSTEM } from './lib/chat.js';
 import { makeDelegations, listSkills, listMcp, userSkillsDir, RULES as AGENT_RULES } from './lib/delegations.js';
-import { makeMeetings, MEETINGS_TOOLS, BRIEF as MEETINGS_BRIEF } from './lib/meetings.js';
+import { makeMeetings, MEETINGS_TOOLS, BRIEF as MEETINGS_BRIEF, localSummaries } from './lib/meetings.js';
 import { makeStandup, slotNow } from './lib/standup.js';
 import { makeChatLog } from './lib/chatlog.js';
 import { readCredo, shuffleForDay } from './lib/credo.js';
@@ -1183,7 +1184,31 @@ async function reviewContext({ since } = {}) {
         .map(e => ({ note: n.title, libelle: e.libelle, montant: e.montant, date: e.date, statut: e.statut, ...(e.date < today && e.statut !== 'devis' ? { en_retard: true } : {}) })))
       .sort((a, b) => a.date.localeCompare(b.date)).slice(0, 10),
     ...await moneyContext(since),
+    realite: await realiteContext(),
   };
+}
+// The last seven days as they really went, so the review can tell what is done or past:
+// meetings held and ahead (Google and Infomaniak), mail in and out, Wispr summaries.
+const calInfomaniak = makeInfomaniakCalendar(path.join(ROOT, 'credentials', 'infomaniak-calendar.json'));
+async function realiteContext() {
+  const out = {}, erreurs = [];
+  const ev = e => ({ titre: e.title, debut: e.start, fin: e.end, ...(e.allDay ? { journee_entiere: true } : {}), ...(e.attendees?.length ? { avec: e.attendees } : {}) });
+  const nowIso = new Date().toISOString();
+  try {
+    const g = await calendar.upcoming({ ...calOpts(), pastDays: 7, days: 7, max: 60 });
+    if (!g.needsScope) out.agenda_google = g.events.map(e => ({ ...ev(e), passe: String(e.start) < nowIso }));
+  } catch (e) { erreurs.push(`agenda Google : ${e.message.slice(0, 120)}`); }
+  if (calInfomaniak.actif()) {
+    try {
+      const paris = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Paris', dateStyle: 'short', timeStyle: 'medium' }).format(new Date());
+      out.agenda_infomaniak = (await calInfomaniak.events({ pastDays: 7, days: 7 })).map(e => ({ ...ev(e), passe: String(e.start) < paris }));
+    } catch (e) { erreurs.push(e.message.slice(0, 160)); }
+  }
+  try { if (mail.status().hasToken) out.mails_7_jours = await mail.recent({ days: 7, max: 60 }); } catch (e) { erreurs.push(`mails : ${e.message.slice(0, 120)}`); }
+  const wispr = localSummaries(new Date(Date.now() - 7 * 864e5).toISOString());
+  if (wispr) out.reunions_wispr = wispr; else erreurs.push('réunions Wispr illisibles sur cette machine');
+  if (erreurs.length) out.erreurs = erreurs;
+  return out;
 }
 // Mails from real people since the last review (a week at most), with what the
 // second brain says about their client's money, for the review to spot commitments.
@@ -1219,9 +1244,18 @@ const review = makeReview(path.join(ROOT, 'output', 'review.json'), {
   get effort() { return setting('revue').effort; },
   get system() { return reglages.prompt('revue', REVIEW_SYSTEM); },
   auto: sbQueue === CURATOR_QUEUE || process.env.ALPES_OS_REVIEW_AUTO === '1',
-}, { context: reviewContext, propositions });
+}, {
+  context: reviewContext, propositions,
+  // a task the review found done is ticked, a past one dropped, in the day it sits in
+  fermer: item => completeCarried(todoFile, item.from ?? readTodo(todoFile).date, item.t, item.statut === 'depassee' ? '-' : 'x'),
+});
 setInterval(() => review.tick(), 60e3).unref();
 app.get('/api/review', (req, res) => res.json(review.status()));
+app.post('/api/review/confirmer', (req, res) => { try { res.json(review.confirmer()); } catch (e) { res.status(400).json({ error: e.message }); } });
+app.post('/api/review/rouvrir', (req, res) => {
+  try { res.json(review.rouvrir(String(req.body?.t ?? ''), item => completeCarried(todoFile, item.from ?? readTodo(todoFile).date, item.t, ' '))); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
 // the Relancer button: waits for the review, or for the one already running
 app.post('/api/review/run', async (req, res) => {
   try { await review.run('demandée').done; res.json(review.status()); }
