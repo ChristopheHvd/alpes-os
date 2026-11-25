@@ -273,7 +273,7 @@ app.get('/api/sb-file', (req, res) => {
   res.sendFile(abs);
 });
 // a devis or facture a finance note points to (brain/finance frontmatter `sources:`,
-// resource relative to "My Drive" — cfg.drive is "My Drive/ALPES IA". Distinct from
+// resource relative to the kDrive root — cfg.drive is "<kDrive AlpesIA>/ALPES IA". Distinct from
 // driveRoot above (scoped to cfg.drive itself, for the devis app's own writes).
 const myDriveRoot = path.dirname(cfg.drive);
 app.get('/api/drive-file', (req, res) => {
@@ -848,7 +848,7 @@ app.post('/api/linkedin/:plan/:id/visual', express.raw({ type: () => true, limit
 
 // Second brain sync — what is waiting for the curator, and a way to run it
 // phone meetings archived by Alpes Vocal, collected by the curator itself
-const REUNIONS_DIR = cfg.reunions ?? path.join(os.homedir(), 'kDrive', 'ALPES IA', 'Réunions');
+const REUNIONS_DIR = cfg.reunions ?? path.join(cfg.drive, 'Réunions');
 const reunionsWaiting = () => pendingReunions(REUNIONS_DIR, CURATOR_QUEUE).length;
 const CURATOR = {
   id: 'curator', name: 'Second cerveau', description: 'Intègre les changements en attente', skill: '/second-brain-curator',
