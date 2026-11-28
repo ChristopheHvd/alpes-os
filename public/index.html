@@ -1361,10 +1361,10 @@ a.pf-card.res-cours p { color: var(--accent); }
     </nav>
     <span class="sp"></span>
     <button class="btn askbtn" id="ask-open"><svg><use href="#i-spark"/></svg><span>Demander à l'assistant</span><kbd>⌘K</kbd></button>
-    <button class="btn" id="demo-toggle" aria-pressed="false" title="Remplace les finances par des données fictives, sur tous les écrans"><svg><use href="#i-screen"/></svg>Démo</button>
+    <button class="btn" id="demo-toggle" aria-pressed="false" title="Remplace les finances, le CRM, la prospection et les échanges par des données fictives"><svg><use href="#i-screen"/></svg>Démo</button>
     <a class="gear" id="gear" href="#reglages" aria-label="Réglages" title="Réglages"><svg><use href="#i-gear"/></svg></a>
   </header>
-  <div class="demobar" id="demobar" hidden><span>Mode démo : les finances et le CRM affichent des données fictives.</span><button class="btn sm" id="demo-quit">Quitter la démo</button></div>
+  <div class="demobar" id="demobar" hidden><span>Mode démo : les finances, le CRM, la prospection et les échanges affichent des données fictives.</span><button class="btn sm" id="demo-quit">Quitter la démo</button></div>
 </div>
 
 <main class="view page" data-view="today">
@@ -2719,21 +2719,23 @@ function pfFinanceWire(el) {
 }
 
 // #finances: its own tab; the today band shows the same three figures
-// A made-up but consistent book for demos, dated around today: 12 900 € cashed in
-// four payments, 1 200 € due next month, 6 000 € of counted leads, one lead left out.
+// A made-up but consistent book for demos, dated around today, sized to impress:
+// 105 300 € cashed in, 32 100 € due, 76 500 € of counted leads, one lead left out.
 function demoFinance() {
   const now = new Date(), y = now.getFullYear(), m = now.getMonth();
   const day = (k, d) => new Date(y, m + k, Math.min(d, new Date(y, m + k + 1, 0).getDate(), k ? 31 : now.getDate())).toLocaleDateString('sv-SE');
   const e = (libelle, montant, k, d, statut, ref, compte = false) => ({ libelle, montant, date: day(k, d), statut, ref, compte });
   const note = (slug, client, title, echeances) => ({ id: `brain/finance/${slug}.md`, slug, title, type: '', description: '', client, projet: '', projects: [], clients: [], echeances, sources: [] });
   return {
-    clients: [['societe-fictive', 'Société Fictive'], ['cabinet-modele', 'Cabinet Modèle'], ['studio-demo', 'Studio Démo'], ['atelier-exemple', 'Atelier Exemple']].map(([slug, title]) => ({ slug, title })),
+    clients: [['societe-fictive', 'Société Fictive'], ['cabinet-modele', 'Cabinet Modèle'], ['groupe-exemple', 'Groupe Exemple'], ['maison-fictive', 'Maison Fictive'], ['studio-demo', 'Studio Démo'], ['atelier-exemple', 'Atelier Exemple']].map(([slug, title]) => ({ slug, title })),
     projects: [],
     notes: [
-      note('societe-fictive-devis', 'societe-fictive', 'Devis Société Fictive, phase 1', [e('Acompte 30 %, phase 1', 2600, -3, 15, 'encaisse', 'FAC-0112'), e('Solde, phase 1', 6000, 0, 28, 'encaisse', 'FAC-0117')]),
-      note('cabinet-modele-audit', 'cabinet-modele', 'Cabinet Modèle, audit et atelier', [e('Audit des process', 2500, -1, 5, 'encaisse', 'FAC-0115'), e('Atelier IA', 1800, 0, 10, 'encaisse', 'FAC-0116'), e('Audit des outils, phase 2', 4600, 3, 20, 'devis', 'DEV-0121')]),
-      note('studio-demo', 'studio-demo', 'Studio Démo, formation et site', [e('Formation 1 jour', 1200, 1, 15, 'a_encaisser', 'FAC-0118'), e('Site et automatisations', 3000, 3, 15, 'devis', 'DEV-0120', true)]),
-      note('atelier-exemple-abonnement', 'atelier-exemple', 'Atelier Exemple, abonnement', [e('Abonnement, 1er mois', 1500, 2, 1, 'devis', 'DEV-0119', true), e('Abonnement, 2e mois', 1500, 3, 1, 'devis', 'DEV-0119', true)]),
+      note('societe-fictive-devis', 'societe-fictive', 'Société Fictive, agents IA', [e('Acompte 30 %, phase 1', 12000, -3, 15, 'encaisse', 'FAC-0112'), e('Solde, phase 1', 28000, 0, 28, 'encaisse', 'FAC-0124'), e('Phase 2, agents métiers', 42000, 3, 20, 'devis', 'DEV-0131', true)]),
+      note('cabinet-modele-audit', 'cabinet-modele', 'Cabinet Modèle, audit et accompagnement', [e('Audit des process', 9500, -2, 5, 'encaisse', 'FAC-0114'), e('Atelier IA', 6800, -1, 10, 'encaisse', 'FAC-0119'), e('Accompagnement, mois 1', 4500, 0, 3, 'encaisse', 'FAC-0122'), e('Accompagnement, mois 2', 4500, 1, 3, 'a_encaisser', 'FAC-0126'), e('Audit des outils, phase 2', 12000, 3, 20, 'devis', 'DEV-0132')]),
+      note('groupe-exemple-deploiement', 'groupe-exemple', 'Groupe Exemple, déploiement et formation', [e('Déploiement des agents, 1re tranche', 18000, -1, 20, 'encaisse', 'FAC-0120'), e('Formation des équipes, 3 jours', 7200, 0, 8, 'encaisse', 'FAC-0123'), e('Déploiement des agents, 2e tranche', 18000, 1, 30, 'a_encaisser', 'FAC-0127')]),
+      note('maison-fictive-audit', 'maison-fictive', 'Maison Fictive, audit et déploiement', [e('Audit et feuille de route', 14500, -3, 22, 'encaisse', 'FAC-0113'), e('Phase 2, déploiement', 24000, 2, 15, 'devis', 'DEV-0130', true)]),
+      note('studio-demo', 'studio-demo', 'Studio Démo, formation et site', [e('Formation 2 jours', 4800, -2, 12, 'encaisse', 'FAC-0116'), e('Site et automatisations', 9600, 1, 15, 'a_encaisser', 'FAC-0125')]),
+      note('atelier-exemple-abonnement', 'atelier-exemple', 'Atelier Exemple, abonnement', [e('Abonnement, 1er mois', 3500, 1, 1, 'devis', 'DEV-0129', true), e('Abonnement, 2e mois', 3500, 2, 1, 'devis', 'DEV-0129', true), e('Abonnement, 3e mois', 3500, 3, 1, 'devis', 'DEV-0129', true)]),
     ],
   };
 }
@@ -4131,9 +4133,44 @@ const ecHeure = iso => { const d = new Date(iso); return `${d.getHours()} h ${St
 const EC_ETAPES = ['Envoyée', 'Chez', 'Faite'];
 const EC_RANG = { submitted: 1, working: 2, 'input-required': 2, completed: 3 };
 const EC_ATTENTE = { accord: 'Accepter ?', decision: 'L\'ajouter à ta journée ?', validation: 'Valider le résultat ?' };
+// demo mode: a fictitious partner and conversations, dated around now, nothing sent
+function demoEchanges() {
+  const il = h => new Date(Date.now() - h * 36e5).toISOString();
+  const M = (id, sens, h, sujet, texte, type = 'info') => ({ id: `demo-${id}`, sens, quand: il(h), sujet, texte, type });
+  const S = (titre, messages, sansReponse = false) => ({ id: `demo-s-${messages[0].id}`, titre, messages, sansReponse, note: !sansReponse });
+  return {
+    demo: true, partenaire: 'Camille Exemple', connexion: 'demo', partage: true, caches: 0, rangement: { rangeLe: il(0.5) },
+    missions: {
+      enCours: [
+        { id: 'demo-m1', sens: 'recue', titre: 'Préparer la démo agents pour Groupe Exemple', echeance: new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10), etat: 'working', agent: { statut: 'en_cours' } },
+        { id: 'demo-m2', sens: 'envoyee', titre: 'Présenter AlpesIA au réseau Entreprendre 74', echeance: new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10), etat: 'working' },
+      ],
+      terminees: [{ titre: 'Relancer Maison Fictive sur la phase 2', etat: 'completed' }, { titre: 'Qualifier les 12 leads du salon', etat: 'completed' }],
+    },
+    sujets: [
+      S('Groupe Exemple, démo des agents', [
+        M('a1', 'recu', 26, 'Groupe Exemple', 'Le DG de **Groupe Exemple** a vu la démo chez un client. Il veut la même chose pour ses 3 sites, budget validé autour de **40 k€**.'),
+        M('a2', 'envoyee', 25, 'Groupe Exemple', 'Top ! Je bloque mardi 10 h pour la démo, je prépare un cas sur leurs devis.'),
+        M('a3', 'recu', 1.5, 'Groupe Exemple', 'Il demande s\'il peut venir avec sa DAF et son responsable informatique. Je leur confirme ?', 'question'),
+      ], true),
+      S('Maison Fictive, phase 2 signée', [
+        M('b1', 'recu', 5, 'Maison Fictive', 'Devis phase 2 signé ce matin 🎉 **24 000 €**, démarrage le mois prochain.'),
+        M('b2', 'envoyee', 4.5, 'Maison Fictive', 'Excellent, merci ! J\'envoie la facture d\'acompte aujourd\'hui.'),
+      ]),
+      S('Salon Alpes Entreprendre', [
+        M('c1', 'recu', 30, 'Salon', '**12 contacts qualifiés** sur le stand, dont 4 qui veulent un audit avant fin de mois. Je te passe la liste dans le CRM.'),
+        M('c2', 'envoyee', 29, 'Salon', 'Parfait, je les appelle cette semaine.'),
+      ]),
+      S('Recommandation Cabinet Modèle', [
+        M('d1', 'recu', 50, 'Cabinet Modèle', 'Cabinet Modèle nous recommande à deux confrères. Ils veulent le même accompagnement mensuel.'),
+      ]),
+    ],
+  };
+}
 async function loadEc(force) {
   if (!ecRoute()) return;
-  try { ec = await api(`/api/echanges${ecTout ? '?tout=1' : ''}`); } catch (e) { return; }
+  if (demoOn) ec = ec?.demo ? ec : demoEchanges();
+  else try { ec = await api(`/api/echanges${ecTout ? '?tout=1' : ''}`); } catch (e) { return; }
   const r = ecRoute();
   if (r.repondre && ec.sujets) {
     // an older question is beyond the 30 days: look again among all of them
@@ -4220,6 +4257,7 @@ $('#ec-body').addEventListener('click', async e => {
   if (b.dataset.sujet) { const s = ec.sujets.find(x => x.messages.some(m => m.id === b.dataset.sujet)); ecOpen = s && ecOpen && ecDans(s, new Set([ecOpen])) ? null : b.dataset.sujet; renderEc(); return; }
   if (b.dataset.plein) { ecPlein.add(b.dataset.plein); renderEc(); return; }
   if ('tout' in b.dataset) { ecTout = !ecTout; await loadEc(true); return; }
+  if (demoOn) { if (b.dataset.oui || b.dataset.terminer || b.dataset.agent) toast('Mode démo : rien n\'est enregistré ni envoyé'); return; }
   let r = null;
   b.disabled = true;
   try {
@@ -4241,6 +4279,7 @@ $('#ec-body').addEventListener('click', async e => {
 $('#ec-body').addEventListener('submit', async e => {
   e.preventDefault();
   const f = e.target, btn = f.querySelector('button[type="submit"]'), v = Object.fromEntries(new FormData(f));
+  if (demoOn) return toast('Mode démo : rien n\'est enregistré ni envoyé');
   btn.disabled = true;
   try {
     let r;
@@ -4981,7 +5020,21 @@ function demoProspection() {
   ];
   const c = { slug: 'demo-batiment', titre: 'Bâtiment 74', statut: 'active', pourquoi: 'Les dirigeants font leurs devis le soir, après le chantier.', moments: ['Recrutement administratif', 'Nouveau dirigeant', 'Agrandissement'], offre: 'Devis et relances automatisés', lien: '', criteres: { naf: ['43.32A', '43.21A'], departements: ['74'], codes_postaux: [], tranches: ['11', '12'] }, recherche: { etat: 'fini', fin: new Date().toISOString(), total: 141 }, entreprises: ents, demo: true };
   const resume = { slug: c.slug, titre: c.titre, statut: 'active', criteres: c.criteres, offre: c.offre, pourquoi: c.pourquoi, recherche: c.recherche, retenues: 3, a_trier: 1, ecartees: 2, total: 6, avec_email: 2, avec_linkedin: 2, avec_tel: 2, avec_moment: 2, campagne: null };
-  return { demo: true, liste: { cibles: [resume], exclusions: 0 }, cible: c };
+  return { demo: true, liste: { cibles: [resume], exclusions: 0 }, cible: c, reponses: demoReponses() };
+}
+function demoReponses() {
+  const il = h => new Date(Date.now() - h * 36e5).toISOString();
+  const R = (id, h, entreprise, canal, classe, titre, fait, action, question, texte, extra = {}) => ({ id: `demo-r${id}`, etat: 'a_traiter', cible: 'demo-batiment', cible_titre: 'Bâtiment 74', date: il(h), entreprise, canal, classe, titre, fait, action, question, texte, contact: {}, reponse: '', relance: '', ...extra });
+  return [
+    R(1, 0.8, 'Menuiserie Exemple', 'email', 'interesse', 'Veut un rendez-vous', 'Jeanne Exemple veut voir les devis automatisés cette semaine, plutôt jeudi.', 'repondre', 'Lui proposer jeudi 14 h ?',
+      'Bonjour, ça tombe bien, on passe nos soirées sur les devis. On peut se voir jeudi ? Jeanne', { sujet: 'Re: Vos devis du soir', reponse: 'Bonjour Jeanne,\n\nJeudi 14 h, ça vous va ? Je viens à Thônes avec un exemple sur vos devis.\n\nChristophe' }),
+    R(2, 3, 'Peinture Démo', 'linkedin', 'interesse', 'Demande les tarifs', 'Léa Démo veut un ordre de prix avant d\'en parler à son associé.', 'appeler', 'L\'appeler aujourd\'hui ?',
+      'Bonjour, votre message m\'intéresse. Vous avez un ordre de prix ? Je dois en parler à mon associé.', { contact: { telephone: '04 50 00 00 02' } }),
+    R(3, 20, 'Plomberie Modèle', 'email', 'pas_maintenant', 'Rappeler en janvier', 'Alix Modèle est en pleine saison, il préfère en reparler en janvier.', 'relancer', 'Relancer le 8 janvier ?',
+      'Merci, c\'est intéressant mais on est sous l\'eau jusqu\'à Noël. Recontactez-moi en janvier.', { sujet: 'Re: Vos devis du soir', relance: `${new Date().getFullYear() + 1}-01-08` }),
+    { ...R(4, 48, 'Charpentes Fictives', 'email', 'interesse', 'RDV pris', '', '', '', ''), etat: 'traitee', rdv: true, note: 'RDV mardi' },
+    { ...R(5, 70, 'Couverture Exemple', 'email', 'absence', 'Absent', '', '', '', ''), etat: 'traitee', auto: 'relance décalée au retour' },
+  ];
 }
 
 async function loadPr(force) {
@@ -4989,7 +5042,7 @@ async function loadPr(force) {
   if (!r) return;
   const hash = location.hash, demo = demoOn;
   let liste, cible = null;
-  if (demo) { const d = demoProspection(); liste = d.liste; cible = r.slug ? d.cible : null; prReps = []; prPros = []; prAppels = []; }
+  if (demo) { const d = demoProspection(); liste = d.liste; cible = r.slug ? d.cible : null; prReps = d.reponses; prPros = []; prAppels = []; }
   else {
     liste = await api('/api/prospection').catch(() => null);
     if (r.slug) cible = await api(`/api/prospection/cibles/${encodeURIComponent(r.slug)}`).then(x => (x.error ? null : x)).catch(() => null);
@@ -5305,7 +5358,7 @@ async function prLong(tag, fn) { prBusy = tag; renderPr(); try { const r = await
 async function prSaveSteps(steps) { const r = await prSend('PATCH', prCampUrl(), { etapes: steps }); if (r.error) toast(r.error, true); return r; }
 async function prCampAction(what, b) {
   const local = ['pv-prev', 'pv-next', 'lancer', 'lancer-non', 'copier'];
-  if (demoOn && !local.includes(what) && ['ecrire', 'lancer-go', 'pause', 'reprendre', 'ajouter-etape', 'supprimer-etape', 'personnaliser'].includes(what)) { toast('Mode démo : rien n\'est enregistré'); return true; }
+  if (demoOn && !local.includes(what) && ['ecrire', 'lancer-go', 'pause', 'reprendre', 'ajouter-etape', 'supprimer-etape', 'personnaliser', 'lire-boite'].includes(what)) { toast('Mode démo : rien n\'est enregistré'); return true; }
   const k = prCible?.campagne;
   switch (what) {
     case 'lire-boite': { const r = await prLong('lire', () => prSend('POST', '/api/prospection/reponses/lire')); if (r && !r.error) toast(r.nouvelles ? `${r.nouvelles} nouvelle(s) réponse(s)` : 'Rien de nouveau'); return true; }
@@ -5511,6 +5564,8 @@ function setDemo(on) {
   crmData = null;
   loadCrm(true);
   loadPr(true);
+  ec = null;
+  loadEc(true);
 }
 $('#demo-toggle').onclick = () => setDemo(!demoOn);
 $('#demo-quit').onclick = () => setDemo(false);
