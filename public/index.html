@@ -1699,13 +1699,24 @@ function rvOrder() {
   todo.items = sort(todo.items);
   todo.carried = sort(todo.carried);
 }
+// demo mode: a fictitious review, consistent with the demo Échanges and prospection replies
+const DEMO_RV_SUM = ['Groupe Exemple attend une réponse de Camille pour la démo de mardi.', 'Maison Fictive a signé la phase 2 : facture d\'acompte à envoyer.', '2 prospects du Bâtiment 74 ont répondu ce matin.'];
+function demoProps() {
+  const P = (id, source, type, title, why, project = '', extra = {}) => ({ id: `demo-p${id}`, source, type, title, why, project, ...extra });
+  return [
+    P(1, 'partenaire', 'question', 'Groupe Exemple peut venir avec sa DAF ?', 'Camille, ce matin', 'Groupe Exemple', { from: 'Camille', lien: 'echanges', ref: 'message:demo-a3' }),
+    P(2, 'revue', 'tache', 'Préparer le cas devis pour la démo Groupe Exemple', 'Démo mardi 10 h, budget autour de 40 k€', 'Groupe Exemple'),
+    P(3, 'mail', 'tache', 'Envoyer la facture d\'acompte de la phase 2 à Maison Fictive', 'Devis de 24 000 € signé ce matin', 'Maison Fictive'),
+    P(4, 'mail', 'tache', 'Confirmer jeudi 14 h à Jeanne Exemple', 'Réponse à la séquence Bâtiment 74, reçue à 8 h', 'Prospection Bâtiment 74'),
+    P(5, 'mail', 'tache', 'Rappeler Léa Démo pour lui donner un ordre de prix', 'Réponse LinkedIn de ce matin', 'Prospection Bâtiment 74'),
+  ];
+}
 function rvRender() {
-  const r = review ?? {};
+  const r = demoOn ? { ...review, at: new Date().toISOString(), running: false, error: null, summary: DEMO_RV_SUM } : review ?? {};
   const failed = r.error && (!r.at || r.errorAt > r.at);
   const head = r.running ? 'Revue en cours…' : rvToday(r.at) ? `Revue de ${rvHour(r.at)}` : r.at ? `Dernière revue ${rvWhen(r.at)}` : 'Revue horaire';
   const meta = p => [p.source === 'mission' ? `Mission de ${p.from}` : p.type === 'question' ? 'Question' : '', p.why].filter(Boolean).map(esc).join(' · ');
-  // real amounts never show in demo mode
-  const shown = props.filter(p => !(demoOn && p.type === 'finance'));
+  const shown = demoOn ? demoProps() : props;
   const x = '<button class="sg-x" data-do="dismiss" title="Écarter : la revue ne la reproposera pas" aria-label="Écarter cette proposition">×</button>';
   const input = p => `<input value="${esc(rvEdits[p.id] ?? p.title)}" aria-label="Titre de la tâche, modifiable" title="Modifiable avant de valider">`;
   // a partner's notice or question: seen here, answered on its page
@@ -1789,6 +1800,11 @@ async function rvDecide(id, act) {
 }
 $('#propositions').addEventListener('click', async e => {
   const b = e.target.closest('button');
+  if (demoOn && b) {
+    if (b.dataset.go) location.hash = b.dataset.go;
+    else toast('Mode démo : rien n\'est enregistré');
+    return;
+  }
   if (b?.dataset.rv) {
     const r = await fetch(`/api/review/${b.dataset.rv}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ t: b.dataset.t }) }).then(x => x.json()).catch(err => ({ error: err.message }));
     if (r.error) return toast(r.error, true);
@@ -1805,7 +1821,7 @@ $('#propositions').addEventListener('click', async e => {
   }
 });
 $('#propositions').addEventListener('input', e => { const sg = e.target.closest('.sg'); if (sg) rvEdits[sg.dataset.id] = e.target.value; });
-$('#propositions').addEventListener('keydown', e => { const sg = e.target.closest('.sg'); if (sg && e.target.matches('input') && e.key === 'Enter') rvDecide(sg.dataset.id, sg.querySelector('.acc').dataset.do); });
+$('#propositions').addEventListener('keydown', e => { const sg = e.target.closest('.sg'); if (sg && e.target.matches('input') && e.key === 'Enter') demoOn ? toast('Mode démo : rien n\'est enregistré') : rvDecide(sg.dataset.id, sg.querySelector('.acc').dataset.do); });
 $('#rv-agent').addEventListener('click', e => { if (e.target.closest('b')) $('#propositions').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
 
 /* ---------- micro apps + runs ---------- */
